@@ -87,6 +87,7 @@ class LLMConfig(BaseModel):
 class KBConfig(BaseModel):
     prompt_doc_url: str
     cache_ttl: int
+    credentials_json: str = "credentials.json"
 
 class SilenceReminderLevel(BaseModel):
     delay_minutes: int

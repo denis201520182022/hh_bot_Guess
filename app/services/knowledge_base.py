@@ -23,7 +23,7 @@ class KnowledgeBaseService:
         
         # Инициализация Redis клиента
         self.redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-        self.cache_key = f"{settings.bot_id}:prompt_library"
+        self.cache_key = f"{settings.bot.id}:prompt_library"
 
     def _extract_doc_id(self, url: str) -> str:
         """Извлекает ID документа из полной ссылки Google Docs"""
