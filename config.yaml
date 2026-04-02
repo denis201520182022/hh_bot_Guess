@@ -1,0 +1,137 @@
+# === ИДЕНТИФИКАЦИЯ БОТА ===
+bot:
+  id: "guess_hr_01"
+
+
+# === СИСТЕМНЫЕ НАСТРОЙКИ ===
+system:
+  docker_mode: true
+  log_level: "INFO"
+  
+
+# === УПРАВЛЕНИЕ ПЛАТФОРМАМИ (КАНАЛЫ СВЯЗИ) ===
+platforms:
+  avito:
+    enabled: false
+    poll_interval: 5      # Интервал опроса новых откликов (сек)
+    webhook_enabled: true  # Прием мгновенных сообщений через FastAPI
+    vacancy_description_source: "platform" # "platform" или "google_doc"
+    dry_run_search: false  # Тестовый режим поиска (без открытия контактов)
+    outbound_search:
+      enabled: false
+      spreadsheet_url: ""
+      search_sheet_name: "AvitoSearch"
+
+    concurrency_limit: 10
+  hh:
+    enabled: true
+    poll_interval: 5      # Для HH обычно хватает 1 раза в минуту
+    vacancy_description_source: "platform" # "platform" или "google_doc"
+    dry_run_search: false  # Тестовый режим поиска (без открытия контактов)
+
+    outbound_search:
+      enabled: false
+      spreadsheet_url: ""
+      search_sheet_name: "HHSearch"
+
+    concurrency_limit: 10
+
+
+
+services:
+  telegram:  # Отправка сообщений в телеграм и настройка нужных категорий карточек
+    enabled: true
+    interview_cards: true
+    reject_cards: false
+    molchun_cards: false
+    reschedule_cards: false
+
+  google_sheets_report:  # Отчет в гугл таблицы
+    enabled: true
+    spreadsheet_url: "https://docs.google.com/spreadsheets/d/1q6Qtcek57WAHDcN3IdS_6GUDTCsAebIjfvzs91fIHCA/edit"
+    candidates_sheet_name: "Candidates"
+
+  crm_integration:  # Интеграция с crm, пока просто заглушка
+    enabled: false
+    
+
+# === КАЛЕНДАРЬ СОБЕСОВ===
+scheduling:
+  # Основной провайдер: "talantix" или "google_sheets"
+  provider: "google_sheets" 
+  
+  # Настройки Talantix
+  talantix:
+    # пока пусто
+
+  # Настройки Google Sheets (как резерв или база знаний)
+  google_sheets:
+    spreadsheet_url: "https://docs.google.com/spreadsheets/d/1q6Qtcek57WAHDcN3IdS_6GUDTCsAebIjfvzs91fIHCA/edit"
+    calendar_sheet_name: "Calendar"
+    
+    
+
+
+
+# === НАСТРОЙКИ LLM (НЕЙРОСЕТЬ) ===
+llm:
+  main_model: "gpt-4o-mini"
+  smart_model: "gpt-4o"
+  temperature: 0.0
+  max_tokens: 2500
+  request_timeout: 600
+  global_concurrency: 60    # Общий лимит одновременных запросов к OpenAI
+
+
+# === БАЗА ЗНАНИЙ (ИНСТРУКЦИИ) ===
+knowledge_base:
+  prompt_doc_url: "https://docs.google.com/document/d/1yDsgAk0eWgcrjd_1DjObmCATEm5YL_JTBk7hBWz2cD8/edit"
+  cache_ttl: 3600
+
+# === НАПОМИНАНИЯ (RE-ENGAGEMENT) ===
+reminders:
+  # Напоминания "Молчунам" (кто перестал отвечать в чате)
+  silence:
+    enabled: true
+    quiet_time:
+      enabled: true
+      start: "20:30"
+      end: "09:00"
+      default_timezone: "Europe/Moscow"
+    levels:
+      - delay_minutes: 30
+        text: |
+          Напишу вам ещё раз, вдруг моё прошлое сообщение затерялось где-то между делами:-).
+          Вакансия интересна или что-то смутило? Если что-то смущает, попробую разъяснить спорные моменты и подобрать для вас варианты .
+      - delay_minutes: 180
+        text: |
+          Пишу вам ещё раз, вдруг не увидели предыдущее сообщение. Если вам сейчас неудобно или вы думаете -  напишите, пожалуйста, чтобы я понимала, как лучше вам помочь.
+        stop_bot: false
+
+  # Напоминания о назначенных собеседованиях
+  interview:
+    enabled: true
+    items:
+      - id: "evening_before"
+        type: "fixed_time"
+        days_before: 1
+        at_time: "19:00"
+        text: |
+          Добрый вечер! Напоминаю, что завтра, {interview_date} в {interview_time} 
+          по московскому времени, у вас назначено собеседование по вакансии '{vacancy_title}'. 
+          Если у вас есть вопросы, напишите нам.
+
+      - id: "one_hour_before"
+        type: "relative"
+        minutes_before: 120
+        text: |
+          Здравствуйте! Напоминаю, что у вас запланировано собеседование по вакансии 
+          '{vacancy_title}' сегодня в {interview_time} по московскому времени. 
+          Пожалуйста, будьте готовы.
+
+# === ТЕКСТЫ И ШАБЛОНЫ СООБЩЕНИЙ ===
+messages:
+  initial_greeting: |
+    Здравствуйте! Мы хотим предложить вам работу на вакансии {vacancy_title} на нашей турбазе “Озерки”, с проживанием, 3-х разовым питанием, оплаченной дорогой и комфортным способом оформления. Готовы рассмотреть такой вариант?
+  qualification_failed_farewell: |
+    Спасибо! Я передам Вашу анкету для рассмотрения. Если по Вашей анкете будет принято положительное решение с Вами свяжутся в течение трёх рабочих дней.

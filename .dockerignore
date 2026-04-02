@@ -1,0 +1,44 @@
+Git
+
+.git
+.gitignore
+
+Python cache
+
+pycache/
+*.pyc
+*.pyo
+
+Virtual env (ОЧЕНЬ ВАЖНО — у тебя есть venv)
+
+venv/
+.venv/
+
+Логи
+
+logs/
+*.log
+
+Миграции кэш
+
+migrations/pycache/
+
+IDE
+
+.vscode/
+.idea/
+
+OS
+
+.DS_Store
+Thumbs.db
+
+Временные
+
+tmp/
+temp/
+*.bak
+
+Тесты и утилиты (если не нужны в проде)
+
+reset_test.py

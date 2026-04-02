@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # === ОСНОВНОЕ ПРИЛОЖЕНИЕ (All-in-One: FastAPI + Workers) ===
+  app:
+    build: .
+    container_name: guess_hr_bot
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - REDIS_URL=${REDIS_URL}
+      - DB_HOST=pgbouncer
+      - DB_PORT=6432
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "8018:8000"       # FastAPI (Webhooks & Health)
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+    networks:
+      - guess_net
+
+  # === RABBITMQ (Очереди задач) ===
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: guess_rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - guess_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - guess_net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === REDIS (Кэш, Локи, Дебаунс) ===
+  redis:
+    image: redis:7-alpine
+    container_name: guess_redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - guess_redis_data:/data
+    networks:
+      - guess_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # === PGBOUNCER (Пул соединений к Postgres) ===
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: guess_pgbouncer
+    restart: always
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=host.docker.internal
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=1000
+      - DEFAULT_POOL_SIZE=20
+      - LISTEN_PORT=6432
+      - AUTH_TYPE=scram-sha-256
+      - IGNORE_STARTUP_PARAMETERS=extra_float_digits,client_encoding
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - guess_net
+
+volumes:
+  guess_rabbitmq_data:
+  guess_redis_data:
+
+networks:
+  guess_net:
+    driver: bridge
+
