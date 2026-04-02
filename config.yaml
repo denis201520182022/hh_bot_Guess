@@ -5,7 +5,7 @@ bot:
 
 # === СИСТЕМНЫЕ НАСТРОЙКИ ===
 system:
-  docker_mode: true
+  docker_mode: false
   log_level: "INFO"
   
 
