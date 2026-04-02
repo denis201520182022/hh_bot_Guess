@@ -157,6 +157,11 @@ class Settings(BaseModel):
     SQUID_PROXY_USER: Optional[str] = Field(default_factory=lambda: os.getenv("SQUID_PROXY_USER"))
     SQUID_PROXY_PASSWORD: Optional[str] = Field(default_factory=lambda: os.getenv("SQUID_PROXY_PASSWORD"))
 
+    HH_CLIENT_ID: Optional[str] = Field(default_factory=lambda: os.getenv("HH_CLIENT_ID"))
+    HH_CLIENT_SECRET: Optional[str] = Field(default_factory=lambda: os.getenv("HH_CLIENT_SECRET"))
+
+    GOOGLE_CREDENTIALS_JSON: Optional[str] = Field(default_factory=lambda: os.getenv("GOOGLE_CREDENTIALS_JSON"))
+
     class Config:
         populate_by_name = True
 
