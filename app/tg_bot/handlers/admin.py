@@ -31,7 +31,8 @@ from app.tg_bot.keyboards import (
     role_choice_keyboard,
     cancel_fsm_keyboard,
     limits_menu_keyboard,
-    admin_keyboard
+    admin_keyboard,
+    platform_choice_keyboard
 )
 
 logger = logging.getLogger(__name__)
