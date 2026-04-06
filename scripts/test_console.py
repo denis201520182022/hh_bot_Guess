@@ -101,6 +101,11 @@ async def chat_loop(chat_id: str):
     
     while True:
         text = await asyncio.to_thread(input, "Вы: ")
+        
+        # Очистка от битых суррогатных символов (которые может вернуть консоль Windows)
+        import re
+        text = re.sub(r'[\ud800-\udfff]', '', text)
+        
         if text.strip().lower() in ['quit', 'exit']:
             print("Завершение работы...")
             # Выход из программы
