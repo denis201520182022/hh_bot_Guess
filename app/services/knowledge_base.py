@@ -14,7 +14,6 @@ import json
 from app.core.config import settings
 
 from app.utils.logger import logger
-logger.info("TEST: Central logger is working inside knowledge_base.py")
 
 class KnowledgeBaseService:
     def __init__(self):

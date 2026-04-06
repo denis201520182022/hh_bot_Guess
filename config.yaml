@@ -85,7 +85,7 @@ llm:
 
 # === БАЗА ЗНАНИЙ (ИНСТРУКЦИИ) ===
 knowledge_base:
-  prompt_doc_url: "https://docs.google.com/document/d/1yDsgAk0eWgcrjd_1DjObmCATEm5YL_JTBk7hBWz2cD8/edit"
+  prompt_doc_url: "https://docs.google.com/document/d/1bsNe2J1Gr2oT6ii94qiYbkPiUP2kvSNNf4RzUPi3lFY/edit"
   cache_ttl: 3600
 
 # === НАПОМИНАНИЯ (RE-ENGAGEMENT) ===
