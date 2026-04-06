@@ -41,6 +41,7 @@ from app.core.config import settings
 from app.db.models import InterviewReminder
 from sqlalchemy import delete
 from app.utils.pii_masker import extract_and_mask_pii 
+from app.core.exceptions import DialogueLockedError
 
 from zoneinfo import ZoneInfo
 MOSCOW_TZ = ZoneInfo("Europe/Moscow")
@@ -716,7 +717,7 @@ class Engine:
         # Таймаут 60 секунд (хватит на любой LLM запрос + логику)
         if not await acquire_lock(lock_key, timeout=60):
             ctx_logger.warning(f"⚠️ Диалог {dialogue_id} уже обрабатывается другим воркером. Пропуск.")
-            raise Exception("Dialogue is locked by another worker.")
+            raise DialogueLockedError("Dialogue is locked by another worker.")
         try:
             # Проверка активности сессии
             if not db.is_active:

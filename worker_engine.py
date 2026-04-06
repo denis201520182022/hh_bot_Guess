@@ -10,6 +10,7 @@ from app.db.session import engine
 from app.services.llm import cleanup_llm
 
 from app.utils.logger import logger, set_log_context, log_context
+from app.core.exceptions import DialogueLockedError
 
 async def on_engine_task(message: IncomingMessage):
     """
@@ -47,8 +48,12 @@ async def on_engine_task(message: IncomingMessage):
             # Если выполнение дошло до этой точки — подтверждаем успех
             await message.ack()
             
+        except DialogueLockedError as e:
+            # Если диалог заблокирован — просто логируем предупреждение (без алертов в ТГ)
+            logger.warning(f"⚠️ [Engine] Диалог {diag_id} заблокирован другим воркером. Пропуск и повтор...")
+            # Пропускаем блок mq.publish("tg_alerts", ...)
         except Exception as e:
-            # Логируем ошибку (твоя исходная логика)
+            # Логируем ошибку (твоя исходная логика для всех остальных ошибок)
             error_msg = f"❌ Ошибка в Движке (Engine):\nДиалог ID: `{diag_id}`\nТекст ошибки: {str(e)}"
             logger.exception("❌ Ошибка в Движке (Engine)")
 
