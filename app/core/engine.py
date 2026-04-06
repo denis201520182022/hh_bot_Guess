@@ -761,7 +761,8 @@ class Engine:
                 "vacancy_id": dialogue.vacancy_id,
                 "vacancy_title": dialogue.vacancy.title if dialogue.vacancy else "Unknown",
                 "candidate_id": dialogue.candidate_id,
-                "state": dialogue.current_state
+                "state": dialogue.current_state,
+                "candidate_data": dialogue.candidate.profile_data if dialogue.candidate else {}
             })
 
 
@@ -847,7 +848,8 @@ class Engine:
                 "vacancy_id": dialogue.vacancy_id,
                 "vacancy_title": dialogue.vacancy.title if dialogue.vacancy else "Unknown",
                 "candidate_id": dialogue.candidate_id,
-                "state": dialogue.current_state
+                "state": dialogue.current_state,
+                "candidate_data": dialogue.candidate.profile_data if dialogue.candidate else {}
             })
 
 

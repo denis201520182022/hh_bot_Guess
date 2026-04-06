@@ -139,6 +139,27 @@ async def get_bot_response(
         content = response.choices[0].message.content
         stats = calculate_usage(response.usage, MAIN_MODEL)
 
+        # --- FILE LOGGING (DEBUG) ---
+        try:
+            log_dir = "llm_logs"
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, f"dialogue_{diag_id}.txt")
+            
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(f"\n{'='*40}\n")
+                f.write(f"TIME: {datetime.datetime.now().isoformat()}\n")
+                f.write(f"STATE BEFORE: {(extra_context or {}).get('state', 'unknown')}\n")
+                f.write(f"CANDIDATE DATA: {json.dumps((extra_context or {}).get('candidate_data', {}), ensure_ascii=False)}\n")
+                f.write(f"--- SENT TO MODEL ({MAIN_MODEL}) ---\n")
+                f.write(f"PROMPT & HISTORY:\n{json.dumps(messages, ensure_ascii=False, indent=2)}\n\n")
+                f.write(f"--- MODEL RESPONSE ---\n")
+                f.write(f"{content}\n")
+                f.write(f"{'='*40}\n")
+        except Exception as eval_err:
+            logger.error(f"Failed to write file log: {eval_err}")
+        # -----------------------------
+
         ctx_logger.info(
             f"✅ LLM Response. [Action: llm_response_success] "
             f"Tokens: {stats['total_tokens']} (Cached: {stats['cache_percentage']}%)"
@@ -204,6 +225,27 @@ async def get_smart_bot_response(
 
         content = response.choices[0].message.content
         stats = calculate_usage(response.usage, SMART_MODEL)
+
+        # --- FILE LOGGING (DEBUG) ---
+        try:
+            log_dir = "llm_logs"
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, f"dialogue_{diag_id}.txt")
+            
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(f"\n{'='*40}\n")
+                f.write(f"TIME: {datetime.datetime.now().isoformat()}\n")
+                f.write(f"STATE BEFORE: {(extra_context or {}).get('state', 'unknown')}\n")
+                f.write(f"CANDIDATE DATA: {json.dumps((extra_context or {}).get('candidate_data', {}), ensure_ascii=False)}\n")
+                f.write(f"--- SENT TO SMART MODEL ({SMART_MODEL}) ---\n")
+                f.write(f"PROMPT & HISTORY:\n{json.dumps(messages, ensure_ascii=False, indent=2)}\n\n")
+                f.write(f"--- MODEL RESPONSE ---\n")
+                f.write(f"{content}\n")
+                f.write(f"{'='*40}\n")
+        except Exception as eval_err:
+            logger.error(f"Failed to write file log: {eval_err}")
+        # -----------------------------
 
         ctx_logger.info(
             f"✅ SMART Response. [Action: smart_llm_success] "

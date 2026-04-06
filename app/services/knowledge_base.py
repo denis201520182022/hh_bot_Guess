@@ -41,8 +41,9 @@ class KnowledgeBaseService:
             # 1. Пытаемся достать из кэша
             cached_data = await self.redis_client.get(self.cache_key)
             if cached_data:
-                logger.debug("📚 Библиотека промптов загружена из кэша Redis")
-                return json.loads(cached_data)
+                library = json.loads(cached_data)
+                logger.debug(f"📚 Библиотека промптов загружена из кэша Redis. Блоки: {list(library.keys())}")
+                return library
 
             # 2. Если в кэше пусто, идем в Google
             logger.info("🌀 Кэш пуст или просрочен. Загрузка данных из Google Docs...")
@@ -64,7 +65,7 @@ class KnowledgeBaseService:
                 self.ttl, 
                 json.dumps(library, ensure_ascii=False)
             )
-            logger.info(f"✅ Кэш Redis обновлен. Загружено блоков: {len(library)}")
+            logger.info(f"✅ Кэш Redis обновлен. Загружено блоков: {len(library)}. Блоки: {list(library.keys())}")
             return library  # Возвращаем данные, если всё ок
         
         # Если библиотека пуста (этот код теперь достижим)
