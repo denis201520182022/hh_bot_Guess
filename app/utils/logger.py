@@ -64,4 +64,4 @@ def setup_logger(name: str):
     return logger
 
 # Имя бота из конфига
-logger = setup_logger(settings.bot.id)
+logger = setup_logger(settings.bot.id)

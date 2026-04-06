@@ -16,7 +16,7 @@ from app.core.rabbitmq import mq
 from app.utils.redis_lock import DistributedSemaphore, close_redis
 
 load_dotenv()
-logger = logging.getLogger("llm_service")
+from app.utils.logger import logger
 
 from app.core.config import settings
 

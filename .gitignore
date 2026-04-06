@@ -16,3 +16,5 @@ credentials.json
 README.md
 migrations/
 .qwen/
+
+tmp_test_logging.py

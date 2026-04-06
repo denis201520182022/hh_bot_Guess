@@ -1180,9 +1180,14 @@ class Engine:
                     'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
                 }
 
-                # 2. Сохраняем историю и добавляем системную команду в конец
-                # В нашей архитектуре нет pending_messages, команда кладется прямо в историю.
-                dialogue.history = (dialogue.history or []) + [hallucination_corr_cmd]
+                # 2. Очищаем историю от старых подобных команд (чтобы не дублировать их бесконечно)
+                clean_history = [
+                    m for m in (dialogue.history or [])
+                    if not str(m.get('message_id', '')).startswith('sys_state_hallucination')
+                ]
+
+                # 3. Сохраняем историю и добавляем системную команду в конец
+                dialogue.history = clean_history + [hallucination_corr_cmd]
                 dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
 
                 # 3. Фиксируем изменения в базе

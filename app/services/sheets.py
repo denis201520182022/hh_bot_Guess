@@ -11,7 +11,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from app.core.config import settings
 from app.core.rabbitmq import mq 
 
-logger = logging.getLogger("google_sheets_scheduling")
+from app.utils.logger import logger
 
 class GoogleSheetsService:
     def __init__(self):

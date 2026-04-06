@@ -1,7 +1,7 @@
 # app/services/google_sync_search_hh.py
 import logging
 
-logger = logging.getLogger("GoogleSyncSearchHH")
+from app.utils.logger import logger
 
 class GoogleSyncSearchHHService:
     async def sync_all(self):

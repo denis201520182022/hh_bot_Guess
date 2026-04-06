@@ -6,7 +6,7 @@ from app.db.session import AsyncSessionLocal
 from app.db.models import JobContext, Account
 from app.core.config import settings
 
-logger = logging.getLogger("GoogleSyncSearch")
+from app.utils.logger import logger
 
 class GoogleSyncSearchAvitoService:
     def __init__(self):
