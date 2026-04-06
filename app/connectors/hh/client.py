@@ -26,7 +26,7 @@ CLIENT_SECRET = os.getenv('HH_CLIENT_SECRET')
 
 # Лимиты (через Redis для распределенной работы)
 # 1. Общий лимит запросов в секунду (Rate Limit)
-HH_API_RATE_LIMITER_GLOBAL = DistributedRateLimiter(name="hh_api_rate", limit=100, period=1.0)
+HH_API_RATE_LIMITER_GLOBAL = DistributedRateLimiter(name="hh_api_rate", limit=100, period=60)
 # 2. Лимит одновременных соединений (Concurrency)
 GLOBAL_HH_API_LIMIT = int(os.getenv("GLOBAL_HH_API_CONCURRENCY", 10))
 
@@ -68,7 +68,7 @@ class HHClient:
         now = datetime.datetime.now(datetime.timezone.utc)
 
         # 1. Быстрая проверка: если токен еще живет (с запасом 5 минут)
-        expires_at_str = auth_data.get("token_expires_at")
+        expires_at_str = auth_data.get("expires_at")
         if auth_data.get("access_token") and expires_at_str:
             try:
                 expires_at = datetime.datetime.fromisoformat(expires_at_str)
@@ -87,7 +87,7 @@ class HHClient:
             auth_data = dict(account.auth_data or {})
             
             # Повторная проверка после лока
-            expires_at_str = auth_data.get("token_expires_at")
+            expires_at_str = auth_data.get("expires_at")
             if auth_data.get("access_token") and expires_at_str:
                 expires_at = datetime.datetime.fromisoformat(expires_at_str)
                 if expires_at > now + datetime.timedelta(minutes=5):
@@ -130,7 +130,7 @@ class HHClient:
                     # Срок жизни
                     expires_in = tokens.get("expires_in", 3600)
                     exp_dt = now + datetime.timedelta(seconds=expires_in)
-                    auth_data["token_expires_at"] = exp_dt.isoformat()
+                    auth_data["expires_at"] = exp_dt.isoformat()
                     
                     # Сохраняем в БД
                     account.auth_data = auth_data
@@ -154,7 +154,7 @@ class HHClient:
                         if error_desc == "token not expired":
                             logger.info(f"ℹ️ HH вернул 'token not expired' для {account.name}. Продлеваем виртуально.")
                             # Если токен не истек, просто сдвигаем срок в БД на 5 минут, чтобы не спамить рефрешем
-                            auth_data["token_expires_at"] = (now + datetime.timedelta(minutes=5)).isoformat()
+                            auth_data["expires_at"] = (now + datetime.timedelta(minutes=5)).isoformat()
                             account.auth_data = auth_data
                             await db.commit()
                             return auth_data.get("access_token")
@@ -236,7 +236,7 @@ class HHClient:
                         # Сбрасываем токен в auth_data
                         auth_data = dict(account.auth_data or {})
                         auth_data["access_token"] = None
-                        auth_data["token_expires_at"] = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).isoformat()
+                        auth_data["expires_at"] = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).isoformat()
                         account.auth_data = auth_data
                         await db.commit()
                         
@@ -558,7 +558,7 @@ class HHClient:
             while True:
                 resp = await self._request(
                     account, db, "GET", f"employers/{employer_id}/vacancies/active",
-                    params={'page': page, 'per_page': 100}
+                    params={'page': page, 'per_page': 50}
                 )
                 if not resp or not resp.get('items'):
                     break
