@@ -152,6 +152,13 @@ class DistributedRateLimiter:
         return {1, 0}
         """
 
+    async def __aenter__(self):
+        await self.acquire()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass  # Rate limiter не требует очистки после выхода
+
     async def acquire(self):
         while True:
             try:
