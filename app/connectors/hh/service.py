@@ -517,10 +517,14 @@ class HHConnectorService(BaseConnector):
                 candidate_last_name = resume_info.get('last_name', '')
                 candidate_full_name = f"{candidate_first_name} {candidate_last_name}".strip()
 
+                # Извлекаем пол кандидата из резюме
+                gender_info = resume_info.get('gender')
+                gender_id = gender_info.get('id') if gender_info else None
+
                 # Находим вакансию в БД (она должна быть синхронизирована поллером ранее)
                 stmt = select(JobContext).filter_by(external_id=ext_vacancy_id)
                 job = (await db.execute(stmt)).scalar_one_or_none()
-                
+
                 if not job:
                     logger.error(f"Вакансия HH {ext_vacancy_id} не найдена в БД. Невозможно привязать отклик.")
                     return
@@ -529,7 +533,7 @@ class HHConnectorService(BaseConnector):
                 # Используем твой составной ключ: ID резюме + ID вакансии
                 unique_candidate_key = f"{hh_resume_id}_{ext_vacancy_id}"
                 candidate = await db.scalar(select(Candidate).filter_by(platform_user_id=unique_candidate_key))
-                
+
                 if not candidate:
                     try:
                         # Используем вложенную транзакцию (savepoint) на случай race condition
@@ -537,7 +541,7 @@ class HHConnectorService(BaseConnector):
                             candidate = Candidate(
                                 platform_user_id=unique_candidate_key,
                                 full_name=candidate_full_name,
-                                profile_data={"hh_resume_id": hh_resume_id}
+                                profile_data={"hh_resume_id": hh_resume_id, "gender": gender_id}
                             )
                             db.add(candidate)
                             await db.flush()

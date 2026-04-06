@@ -94,13 +94,19 @@ class HHClient:
                     return auth_data["access_token"]
 
             # Если мы здесь — токен реально пора обновлять
-            logger.info(f"🔄 Обновление HH токена для аккаунта {account.name} (ID: {account.id})")
+            logger.info(f"🔄 Токен для аккаунта {account.name} (ID: {account.id}) истек или отсутствует. Обновляю...")
             
             refresh_token = auth_data.get("refresh_token")
             if not refresh_token:
-                msg = f"🔴 КРИТИЧЕСКАЯ ОШИБКА: У аккаунта {account.name} (ID: {account.id}) нет refresh_token!"
+                # msg = f"🔴 КРИТИЧЕСКАЯ ОШИБКА: У аккаунта {account.name} (ID: {account.id}) нет refresh_token!"
+                msg = (
+                    f"🔴 КРИТИЧЕСКАЯ ОШИБКА АВТОРИЗАЦИИ\n\n"
+                    f"Бот остановлен для рекрутера: {account.name}\n\n"
+                    f"Причина: Отсутствует refresh_token в базе данных.\n"
+                    f"Действие: Требуется провести повторную авторизацию."
+                )
                 logger.error(msg)
-                await self._send_system_alert(msg)
+                await self._send_system_alert(error_message)
                 return None
 
             data = {
@@ -131,6 +137,12 @@ class HHClient:
                     await db.commit()
                     
                     logger.info(f"✅ Успешно получен новый access_token для HH аккаунта {account.name}")
+                    msg = (
+                        f"✅ УСПЕШНАЯ АВТОРИЗАЦИЯ\n\n"
+                        f"Бот запущен для рекрутера: {account.name}\n\n"
+                        f"Причина: Токен успешно обновлен."
+                    )
+                    await self._send_system_alert(msg)
                     return auth_data["access_token"]
 
                 else:

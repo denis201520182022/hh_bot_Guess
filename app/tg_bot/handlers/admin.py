@@ -16,13 +16,13 @@ import datetime
 from aiogram.types import BufferedInputFile
 from sqlalchemy.orm.attributes import flag_modified
 from app.db.models import (
-    Account, 
-    JobContext, 
-    Candidate, 
+    Account,
+    JobContext,
+    Candidate,
     SearchStatus,
     SearchStat
 )
-from sqlalchemy.orm import selectinload, joinedload 
+from sqlalchemy.orm import selectinload, joinedload
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.db.models import TelegramUser, Account, AppSettings, Dialogue
 from app.tg_bot.filters import AdminFilter
@@ -34,6 +34,7 @@ from app.tg_bot.keyboards import (
     admin_keyboard,
     platform_choice_keyboard
 )
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -156,8 +157,7 @@ async def limits_menu(message: Message, session: AsyncSession):
 @router.callback_query(F.data == "manage_search")
 async def manage_search_menu(callback: CallbackQuery, session: AsyncSession):
     # Получаем все аккаунты и их статусы
-    # Сначала найдем все аккаунты Авито
-    acc_stmt = select(Account).where(Account.platform == 'avito')
+    acc_stmt = select(Account)
     accounts = (await session.execute(acc_stmt)).scalars().all()
     
     # Получаем существующие статусы
@@ -165,11 +165,19 @@ async def manage_search_menu(callback: CallbackQuery, session: AsyncSession):
     statuses = (await session.execute(status_stmt)).scalars().all()
     status_map = {s.account_id: s.is_enabled for s in statuses}
 
-    sheet_url = "https://docs.google.com/spreadsheets/d/1njb64bZ2mT0S7lQgSGFRN5HD9fzMKnJ--6u-kWIC7es/edit#gid=77096499"
+    # Формируем ссылки на таблицы из конфига для каждой платформы
+    platform_links = []
+    if settings.platforms.avito.enabled and settings.platforms.avito.outbound_search.spreadsheet_url:
+        platform_links.append(f"🟠 <a href='{settings.platforms.avito.outbound_search.spreadsheet_url}'>Avito</a>")
+    if settings.platforms.hh.enabled and settings.platforms.hh.outbound_search.spreadsheet_url:
+        platform_links.append(f"🔴 <a href='{settings.platforms.hh.outbound_search.spreadsheet_url}'>HH</a>")
+    
+    links_text = "\n".join(platform_links) if platform_links else "<i>Ссылки не настроены</i>"
     
     text = (
         "<b>🔎 Управление поиском резюме</b>\n\n"
-        f"📍 Настроить параметры и квоты можно в <a href='{sheet_url}'>Google Таблице</a>\n\n"
+        "📍 Настроить параметры и квоты можно в Google Таблицах:\n"
+        f"{links_text}\n\n"
         "Нажмите на кнопку аккаунта, чтобы включить или выключить поиск:"
     )
 

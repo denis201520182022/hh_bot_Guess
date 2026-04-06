@@ -78,15 +78,7 @@ class Engine:
                 lines.append(f"{role}: {content}")
         return "\n".join(lines)
 
-    def _calculate_age(self, birth_date_str: str) -> Optional[int]:
-        """Вычисляет количество полных лет на основе даты рождения YYYY-MM-DD."""
-        try:
-            birth_date = datetime.datetime.strptime(birth_date_str, "%Y-%m-%d").date()
-            today = datetime.date.today()
-            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-            return age
-        except (ValueError, TypeError):
-            return None
+    
     
     def _is_technical_message(self, content: Any) -> bool:
         """Определяет, является ли сообщение системным/техническим мусором."""
@@ -325,39 +317,45 @@ class Engine:
     def _check_eligibility(self, profile: dict) -> tuple[bool, str | None]:
         """
         Возвращает (True, None) если подходит, или (False, "reason") если отказ.
-        Проверка строго по 3 критериям.
+        Проверка по критериям клиента.
+        ВАЖНО: отсутствие данных НЕ считается отказом — проверяем только то, что уже известно.
         """
-        # --- Критерий 1: Возраст (30-55) ---
-        age_str = profile.get("age")
-        if age_str is not None:
+        # --- Критерий 1: Возраст (18-50) ---
+        age = profile.get("age")
+        if age is not None:
             try:
-                age = int(age_str)
-                if not (30 <= age <= 55):
-                    return False, f"age_out_of_range_{age}"
+                age_val = int(age)
+                if not (18 <= age_val <= 50):
+                    return False, f"age_out_of_range_{age_val}"
             except (ValueError, TypeError):
-                pass # Если LLM вернула невалидный возраст, просто игнорируем его
+                pass
 
-        # --- Критерий 2: Гражданство и Патент (Уточненная логика) ---
+        # --- Критерий 2: Гражданство (только РФ) ---
         citizenship = str(profile.get("citizenship", "")).strip().lower()
-        has_patent = str(profile.get("has_patent", "")).strip().lower()
-        
-        # Проверяем, является ли гражданство РФ (учитываем разные написания)
-        is_rf = any(x in citizenship for x in ["россия", "рф", "российская", "russia"])
+        if citizenship:
+            is_rf = any(x in citizenship for x in ["россия", "рф", "российская", "russia"])
+            if not is_rf:
+                return False, "non_rf_citizenship"
 
-        # Если указано гражданство НЕ РФ
-        if citizenship and not is_rf:
-            # ОТКАЗЫВАЕМ ТОЛЬКО ЕСЛИ:
-            # Кандидат прямо сказал, что патента НЕТ
-            if has_patent == "нет":
-                return False, "non_rf_no_patent"
-            
-            # Если в поле патента "да" или там пока пусто (None/"") — НЕ отказываем.
-            # Если пусто, бот просто пойдет уточнять дальше по сценарию.
+        # --- Критерий 3: Военный билет для мужчин ---
+        gender = str(profile.get("gender", "")).strip().lower()
+        if gender == "male":
+            military_doc = str(profile.get("has_military_document", "")).strip().lower()
+            if military_doc == "no":
+                return False, "no_military_document_male"
 
-        # --- Критерий 3: Судимость (Проверяем маркер "violent") ---
-        criminal_record = str(profile.get("criminal_record", "")).lower()
-        if criminal_record == "violent":
-            return False, "violent_criminal_record"
+        # --- Критерий 4: Готовность к ТК РФ ---
+        contract_ready = str(profile.get("employment_contract_ready", "")).strip().lower()
+        if contract_ready == "no":
+            return False, "not_ready_for_tk_rf"
+
+        # --- Критерий 5: Тип занятости и готовность к часам ---
+        employment_type = str(profile.get("employment_type", "")).strip().lower()
+        if employment_type == "part":
+            ready_hours = str(profile.get("ready_20_40_hours", "")).strip().lower()
+            if ready_hours == "no":
+                return False, "part_time_not_ready_for_hours"
+        # Если full — подходит, если неизвестно — пропускаем
 
         return True, None
     
@@ -527,19 +525,23 @@ class Engine:
         return calendar_context
 
 
-    async def _assemble_dynamic_prompt(self, prompt_library: dict, dialogue_state: str, user_message: str, vacancy_description: str) -> str:
+    async def _assemble_dynamic_prompt(self, prompt_library: dict, dialogue_state: str, user_message: str, vacancy_description: str, dialogue: Dialogue = None) -> str:
         """Сборка системного промпта из блоков библиотеки"""
         required_blocks = ['#ROLE_AND_STYLE#']
-        
+
         state_map = {
             'initial': ['#QUALIFICATION_RULES#', '#FAQ#'],
             'awaiting_questions': ['#QUALIFICATION_RULES#', '#FAQ#', '#DECLINED_VAC#'],
             'awaiting_phone': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
-            'awaiting_fio': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
-            
             'awaiting_citizenship': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
-            'clarifying_citizenship': ['#QUALIFICATION_RULES#', '#CLARI#', '#DECLINED_VAC#'],
             'awaiting_age': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
+
+            'awaiting_employment_type': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
+            'clarifying_part_time': ['#PART_TIME_RULES#', '#DECLINED_VAC#'],
+            'awaiting_shift_preference': ['#SHIFT_RULES#', '#DECLINED_VAC#'],
+            'awaiting_employment_contract': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
+            'awaiting_military_document': ['#MILITARY_RULES#', '#DECLINED_VAC#'],
+
             'clarifying_anything': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
             'qualification_complete': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
 
@@ -550,14 +552,33 @@ class Engine:
 
             'call_later': ['#QUALIFICATION_RULES#', '#FAQ#'],
             'clarifying_declined_vacancy': ['#QUALIFICATION_RULES#'],
+
+
             'post_qualification_chat': ['#POSTCVAL#', '#FAQ#']
         }
-        
+
+
         required_blocks.extend(state_map.get(dialogue_state, ['#QUALIFICATION_RULES#']))
-        
+
         # Убираем дубли и собираем текст
         final_keys = list(dict.fromkeys(required_blocks))
         prompt_pieces = [prompt_library.get(key, '') for key in final_keys]
+
+        # Заменяем плейсхолдеры в промптах на данные из job_contexts
+        vacancy_title = ""
+        vacancy_full_address = ""
+        if dialogue and dialogue.vacancy:
+            vacancy_title = dialogue.vacancy.title or ""
+            if dialogue.vacancy.description_data:
+                vacancy_full_address = dialogue.vacancy.description_data.get("full_address", "")
+
+        # Замена плейсхолдеров во всех кусках промпта
+        if vacancy_title or vacancy_full_address:
+            prompt_pieces = [
+                piece.replace("[название вакансии]", vacancy_title)
+                     .replace("[адрес вакансии]", vacancy_full_address)
+                for piece in prompt_pieces
+            ]
         
         # Определяем состояния, для которых нужен календарь
         SCHEDULING_STATES = ['init_scheduling_spb', 'scheduling_spb_day', 'scheduling_spb_time', 'post_qualification_chat', 'interview_scheduled_spb']
@@ -943,10 +964,10 @@ class Engine:
                     dialogue.candidate.phone_number = extracted_phone
                     ctx_logger.info(f"📞 Извлечен телефон из текста: {extracted_phone}")
 
-                if extracted_fio:
-                    # Записываем ФИО, если оно найдено регуляркой
-                    dialogue.candidate.full_name = extracted_fio
-                    ctx_logger.info(f"👤 Извлечено ФИО из текста: {extracted_fio}")
+                # if extracted_fio:
+                #     # Записываем ФИО, если оно найдено регуляркой
+                #     dialogue.candidate.full_name = extracted_fio
+                #     ctx_logger.info(f"👤 Извлечено ФИО из текста: {extracted_fio}")
 
                 # Собираем текст для отправки в LLM
                 all_masked_content.append(masked_content)
@@ -979,14 +1000,15 @@ class Engine:
             # но в нашей архитектуре описание лежит в JobContext.description_data
             relevant_vacancy_desc = "Описание не найдено"
             if dialogue.vacancy and dialogue.vacancy.description_data:
-                relevant_vacancy_desc = dialogue.vacancy.description_data.get("text", "")
+                relevant_vacancy_desc = dialogue.vacancy.description_data.get("description_text", "")
 
             # Собираем системный промпт из блоков (#ROLE#, #FAQ# и т.д.)
             system_prompt = await self._assemble_dynamic_prompt(
                 prompt_library,
                 dialogue.current_state,
                 combined_masked_message.lower(),
-                relevant_vacancy_desc
+                relevant_vacancy_desc,
+                dialogue  # Передаем объект dialogue для замены плейсхолдеров
             )
 
             # Добавляем контекст задачи в конец промпта
@@ -1104,31 +1126,38 @@ class Engine:
 
             # === 11. ВАЛИДАЦИЯ СТАТУСА ===
             ALLOWED_STATES = {
-                'initial', 
-                'awaiting_questions', 
-                'awaiting_phone', 
-                'awaiting_fio',
-                'awaiting_citizenship', 
-                'clarifying_citizenship',
+                'initial',
+                'awaiting_questions',
+                'awaiting_phone',
+                'awaiting_citizenship',
                 'awaiting_age',
-                'awaiting_experience',
-                'awaiting_readiness',
-                'awaiting_medbook',
-                'awaiting_criminal',
+                'awaiting_employment_type',
+                'clarifying_part_time',
+                'awaiting_shift_preference',
+                'awaiting_employment_contract',
+                'awaiting_military_document',
                 'clarifying_anything',
                 'clarifying_declined_vacancy',
                 'qualification_complete',
                 
-                
+                'forwarded_to_researcher',
+
                 'init_scheduling_spb',
                 'scheduling_spb_day',
                 'scheduling_spb_time',
                 'interview_scheduled_spb',
+
                 'post_qualification_chat',
                 'declined_vacancy',
                 'declined_interview',
                 'call_later'
             }
+
+
+            
+
+           
+            
 
             if new_state not in ALLOWED_STATES:
                 ctx_logger.error(
@@ -1144,7 +1173,7 @@ class Engine:
                         f"[SYSTEM COMMAND] В твоем последнем ответе произошла техническая ошибка: "
                         f"ты вернул недопустимое состояние (new_state) '{new_state}'. "
                         f"Такого состояния НЕ СУЩЕСТВУЕТ в твоей инструкции. "
-                        f"Проанализируй диалог заново и выбери корректное состояние СТРОГО из разрешенного списка."
+                        f"Проанализируй диалог и инструкции заново и выбери корректное состояние"
                     ),
                     'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
                 }
@@ -1174,7 +1203,7 @@ class Engine:
             TIME_KEYWORDS = [
                 "сегодня", "завтра", "послезавтра", "понедельник", "вторник", "сред", "четверг", 
                 "пятниц", "суббот", "воскресен", "январ", "феврал", "март", "апрел", "май", "июн", 
-                "июл", "август", "сентябр", "октябр", "ноябр", "декабр", "число", "время", "числа", "числ", "03", "04"
+                "июл", "август", "сентябр", "октябр", "ноябр", "декабр", "число", "время", "числа", "числ", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"
             ]
 
             if new_state in DATE_CRITICAL_STATES:
@@ -1312,8 +1341,8 @@ class Engine:
                                 hint_content = (
                                     f"[SYSTEM COMMAND] Внимание!!! На {interview_date} ({correct_weekday}) строго разрешены "
                                     f"только следующие слоты: {slots_str}. "
-                                    f"Ты ОБЯЗАНА перечислить ВСЕ эти варианты ({slots_str}) в своем ответе, "
-                                    f"чтобы кандидат мог выбрать один из них."
+                                    # f"Ты ОБЯЗАНА "
+                                    # f"чтобы кандидат мог выбрать один из них."
                                 )
 
                             # 6. Проверяем историю на дубли (анти-луп из HH)
@@ -1416,134 +1445,212 @@ class Engine:
 
                 
 
-                # --- 13.1 ОБРАБОТКА ДАТЫ РОЖДЕНИЯ ---
-                raw_birth_date = extracted_data.get("birth_date")
-                if raw_birth_date:
-                    allowed_age_states = ['awaiting_age', 'clarifying_anything']
-                    
-                    if current_state_at_update in allowed_age_states:
-                        if current_state_at_update == 'clarifying_anything' and profile.get("birth_date"):
-                            ctx_logger.debug(f"Защита: поле birth_date уже заполнено, пропускаем")
-                        else:
-                            calculated_age = self._calculate_age(raw_birth_date)
-                            if calculated_age is not None:
-                                profile["birth_date"] = raw_birth_date
-                                profile["age"] = calculated_age # Для фильтра 30-55
-                                changed = True
-                                ctx_logger.info(f"✅ Дата рождения {raw_birth_date} принята. Возраст: {calculated_age}")
-                            else:
-                                ctx_logger.warning(f"⚠️ Некорректный формат даты от LLM: {raw_birth_date}")
 
-                # --- 13.2 ОБРАБОТКА ГРАЖДАНСТВА (Специфика: Только РФ vs Остальные) ---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                # --- 13.1 ОБРАБОТКА ВОЗРАСТА ---
+                raw_age = extracted_data.get("age")
+                if raw_age:
+                    allowed_age_states = ['awaiting_age', 'clarifying_anything']
+
+                    if current_state_at_update in allowed_age_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("age"):
+                            ctx_logger.debug(f"Защита: поле age уже заполнено, пропускаем")
+                        else:
+                            try:
+                                age_value = int(raw_age)
+                                profile["age"] = age_value
+                                changed = True
+                                ctx_logger.info(f"✅ Возраст {age_value} принят")
+                            except (ValueError, TypeError):
+                                ctx_logger.warning(f"⚠️ Некорректный формат возраста от LLM: {raw_age}")
+
+                # --- 13.2 ОБРАБОТКА ГРАЖДАНСТВА ---
                 raw_citizenship = extracted_data.get("citizenship")
                 if raw_citizenship:
-                    allowed_cit_states = ['awaiting_citizenship', 'clarifying_citizenship', 'clarifying_anything']
-                    
+                    allowed_cit_states = ['awaiting_citizenship', 'clarifying_anything']
+
                     if current_state_at_update in allowed_cit_states:
                         if current_state_at_update == 'clarifying_anything' and profile.get("citizenship"):
                             ctx_logger.debug(f"Защита: поле citizenship уже заполнено, пропускаем")
                         else:
-                            
                             cit_low = str(raw_citizenship).lower()
-                            
-                            # Простая проверка на РФ
+                            # Нормализуем РФ
                             is_rf = any(x in cit_low for x in ["россия", "рф", "российская", "russia"])
-                            
                             if is_rf:
                                 profile["citizenship"] = "РФ"
-                                changed = True
                             else:
-                                # Это иностранец. Пишем как есть.
                                 profile["citizenship"] = raw_citizenship
-                                changed = True
-                                
-                                # Проверяем, есть ли уже информация о патенте
-                                has_patent_info = extracted_data.get("has_patent")
-                                
-                                # Если патента нет в extracted_data и мы не в режиме уточнения
-                                if not has_patent_info and current_state_at_update != 'clarifying_citizenship':
-                                    ctx_logger.info(f"🌍 Гражданство '{raw_citizenship}' (не РФ). Требуется уточнение патента.")
-                                    
-                                    # Формируем команду на уточнение
-                                    correction_msg = (
-                                        f"[SYSTEM COMMAND] Кандидат сообщил гражданство {raw_citizenship} (не РФ). "
-                                        f"Ты ОБЯЗАНА уточнить, есть ли у него действующий патент для работы. "
-                                        f"Установи стейт 'clarifying_citizenship' и задай этот вопрос."
-                                    )
-                                    
-                                    sys_msg = {
-                                        "role": "user", 
-                                        "content": correction_msg, 
-                                        "message_id": f"sys_cit_check_{time.time()}",
-                                        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
-                                    }
-                                    
-                                    # Сохраняем профиль (гражданство мы записали) и уходим на ретрай
-                                    dialogue.candidate.profile_data = profile
-
-
-                                    dialogue.history = (dialogue.history or []) + [sys_msg]
-                                    dialogue.current_state = "clarifying_citizenship" # Форсируем стейт
-                                    await db.commit()
-                                    
-                                    
-                                    await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "citizenship_refine"})
-                                    return
-
+                            changed = True
+                            ctx_logger.info(f"✅ Гражданство: {profile['citizenship']}")
                     else:
                         ctx_logger.debug(f"Игнорируем гражданство {raw_citizenship}: стейт {current_state_at_update} не разрешает.")
-                
-                # Записываем ответ про патент, если он пришел (обычно в стейте clarifying_citizenship)
-                if extracted_data.get("has_patent"):
-                    # Добавь ту же проверку, что и для гражданства!
-                    allowed_cit_states = ['awaiting_citizenship', 'clarifying_citizenship', 'clarifying_anything']
-                    
-                    if current_state_at_update in allowed_cit_states:
-                        if current_state_at_update == 'clarifying_anything' and profile.get("has_patent"):
-                            ctx_logger.debug("Защита: патент уже есть, не перезаписываем")
-                        else:
-                            profile["has_patent"] = extracted_data["has_patent"]
-                            changed = True
-                    else:
-                        ctx_logger.debug(f"Игнорируем патент: стейт {current_state_at_update} не разрешает.")
 
-                # --- 13.3 ОСТАЛЬНЫЕ ПОЛЯ (Маппинг стейтов как в HH) ---
+                # --- 13.3 ОБРАБОТКА ТИПА ЗАНЯТОСТИ (employment_type) ---
+                raw_employment_type = extracted_data.get("employment_type")
+                if raw_employment_type:
+                    allowed_employment_states = ['awaiting_employment_type', 'clarifying_anything']
+
+                    if current_state_at_update in allowed_employment_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("employment_type"):
+                            ctx_logger.debug(f"Защита: поле employment_type уже заполнено, пропускаем")
+                        else:
+                            emp_type_low = str(raw_employment_type).lower()
+                            # Нормализуем значения
+                            if emp_type_low in ["full", "полная", "полный день"]:
+                                profile["employment_type"] = "full"
+                                changed = True
+                                ctx_logger.info(f"✅ Тип занятости: полная (full)")
+                            elif emp_type_low in ["part", "частичная", "частичная занятость", "подработка"]:
+                                profile["employment_type"] = "part"
+                                changed = True
+                                ctx_logger.info(f"✅ Тип занятости: частичная (part)")
+                            else:
+                                ctx_logger.warning(f"⚠️ Некорректное значение employment_type: {raw_employment_type}")
+                    else:
+                        ctx_logger.debug(f"Игнорируем employment_type: стейт {current_state_at_update} не разрешает.")
+
+                # --- 13.4 ОБРАБОТКА ГОТОВНОСТИ РАБОТАТЬ 20-40 ЧАСОВ (ready_20_40_hours) ---
+                raw_ready_hours = extracted_data.get("ready_20_40_hours")
+                if raw_ready_hours:
+                    allowed_hours_states = ['clarifying_part_time', 'clarifying_anything']
+
+                    if current_state_at_update in allowed_hours_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("ready_20_40_hours"):
+                            ctx_logger.debug(f"Защита: поле ready_20_40_hours уже заполнено, пропускаем")
+                        else:
+                            hours_low = str(raw_ready_hours).lower()
+                            if hours_low in ["yes", "да", "готов", "согласен"]:
+                                profile["ready_20_40_hours"] = "yes"
+                                changed = True
+                                ctx_logger.info(f"✅ Готовность работать 20-40 часов: yes")
+                            elif hours_low in ["no", "нет", "не готов", "не согласен"]:
+                                profile["ready_20_40_hours"] = "no"
+                                changed = True
+                                ctx_logger.info(f"✅ Готовность работать 20-40 часов: no")
+                            else:
+                                ctx_logger.warning(f"⚠️ Некорректное значение ready_20_40_hours: {raw_ready_hours}")
+                    else:
+                        ctx_logger.debug(f"Игнорируем ready_20_40_hours: стейт {current_state_at_update} не разрешает.")
+
+                # --- 13.5 ОБРАБОТКА ПРЕДПОЧТЕНИЙ ПО СМЕНЕ (shift_preference) ---
+                raw_shift = extracted_data.get("shift_preference")
+                if raw_shift:
+                    allowed_shift_states = ['awaiting_shift_preference', 'clarifying_anything']
+
+                    if current_state_at_update in allowed_shift_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("shift_preference"):
+                            ctx_logger.debug(f"Защита: поле shift_preference уже заполнено, пропускаем")
+                        else:
+                            shift_low = str(raw_shift).lower()
+                            if shift_low in ["morning", "утро", "утренняя"]:
+                                profile["shift_preference"] = "morning"
+                                changed = True
+                                ctx_logger.info(f"✅ Предпочтение смены: morning")
+                            elif shift_low in ["evening", "вечер", "вечерняя"]:
+                                profile["shift_preference"] = "evening"
+                                changed = True
+                                ctx_logger.info(f"✅ Предпочтение смены: evening")
+                            elif shift_low in ["any", "любая", "без разницы", "не важно"]:
+                                profile["shift_preference"] = "any"
+                                changed = True
+                                ctx_logger.info(f"✅ Предпочтение смены: any")
+                            else:
+                                ctx_logger.warning(f"⚠️ Некорректное значение shift_preference: {raw_shift}")
+                    else:
+                        ctx_logger.debug(f"Игнорируем shift_preference: стейт {current_state_at_update} не разрешает.")
+
+                # --- 13.6 ОБРАБОТКА ГОТОВНОСТИ К ТК РФ (employment_contract_ready) ---
+                raw_contract = extracted_data.get("employment_contract_ready")
+                if raw_contract:
+                    allowed_contract_states = ['awaiting_employment_contract', 'clarifying_anything']
+
+                    if current_state_at_update in allowed_contract_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("employment_contract_ready"):
+                            ctx_logger.debug(f"Защита: поле employment_contract_ready уже заполнено, пропускаем")
+                        else:
+                            contract_low = str(raw_contract).lower()
+                            if contract_low in ["yes", "да", "готов", "согласен"]:
+                                profile["employment_contract_ready"] = "yes"
+                                changed = True
+                                ctx_logger.info(f"✅ Готовность к ТК РФ: yes")
+                            elif contract_low in ["no", "нет", "не готов", "не согласен"]:
+                                profile["employment_contract_ready"] = "no"
+                                changed = True
+                                ctx_logger.info(f"✅ Готовность к ТК РФ: no")
+                            else:
+                                ctx_logger.warning(f"⚠️ Некорректное значение employment_contract_ready: {raw_contract}")
+                    else:
+                        ctx_logger.debug(f"Игнорируем employment_contract_ready: стейт {current_state_at_update} не разрешает.")
+
+                # --- 13.7 ОБРАБОТКА ВОЕННОГО БИЛЕТА (has_military_document) ---
+                raw_military = extracted_data.get("has_military_document")
+                if raw_military:
+                    allowed_military_states = ['awaiting_military_document', 'clarifying_anything']
+
+                    if current_state_at_update in allowed_military_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("has_military_document"):
+                            ctx_logger.debug(f"Защита: поле has_military_document уже заполнено, пропускаем")
+                        else:
+                            military_low = str(raw_military).lower()
+                            if military_low in ["yes", "да", "есть", "имеется"]:
+                                profile["has_military_document"] = "yes"
+                                changed = True
+                                ctx_logger.info(f"✅ Военный билет: yes")
+                            elif military_low in ["no", "нет", "не имеется"]:
+                                profile["has_military_document"] = "no"
+                                changed = True
+                                ctx_logger.info(f"✅ Военный билет: no")
+                            else:
+                                ctx_logger.warning(f"⚠️ Некорректное значение has_military_document: {raw_military}")
+                    else:
+                        ctx_logger.debug(f"Игнорируем has_military_document: стейт {current_state_at_update} не разрешает.")
+
+                # --- 13.8 ОСТАЛЬНЫЕ ПОЛЯ (Маппинг стейтов как в HH) ---
                 
                 # ФИО и Телефон (Колонки) - пишем всегда, если их нет (защита от перезаписи)
-                if extracted_data.get("full_name") and not dialogue.candidate.full_name:
-                    dialogue.candidate.full_name = extracted_data["full_name"]
+                # if extracted_data.get("full_name") and not dialogue.candidate.full_name:
+                #     dialogue.candidate.full_name = extracted_data["full_name"]
                 
-                if extracted_data.get("phone") and not dialogue.candidate.phone_number:
-                    dialogue.candidate.phone_number = extracted_data["phone"]
+                # if extracted_data.get("phone") and not dialogue.candidate.phone_number:
+                #     dialogue.candidate.phone_number = extracted_data["phone"]
 
-                # Остальные поля (JSONB) - строго по стейтам
-                mapping = {
-                    "city": ["awaiting_city", "clarifying_anything"],
-                    "experience": ["awaiting_experience", "clarifying_anything"],
-                    "readiness_date": ["awaiting_readiness", "clarifying_anything"],
-                    "has_medbook": ["awaiting_medbook", "clarifying_anything"],
-                    "criminal_record": ["awaiting_criminal", "clarifying_anything"]
-                }
                 
-                for field_key, allowed_states in mapping.items():
-                    val = extracted_data.get(field_key)
-                    if val:
-                        if current_state_at_update in allowed_states:
-                            # ДОБАВИТЬ ЭТУ ПРОВЕРКУ:
-                            if current_state_at_update == 'clarifying_anything' and profile.get(field_key):
-                                ctx_logger.debug(f"Защита: {field_key} уже заполнено, пропускаем")
-                                continue # Пропускаем запись этого поля
-                                
-                            profile[field_key] = val
-                            changed = True
-                        else:
-                             ctx_logger.debug(f"Игнорируем {field_key}='{val}': стейт {current_state_at_update} не разрешает.")
+                
+                
                 if changed:
                     dialogue.candidate.profile_data = profile
                     is_ok = True 
                     reason = None
                     # ПРОВЕРЯЕМ НА ОТКАЗ ТОЛЬКО ЕСЛИ МЫ ЕЩЕ НЕ В ПРОЦЕССЕ ЗАПИСИ
-                    SCHEDULING_STATES = ['init_scheduling_spb', 'scheduling_spb_day', 'scheduling_spb_time', 'interview_scheduled_spb']
+                    SCHEDULING_STATES = ['init_scheduling_spb', 'scheduling_spb_day', 'scheduling_spb_time', 'interview_scheduled_spb', 'post_qualification_chat', 'forwarded_to_researcher']
                     
                     if current_state_at_update not in SCHEDULING_STATES:
                         is_ok, reason = self._check_eligibility(profile)
@@ -1567,6 +1674,27 @@ class Engine:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             # === 14. БЛОК КВАЛИФИКАЦИИ И ПРИНЯТИЯ РЕШЕНИЙ ===
 
             # ==========================================================================================
@@ -1575,7 +1703,38 @@ class Engine:
             
             # Проверяем условия, только если LLM пытается завершить анкету (new_state == 'qualification_complete')
             if dialogue.status not in ['qualified', 'rejected'] and new_state == 'qualification_complete':
-                
+
+                # --- 14.0 ПРОВЕРКА: ВОЕННЫЙ БИЛЕТ ДЛЯ МУЖЧИН ПРИЗЫВНОГО ВОЗРАСТА ---
+                profile = dialogue.candidate.profile_data or {}
+                gender = profile.get("gender")
+                age = profile.get("age")
+
+                if gender == "male" and age is not None and 18 <= int(age) <= 30:
+                    if not profile.get("has_military_document"):
+                        ctx_logger.info(f"🎖️ Кандидат — мужчина {age} лет, требуется уточнение военного билета.")
+
+                        correction_msg = (
+                            f"[SYSTEM COMMAND] Кандидат — мужчина призывного возраста ({age} лет). "
+                            f"Ты ОБЯЗАНА уточнить наличие военного билета или приписного свидетельства. "
+                            f"Установи стейт 'awaiting_military_document' и задай этот вопрос."
+                        )
+
+                        sys_msg = {
+                            "role": "user",
+                            "content": correction_msg,
+                            "message_id": f"sys_military_check_{time.time()}",
+                            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        }
+
+                        # Сохраняем профиль и уходим на ретрай
+                        dialogue.candidate.profile_data = profile
+                        dialogue.history = (dialogue.history or []) + [sys_msg]
+                        dialogue.current_state = "awaiting_military_document"
+                        await db.commit()
+
+                        await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "military_refine"})
+                        return
+
                 # --- 14.1 ПРОВЕРКА: ЗАДАВАЛСЯ ЛИ ВОПРОС ПРО ТЕЛЕФОН (Копия логики HH) ---
                 if not dialogue.candidate.phone_number:
                     phone_keywords = ["телефон", "номер"]
@@ -1612,35 +1771,36 @@ class Engine:
 
                 # --- 14.2 ПРОВЕРКА ПОЛНОТЫ АНКЕТЫ (Динамический LLM Recovery) ---
                 profile = dialogue.candidate.profile_data or {}
-                
-                # 1. Собираем карту только РЕАЛЬНО отсутствующих данных
-                missing_data_map = {}
-                
-                if not dialogue.candidate.phone_number: 
-                    missing_data_map["phone"] = "Номер телефона"
-                if not profile.get("birth_date"): 
-                    missing_data_map["birth_date"] = "Полная дата рождения (день, месяц, год)"
-                if not profile.get("citizenship"): 
-                    missing_data_map["citizenship"] = "Гражданство собеседника(страна)"
-                if not profile.get("experience"): 
-                    missing_data_map["experience"] = "Опыт работы (описание, или отсутствие опыта просто 'нет' тогда поставь)"
-                if not profile.get("readiness_date"): 
-                    missing_data_map["readiness_date"] = "Когда готов выйти на работу (вахту)"
-                if not profile.get("has_medbook"): 
-                    missing_data_map["has_medbook"] = "Наличие медкнижки (да/нет)"
-                if not profile.get("criminal_record"): 
-                    missing_data_map["criminal_record"] = "Судимость (<Описание судимости. Если это преступление против личности (убийство, разбой, насилие, тяжкие телесные), верни строго 'violent'. Если судимости нет, верни 'нет’. В остальных случаях опиши кратко (например, 'экономическая').>)"
 
-                # Проверка патента для иностранцев
-                cit_val = str(profile.get("citizenship", "")).lower()
-                is_rf = any(x in cit_val for x in ["россия", "рф", "российская", "russia"])
-                if profile.get("citizenship") and not is_rf and not profile.get("has_patent"):
-                    missing_data_map["has_patent"] = "Наличие патента (да/нет)"
+                # 1. Собираем карту РЕАЛЬНО отсутствующих данных по новым критериям
+                missing_data_map = {}
+
+                # Обязательные поля
+                if not profile.get("age"):
+                    missing_data_map["age"] = "Возраст (целое число лет)"
+                if not profile.get("citizenship"):
+                    missing_data_map["citizenship"] = "Гражданство (название страны)"
+                if not profile.get("employment_type"):
+                    missing_data_map["employment_type"] = "Тип занятости (full — полная, part — частичная)"
+                if not profile.get("employment_contract_ready"):
+                    missing_data_map["employment_contract_ready"] = "Готовность к оформлению по ТК РФ (yes/no)"
+
+                # Условные поля
+                employment_type = str(profile.get("employment_type", "")).strip().lower()
+                if employment_type == "part" and not profile.get("ready_20_40_hours"):
+                    missing_data_map["ready_20_40_hours"] = "Готовность работать 20-40 часов в неделю (yes/no)"
+                if employment_type == "full" and not profile.get("shift_preference"):
+                    missing_data_map["shift_preference"] = "Предпочтение по смене (morning/evening/any)"
+
+                # Военный билет — только для мужчин
+                gender = str(profile.get("gender", "")).strip().lower()
+                if gender == "male" and not profile.get("has_military_document"):
+                    missing_data_map["has_military_document"] = "Наличие военного билета или приписного (yes/no)"
 
                 # Если есть пробелы — запускаем точечный поиск в истории
                 if missing_data_map:
                     ctx_logger.info(f"🔍 Анкета не полна. Запуск Recovery для ключей: {list(missing_data_map.keys())}")
-                    
+
                     # Подготовка истории (последние 20 сообщений)
                     clean_history_lines = []
                     for m in (dialogue.history or []):
@@ -1654,9 +1814,8 @@ class Engine:
                     recent_history_text = "\n".join(clean_history_lines[-20:])
 
                     # Генерируем динамическую инструкцию по формату JSON
-                    # Пример: "age": <значение или null>, "experience": <значение или null>
                     json_format_example = "{\n" + ",\n".join([f'  "{k}": <значение или null>' for k in missing_data_map.keys()]) + "\n}"
-                    
+
                     # Генерируем описание того, что искать
                     fields_to_search = "\n".join([f"- {k} ({v})" for k, v in missing_data_map.items()])
 
@@ -1672,7 +1831,6 @@ class Engine:
 
                     try:
                         recovery_attempts = []
-                        # Используем Smart-модель (gpt-4o) для высокой точности экстракции
                         recovery_response = await get_bot_response(
                             system_prompt=recovery_prompt,
                             dialogue_history=[],
@@ -1682,31 +1840,17 @@ class Engine:
                         )
 
                         if recovery_response:
-                            # Логируем стоимость и токены (включая скрытые ретраи)
                             await self._log_llm_usage(db, dialogue, "Data_Recovery_Audit", recovery_response.get("usage_stats"), model_name="gpt-4o-mini")
-                            
+
                             extracted_data = recovery_response.get('parsed_response', {})
                             is_profile_updated = False
 
-                            # Обрабатываем то, что удалось спасти
+                            # Обрабатываем то, что удалось найти в истории
                             for key in list(missing_data_map.keys()):
                                 val = extracted_data.get(key)
                                 if val is not None and str(val).lower() != 'null':
-                                    if key == "phone":
-                                        dialogue.candidate.phone_number = str(val)
-                                        ctx_logger.info(f"✨ Recovery спас телефон: {val}")
-                                    elif key == "birth_date":
-                                        calculated_age = self._calculate_age(str(val))
-                                        if calculated_age is not None: # БЫЛО: if calculated_age
-                                            profile["birth_date"] = str(val)
-                                            profile["age"] = calculated_age
-                                            is_profile_updated = True
-                                            ctx_logger.info(f"✨ Recovery спас дату рождения: {val}")
-                                    else:
-                                        profile[key] = val
-                                        ctx_logger.info(f"✨ Recovery спас поле {key}: {val}")
-                                    
-                                    # Удаляем из списка "недостающих", чтобы бот не спрашивал
+                                    profile[key] = val
+                                    ctx_logger.info(f"✨ Recovery спас поле {key}: {val}")
                                     missing_data_map.pop(key)
                                     is_profile_updated = True
 
@@ -1717,18 +1861,18 @@ class Engine:
                     except Exception as e:
                         ctx_logger.error(f"❌ Ошибка в блоке Recovery: {e}")
 
-                # 5. ФИНАЛЬНЫЙ ВЕРДИКТ: Если данные все еще нужны
+                # 2. ФИНАЛЬНЫЙ ВЕРДИКТ: Если данные все еще нужны — отправляем бота спрашивать
                 if missing_data_map:
                     missing_human_names = ", ".join(missing_data_map.values())
                     ctx_logger.warning(f"⚠️ Recovery не помог. Не хватает: {missing_human_names}")
-                    
+
                     sys_cmd_content = (
                         f"[SYSTEM COMMAND] Анкета не завершена. Тебе НЕОБХОДИМО уточнить следующие данные: {missing_human_names}. "
                         f"Прямо сейчас задай вопрос кандидату, чтобы узнать эти сведения. "
-                        f"Используй стейт clarifying_anything для уточнения этих сведений"
+                        f"Используй стейт clarifying_anything для уточнения этих сведений. "
                         f"ЗАПРЕЩЕНО переходить в 'qualification_complete', пока эти поля пусты."
                     )
-                    
+
                     sys_msg = {
                         "role": "user",
                         "content": sys_cmd_content,
@@ -1738,13 +1882,19 @@ class Engine:
                     dialogue.history = (dialogue.history or []) + [sys_msg]
                     dialogue.current_state = "clarifying_anything"
                     await db.commit()
-                    
+
                     await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "data_fix_retry"})
                     return
 
+
+
+
+
+
+
                 # --- 14.3 ФИНАЛЬНЫЙ АУДИТ ДАННЫХ (Smart LLM - Auditor) ---
                 ctx_logger.info("Запуск финального аудита данных через Smart LLM...")
-                
+
                 # Собираем чистую историю без системных команд
                 all_msgs_for_verify = (dialogue.history or [])
                 verify_history_lines = []
@@ -1756,31 +1906,31 @@ class Engine:
                     if not str(content).startswith('[SYSTEM'):
                         label = "Кандидат" if m.get('role') == 'user' else "Бот"
                         verify_history_lines.append(f"{label}: {content}")
-                
+
                 full_history_text = "\n".join(verify_history_lines)
 
                 verification_prompt = (
                     """[SYSTEM COMMAND] Ты — технический АУДИТОР данных.
                     Проанализируй диалог и извлеки финальные данные для квалификации.
 
-                    ПРАВИЛА ГРАЖДАНСТВА:
-                    1. Если Россия (РФ, Российская федерация) -> в "citizenship" верни "РФ".
-                    2. Если любая другая страна -> в "citizenship" верни название страны.
-
-                    Правило даты рождения:
-                    1. в "birth_date" верни ПОЛНУЮ дату рождения в формате YYYY-MM-DD. 
-                       Если кандидат назвал только возраст, верни null.
-
-                    ПРАВИЛА СУДИМОСТИ:
-                    1. В "criminal_record" верни "нет" — если нет судимости или она экономическая.
-                    2. В "criminal_record" верни "violent" — если преступление против личности (убийство, насилие, разбой, тяжкие телесные)
+                    ПРАВИЛА:
+                    1. citizenship: Если Россия (РФ, Российская федерация) -> верни "РФ". Иначе — название страны.
+                    2. age: Верни целое число лет. Если возраст не назывался — верни null.
+                    3. employment_type: "full" (полная занятость) или "part" (частичная/подработка). Если не известно — null.
+                    4. employment_contract_ready: "yes" если готов к ТК РФ, "no" если не готов. Если не известно — null.
+                    5. ready_20_40_hours: "yes"/"no" — готовность работать 20-40 часов. Только если employment_type=part.
+                    6. shift_preference: "morning"/"evening"/"any" — предпочтение по смене. Только если employment_type=full.
+                    7. has_military_document: "yes"/"no" — наличие военного билета. Только для мужчин.
 
                     Верни ответ ТОЛЬКО в формате JSON:
                     {
-                        "birth_date": "YYYY-MM-DD или null",
-                        "citizenship": "<строка>",
-                        "has_patent": "<да/нет/none>",
-                        "criminal_record": "<нет / против личности>",
+                        "age": <число или null>,
+                        "citizenship": "<строка или null>",
+                        "employment_type": "<full/part или null>",
+                        "employment_contract_ready": "<yes/no или null>",
+                        "ready_20_40_hours": "<yes/no или null>",
+                        "shift_preference": "<morning/evening/any или null>",
+                        "has_military_document": "<yes/no или null>",
                         "reasoning": "<твое краткое обоснование>"
                     }
                     """
@@ -1792,47 +1942,49 @@ class Engine:
                         system_prompt=verification_prompt,
                         dialogue_history=[],
                         user_message=f"ИСТОРИЯ ДИАЛОГА:\n{full_history_text}",
-                        
                         attempt_tracker=verify_attempts,
                         extra_context=ctx_logger.extra
                     )
 
                     if verify_response:
                         await self._log_llm_usage(db, dialogue, "Final_Audit", verify_response.get("usage_stats"), model_name="gpt-4o")
-                        
+
                         v_data = verify_response.get('parsed_response', {})
-                        v_birth_date = v_data.get('birth_date')
-                        v_cit = v_data.get('citizenship')
-                        v_patent = v_data.get('has_patent')
-                        v_criminal = v_data.get('criminal_record')
 
                         # Сравниваем аудит с тем, что у нас в БД
-                        db_birth_date = profile.get("birth_date")
-                        db_cit = profile.get("citizenship")
-                        db_patent = profile.get("has_patent")
+                        discrepancies = []
 
-                        if v_birth_date is not None or v_cit is not None:
-                            # Логика сравнения
-                            is_age_ok = (db_birth_date == v_birth_date)
-                            is_cit_ok = (str(db_cit).lower() == str(v_cit).lower())
-                            
-                        if not is_age_ok or not is_cit_ok:
-                            ctx_logger.warning(f"🚨 РАССИНХРОН АУДИТА! БД: {db_birth_date}/{db_cit}, Аудит: {v_birth_date}/{v_cit}")
+                        audit_fields = [
+                            "age", "citizenship", "employment_type", "employment_contract_ready",
+                            "ready_20_40_hours", "shift_preference", "has_military_document"
+                        ]
+
+                        for field in audit_fields:
+                            v_val = v_data.get(field)
+                            db_val = profile.get(field)
+
+                            # Нормализуем для сравнения
+                            v_str = str(v_val).strip().lower() if v_val is not None else ""
+                            db_str = str(db_val).strip().lower() if db_val is not None else ""
+
+                            if v_str and v_str != "null" and v_str != db_str:
+                                discrepancies.append({
+                                    "field": field,
+                                    "db_value": db_val,
+                                    "audit_value": v_val
+                                })
+
+                        if discrepancies:
+                            ctx_logger.warning(f"🚨 РАССИНХРОН АУДИТА! Найдено {len(discrepancies)} расхождений:")
+                            for d in discrepancies:
+                                ctx_logger.warning(f"   {d['field']}: БД={d['db_value']}, Аудит={d['audit_value']}")
+
                             # Отправляем алерт верификации
                             await mq.publish("tg_alerts", {
                                 "type": "verification",
                                 "dialogue_id": dialogue.id,
                                 "external_chat_id": dialogue.external_chat_id,
-                                "db_data": {
-                                    "birth_date": db_birth_date, 
-                                    "citizenship": db_cit, 
-                                    "patent": profile.get("has_patent")
-                                },
-                                "llm_data": {
-                                    "birth_date": v_birth_date, 
-                                    "citizenship": v_cit, 
-                                    "patent": v_patent
-                                },
+                                "discrepancies": discrepancies,
                                 "reasoning": v_data.get("reasoning", "не указано"),
                                 "history_text": self._get_history_as_text(dialogue)
                             })
@@ -1843,6 +1995,52 @@ class Engine:
                     ctx_logger.error(f"Ошибка процесса аудитора: {e}", exc_info=True)
                     # В случае ошибки LLM аудита — не рискуем, возвращаемся
                     return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
                     # === 14.4 ПРИНЯТИЕ РЕШЕНИЯ (ELIGIBILITY) ===
