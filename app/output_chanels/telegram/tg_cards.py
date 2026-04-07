@@ -77,17 +77,48 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
         chat_link = "#"
         link_label = "Чат"
 
+    # === ПЕРЕВОД ЗНАЧЕНИЙ НА РУССКИЙ ===
+    emp_type = profile.get('employment_type')
+    emp_label = "Полная" if emp_type == "full" else "Частичная" if emp_type == "part" else "—"
+    
+    # Готовность к часам (для подработки)
+    hours = profile.get('ready_20_40_hours')
+    hours_label = "✅ Да" if hours == "yes" else "❌ Нет" if hours == "no" else "—"
+    
+    # Смена (для полного дня)
+    shift = profile.get('shift_preference')
+    shift_map = {"morning": "🌅 Утро", "evening": "🌆 Вечер", "any": "🔄 Любая"}
+    shift_label = shift_map.get(shift, "—")
+    
+    # ТК РФ
+    contract = profile.get('employment_contract_ready')
+    contract_label = "✅ Да" if contract == "yes" else "❌ Нет" if contract == "no" else "—"
+    
+    # Военный билет
+    military = profile.get('has_military_document')
+    military_label = "✅ Да" if military == "yes" else "❌ Нет" if military == "no" else "—"
+
     # 2. ФОРМИРУЕМ УНИВЕРСАЛЬНЫЙ ТЕКСТ
     message_text = (
-        f"🚀 <b>Новый кандидат ({platform_name})</b>\n\n" # Теперь пишет (HH) или (AVITO)
+        f"🚀 <b>Новый кандидат ({platform_name})</b>\n\n"
         f"📌 <b>Вакансия:</b> {esc(vacancy.title if vacancy else 'Не указана')}\n"
-        f"📍 <b>Город:</b> {esc(profile.get('city', 'Не указан'))}\n\n"
         f"👤 <b>ФИО:</b> {esc(candidate.full_name)}\n"
-        f"📞 <b>Телефон:</b> <code>{esc(candidate.phone_number)}</code>\n"
-        f"📅 <b>Дата рождения:</b> {esc(profile.get('birth_date'))}\n"
+        f"📞 <b>Телефон:</b> <code>{esc(candidate.phone_number)}</code>\n\n"
+        
         f"🎂 <b>Возраст:</b> {esc(profile.get('age'))}\n"
         f"🌍 <b>Гражданство:</b> {esc(profile.get('citizenship'))}\n"
-        f"📜 <b>Патент:</b> {esc(profile.get('has_patent'))}\n\n"
+        f"⏳ <b>Занятость:</b> {esc(emp_label)}\n"
+    )
+
+    # Доп. поля в зависимости от типа занятости
+    if emp_type == "part":
+        message_text += f"⏱ <b>Готов 20-40ч:</b> {esc(hours_label)}\n"
+    elif emp_type == "full":
+        message_text += f"🕒 <b>Смена:</b> {esc(shift_label)}\n"
+
+    message_text += (
+        f"📜 <b>Оформление ТК:</b> {esc(contract_label)}\n"
+        f"🎖️ <b>Военный билет:</b> {esc(military_label)}\n\n"
         f"📅 <b>Собеседование:</b> {esc(meta.get('interview_date'))} в {esc(meta.get('interview_time'))}\n\n"
         f"🔗 <a href='{chat_link}'>{link_label}</a>"
     )

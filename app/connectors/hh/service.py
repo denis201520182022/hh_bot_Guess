@@ -132,16 +132,6 @@ class HHConnectorService(BaseConnector):
         if self.is_running:
             return
         self.is_running = True
-        
-        # Принудительный сброс лимитера при старте (на случай зависших счетчиков)
-        try:
-            from app.utils.redis_lock import get_redis_client
-            redis = get_redis_client()
-            await redis.delete("rate_limit:hh_api_rate")
-            logger.info("🧹 [HH Poller] Лимитер HH API сброшен.")
-        except Exception as e:
-            logger.error(f"Не удалось сбросить лимитер: {e}")
-
         logger.info("🚀 Запуск HH Connector Service (Polling mode)...")
         self._poll_task = asyncio.create_task(self._poll_loop())
 

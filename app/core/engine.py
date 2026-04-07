@@ -23,7 +23,7 @@ from decimal import Decimal
 from sqlalchemy import select, update, delete # Добавить delete
 from app.db.models import Dialogue, Candidate, JobContext, Account, LlmLog, AnalyticsEvent # Добавить AnalyticsEvent
 from app.connectors import get_connector
-from app.connectors.hh import hh_connector
+from app.connectors.hh import hh_connector, hh
 # Наши модули
 from app.utils.analytics import log_event
 from app.utils.redis_lock import acquire_lock, release_lock
@@ -2278,6 +2278,13 @@ class Engine:
                     "type": "qualified"
                 })
 
+                # [HH ONLY] Перемещаем отклик в папку 'interview'
+                if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
+                    try:
+                        await hh.move_response_to_folder(dialogue.account, db, dialogue.external_chat_id, 'interview')
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка перемещения отклика HH в 'interview': {e}")
+
                 dialogue.current_state = 'post_qualification_chat'
                 new_state = 'post_qualification_chat'
             
@@ -2413,6 +2420,13 @@ class Engine:
                 )
                 
                 ctx_logger.info(f"Диалог завершен со статусом REJECTED (Тип: {stat_event_type}, Состояние: {new_state})")
+                
+                # [HH ONLY] Перемещаем отклик в папку 'assessment' (как просил пользователь)
+                if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
+                    try:
+                        await hh.move_response_to_folder(dialogue.account, db, dialogue.external_chat_id, 'assessment')
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка перемещения отклика HH в 'assessment': {e}")
 
 
             # === 17. ПОДГОТОВКА И ОТПРАВКА ОТВЕТА ===
