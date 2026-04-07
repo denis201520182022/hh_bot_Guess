@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 from app.core.config import settings
 from app.core.rabbitmq import mq # Для алертов
 
-logger = logging.getLogger("redis_manager")
+from app.utils.logger import logger
 
 # Глобальный клиент (Singleton)
 _redis_client: Optional[Redis] = None
@@ -19,6 +19,7 @@ def get_redis_client() -> Redis:
     """Инициализация и получение асинхронного клиента Redis"""
     global _redis_client
     if _redis_client is None:
+        logger.info(f"🔌 [Redis] Инициализация клиента: {settings.REDIS_URL}")
         # Берем параметры из твоего центрального конфига
         _redis_client = Redis.from_url(
             settings.REDIS_URL, 
@@ -27,6 +28,7 @@ def get_redis_client() -> Redis:
             socket_timeout=5,
             retry_on_timeout=True
         )
+        logger.info("✅ [Redis] Клиент создан.")
     return _redis_client
 
 async def close_redis():
