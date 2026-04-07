@@ -1,5 +1,6 @@
 # app/connectors/hh/service.py
 import asyncio
+import json
 import logging
 import datetime
 import time # Добавили для замеров времени из старого кода
@@ -305,6 +306,8 @@ class HHConnectorService(BaseConnector):
                 rec_logger.warning("API HH не вернуло активных вакансий.")
                 return []
 
+            rec_logger.info(f"📥 HH POLLING DATA (VACANCIES): {json.dumps(all_vacancies_from_api, ensure_ascii=False)}")
+
             active_hh_ids = {str(v["id"]) for v in all_vacancies_from_api}
             rec_logger.info(f"Начинаю проверку {len(all_vacancies_from_api)} вакансий из API...")
 
@@ -451,6 +454,9 @@ class HHConnectorService(BaseConnector):
                     since_datetime=cutoff_date, 
                     check_for_updates=is_update_folder
                 )
+                
+                if raw_responses:
+                    logger.info(f"📥 HH POLLING DATA (RESPONSES from {folder}): {json.dumps([r[0] for r in raw_responses], ensure_ascii=False)}")
                 
                 for item, vid in raw_responses:
                     # Быстро пушим в очередь. Вся логика БД будет в Унификаторе.
@@ -699,6 +705,9 @@ class HHConnectorService(BaseConnector):
         if not messages_url: return False
 
         all_api_msgs = await hh.get_messages(account, db, messages_url)
+        
+        if all_api_msgs:
+            logger.info(f"📥 HH POLLING DATA (MESSAGES for {dialogue.id}): {json.dumps(all_api_msgs, ensure_ascii=False)}")
         
         # Собираем ID уже известных сообщений (из истории и из временного буфера, если он есть)
         existing_ids = {str(m.get("message_id")) for m in (dialogue.history or [])}
