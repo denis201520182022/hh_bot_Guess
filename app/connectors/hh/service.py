@@ -256,6 +256,7 @@ class HHConnectorService(BaseConnector):
             # 1. Синхронизируем вакансии
             logger.info(f"🔄 [{account.name}] Синхронизация списка вакансий...")
             vacancy_ids = await self._sync_vacancies_for_account(account, db)
+            logger.info(f"Количество вакансий: {len(vacancy_ids)}")
             
             if not vacancy_ids:
                 logger.info(f"ℹ️ [{account.name}] Нет активных вакансий в работе.")

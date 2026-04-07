@@ -144,7 +144,9 @@ class HHClient:
                         f"Бот запущен для рекрутера: {account.name}\n\n"
                         f"Причина: Токен успешно обновлен."
                     )
+                    logger.info("  [Token] Предварительная отправка алерта...")
                     await self._send_system_alert(msg)
+                    logger.info("  [Token] Возвращаю токен...")
                     return auth_data["access_token"]
 
                 else:
@@ -215,8 +217,11 @@ class HHClient:
         headers["HH-User-Agent"] = "ZaBota-Bot/1.0 (hbfys@mail.com)"
 
         # 2. Ограничение нагрузки через Redis (Rate Limit + Semaphore)
+        logger.info(f"  [Request Step 1] Вход в Rate Limiter: {HH_API_RATE_LIMITER_GLOBAL.key}")
         async with HH_API_RATE_LIMITER_GLOBAL:
+            logger.info(f"  [Request Step 2] Вход в Глобальный Семафор HH (limit={GLOBAL_HH_API_LIMIT})")
             async with DistributedSemaphore(name="hh_api_global", limit=GLOBAL_HH_API_LIMIT):
+                logger.info(f"  [Request Step 3] Подготовка заголовков и отправка...")
                 logger.info(f"📡 [HH Client] Отправка {method} на {url}...")
                 response = await self._http_client.request(method, url, headers=headers, **kwargs)
                 logger.info(f"📊 [HH Client] Получен ответ {response.status_code}")

@@ -65,6 +65,7 @@ class DistributedSemaphore:
         await self.release()
 
     async def acquire(self):
+        logger.info(f"  [Semaphore] Попытка захвата '{self.name}' (limit={self.limit})...")
         start_wait = time.time()
         while True:
             # Lua-скрипт гарантирует атомарность (никто не вклинится между GET и INCR)
@@ -160,6 +161,7 @@ class DistributedRateLimiter:
         pass  # Rate limiter не требует очистки после выхода
 
     async def acquire(self):
+        logger.info(f"  [RateLimiter] Проверка лимита '{self.key}' (limit={self.limit})...")
         while True:
             try:
                 # result[0] - статус (1-ок, 0-лимит), result[1] - сколько ждать
