@@ -87,7 +87,7 @@ class DistributedSemaphore:
                 
                 # Если занято — логируем раз в 10 секунд
                 if int(time.time() - start_wait) % 10 == 0:
-                    logger.debug(f"⏳ [Action: semaphore_wait] '{self.name}' is FULL ({result}/{self.limit})")
+                    logger.info(f"⏳ [Action: semaphore_wait] '{self.name}' is FULL ({result}/{self.limit})")
                 
             except Exception as e:
                 logger.error(f"❌ Redis Semaphore Error: {e}")

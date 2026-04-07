@@ -63,6 +63,7 @@ class HHClient:
         if not account.is_active:
             return None
         
+        logger.info(f"🔑 [HH Client] Проверка токена для {account.name}...")
         # Данные авторизации из JSONB поля
         auth_data = dict(account.auth_data or {})
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -82,6 +83,7 @@ class HHClient:
         lock_name = f"hh_token_lock:{account.id}"
 
         async with DistributedSemaphore(name=lock_name, limit=1, timeout=60):
+            logger.info(f"⏳ [HH Client] Захвачена блокировка для обновления токена {account.name}")
             # Перечитываем данные из БД (вдруг кто-то уже обновил, пока мы ждали лока)
             await db.refresh(account)
             auth_data = dict(account.auth_data or {})
@@ -199,6 +201,8 @@ class HHClient:
         Универсальный метод запроса к HH API с автоматическим обновлением токенов,
         ретраями и распределенным ограничением нагрузки.
         """
+        logger.info(f"🌐 [HH Client] REQUEST: {method} {url} | Params: {kwargs.get('params')}")
+
         # 1. Получаем актуальный токен
         token = await self.get_token(account, db)
         if not token:
@@ -256,7 +260,15 @@ class HHClient:
             response.raise_for_status()
 
         # Возврат JSON, если он есть
-        return response.json() if response.content else None
+        if response.content:
+            try:
+                resp_json = response.json()
+                logger.info(f"📥 [HH Client] RESPONSE [{response.status_code}]: {json.dumps(resp_json, ensure_ascii=False)}")
+                return resp_json
+            except Exception:
+                logger.info(f"📥 [HH Client] RESPONSE [{response.status_code}]: {response.text[:1000]}")
+                return None
+        return None
 
     async def get_responses_from_folder(
         self,
