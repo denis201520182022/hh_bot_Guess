@@ -145,14 +145,15 @@ class DistributedRateLimiter:
         self.limit = limit
         self.period = period
         self._lua_script = """
-        local current = redis.call('incr', KEYS[1])
-        if current == 1 then
+        local current = redis.call('get', KEYS[1])
+        if current and tonumber(current) >= tonumber(ARGV[1]) then
+            return {0, redis.call('ttl', KEYS[1]), tonumber(current)}
+        end
+        local new_val = redis.call('incr', KEYS[1])
+        if new_val == 1 then
             redis.call('expire', KEYS[1], ARGV[2])
         end
-        if current > tonumber(ARGV[1]) then
-            return {0, redis.call('ttl', KEYS[1])}
-        end
-        return {1, 0}
+        return {1, 0, new_val}
         """
 
     async def __aenter__(self):
@@ -166,13 +167,15 @@ class DistributedRateLimiter:
         logger.info(f"  [RateLimiter] Проверка лимита '{self.key}' (limit={self.limit})...")
         while True:
             try:
-                # result[0] - статус (1-ок, 0-лимит), result[1] - сколько ждать
+                # result[0] - статус (1-ок, 0-лимит), result[1] - сколько ждать, result[2] - текущее значение
                 res = await self.client.eval(self._lua_script, 1, self.key, self.limit, self.period)
-                if res[0] == 1:
+                status, ttl, current = res[0], res[1], res[2]
+                
+                if status == 1:
                     return True
                 
-                wait_time = max(res[1], 1)
-                logger.info(f"🐢 [Action: rate_limit_hit] '{self.key}' exceeded. Waiting {wait_time}s")
+                wait_time = max(ttl, 1)
+                logger.info(f"🐢 [RateLimit Hit] '{self.key}': {current}/{self.limit}. Ждем {wait_time}с")
                 await asyncio.sleep(wait_time)
             except Exception as e:
                 logger.error(f"❌ Redis RateLimit Error: {e}")
