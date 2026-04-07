@@ -526,6 +526,35 @@ class Engine:
         return calendar_context
 
 
+    def _get_missing_fields_map(self, profile: dict) -> Dict[str, str]:
+        """Централизованная логика определения того, каких данных не хватает в профиле."""
+        missing_data_map = {}
+
+        # Обязательные поля
+        if not profile.get("age"):
+            missing_data_map["age"] = "Возраст (целое число лет)"
+        if not profile.get("citizenship"):
+            missing_data_map["citizenship"] = "Гражданство (название страны)"
+        if not profile.get("employment_type"):
+            missing_data_map["employment_type"] = "Тип занятости (full — полная, part — частичная)"
+        if not profile.get("employment_contract_ready"):
+            missing_data_map["employment_contract_ready"] = "Готовность к оформлению по ТК РФ (yes/no)"
+
+        # Условные поля
+        employment_type = str(profile.get("employment_type", "")).strip().lower()
+        if employment_type == "part" and not profile.get("ready_20_40_hours"):
+            missing_data_map["ready_20_40_hours"] = "Готовность работать 20-40 часов в неделю (yes/no)"
+        if employment_type == "full" and not profile.get("shift_preference"):
+            missing_data_map["shift_preference"] = "Предпочтение по смене (morning/evening/any)"
+
+        # Военный билет — только для мужчин
+        gender = str(profile.get("gender", "")).strip().lower()
+        if gender == "male" and not profile.get("has_military_document"):
+            missing_data_map["has_military_document"] = "Наличие военного билета или приписного (yes/no)"
+
+        return missing_data_map
+
+
     async def _assemble_dynamic_prompt(self, prompt_library: dict, dialogue_state: str, user_message: str, vacancy_description: str, dialogue: Dialogue = None) -> str:
         """Сборка системного промпта из блоков библиотеки"""
         required_blocks = ['#ROLE_AND_STYLE#']
@@ -540,10 +569,9 @@ class Engine:
             'awaiting_employment_type': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
             'clarifying_part_time': ['#PART_TIME_RULES#', '#DECLINED_VAC#'],
             'awaiting_shift_preference': ['#SHIFT_RULES#', '#DECLINED_VAC#'],
-            'awaiting_employment_contract': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
+            'awaiting_employment_contract': ['#FINAL_ASK#', '#DECLINED_VAC#'],
             'awaiting_military_document': ['#MILITARY_RULES#', '#DECLINED_VAC#'],
 
-            'clarifying_anything': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
             'qualification_complete': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
 
             'init_scheduling_spb': ['#SCHEDULING_ALGORITHM#'],
@@ -554,12 +582,33 @@ class Engine:
             'call_later': ['#QUALIFICATION_RULES#', '#FAQ#'],
             'clarifying_declined_vacancy': ['#QUALIFICATION_RULES#'],
 
-
             'post_qualification_chat': ['#POSTCVAL#', '#FAQ#']
         }
 
-
-        required_blocks.extend(state_map.get(dialogue_state, ['#QUALIFICATION_RULES#']))
+        # [ДИНАМИЧЕСКИЙ ПРОМПТ] Для clarifying_anything собираем только нужные блоки правил
+        if dialogue_state == 'clarifying_anything':
+            profile = dialogue.candidate.profile_data or {} if dialogue and dialogue.candidate else {}
+            missing = self._get_missing_fields_map(profile)
+            
+            blocks = ['#DECLINED_VAC#']
+            if any(k in missing for k in ['age', 'citizenship', 'employment_type']):
+                blocks.append('#QUALIFICATION_RULES#')
+            if 'employment_contract_ready' in missing:
+                blocks.append('#FINAL_ASK#')
+            if 'ready_20_40_hours' in missing:
+                blocks.append('#PART_TIME_RULES#')
+            if 'shift_preference' in missing:
+                blocks.append('#SHIFT_RULES#')
+            if 'has_military_document' in missing:
+                blocks.append('#MILITARY_RULES#')
+            
+            # Если вообще ничего не нашли (редкий случай), даем базовые правила
+            if len(blocks) == 1:
+                blocks.append('#QUALIFICATION_RULES#')
+                
+            required_blocks.extend(blocks)
+        else:
+            required_blocks.extend(state_map.get(dialogue_state, ['#QUALIFICATION_RULES#']))
 
         # Убираем дубли и собираем текст
         final_keys = list(dict.fromkeys(required_blocks))
@@ -693,6 +742,9 @@ class Engine:
             try:
                 await self._process_single_dialogue(dialogue_id, db, ctx_logger, task_data)
                 trigger = task_data.get("trigger")
+            except DialogueLockedError:
+                # Просто пробрасываем в воркер, он сам залогирует WARNING
+                raise 
             except Exception as e:
                 ctx_logger.error(f"💥 Критическая ошибка обработки диалога: {e}", exc_info=True)
                 # Тут можно добавить отправку алерта в Sentry/Telegram
@@ -1679,6 +1731,25 @@ class Engine:
                 
                 await db.flush()
 
+                # --- [НОВОЕ] Логика мгновенной перегенерации для уточнения типа занятости / ТК РФ ---
+                is_part_time_refine = (new_state == 'clarifying_part_time' and profile.get("employment_type") == 'part')
+                is_shift_refine = (new_state == 'awaiting_shift_preference' and profile.get("employment_type") == 'full')
+                is_contract_refine = (new_state == 'awaiting_employment_contract')
+
+                if (is_part_time_refine or is_shift_refine or is_contract_refine) and dialogue.current_state != new_state:
+                    ctx_logger.info(f"🔄 Переход в {new_state}. Сохраняем и отправляем на перегенерацию.")
+                    
+                    dialogue.current_state = new_state
+                    dialogue.candidate.profile_data = profile
+                    
+                    await db.commit()
+                    
+                    await mq.publish("engine_tasks", {
+                        "dialogue_id": dialogue.id, 
+                        "trigger": f"{new_state}_refine_retry"
+                    })
+                    return # Прерываем текущий цикл, чтобы не слать старый ответ
+
 
 
 
@@ -1780,30 +1851,8 @@ class Engine:
                 # --- 14.2 ПРОВЕРКА ПОЛНОТЫ АНКЕТЫ (Динамический LLM Recovery) ---
                 profile = dialogue.candidate.profile_data or {}
 
-                # 1. Собираем карту РЕАЛЬНО отсутствующих данных по новым критериям
-                missing_data_map = {}
-
-                # Обязательные поля
-                if not profile.get("age"):
-                    missing_data_map["age"] = "Возраст (целое число лет)"
-                if not profile.get("citizenship"):
-                    missing_data_map["citizenship"] = "Гражданство (название страны)"
-                if not profile.get("employment_type"):
-                    missing_data_map["employment_type"] = "Тип занятости (full — полная, part — частичная)"
-                if not profile.get("employment_contract_ready"):
-                    missing_data_map["employment_contract_ready"] = "Готовность к оформлению по ТК РФ (yes/no)"
-
-                # Условные поля
-                employment_type = str(profile.get("employment_type", "")).strip().lower()
-                if employment_type == "part" and not profile.get("ready_20_40_hours"):
-                    missing_data_map["ready_20_40_hours"] = "Готовность работать 20-40 часов в неделю (yes/no)"
-                if employment_type == "full" and not profile.get("shift_preference"):
-                    missing_data_map["shift_preference"] = "Предпочтение по смене (morning/evening/any)"
-
-                # Военный билет — только для мужчин
-                gender = str(profile.get("gender", "")).strip().lower()
-                if gender == "male" and not profile.get("has_military_document"):
-                    missing_data_map["has_military_document"] = "Наличие военного билета или приписного (yes/no)"
+                # 1. Собираем карту РЕАЛЬНО отсутствующих данных
+                missing_data_map = self._get_missing_fields_map(profile)
 
                 # Если есть пробелы — запускаем точечный поиск в истории
                 if missing_data_map:
@@ -1879,6 +1928,7 @@ class Engine:
                         f"Прямо сейчас задай вопрос кандидату, чтобы узнать эти сведения. "
                         f"Используй стейт clarifying_anything для уточнения этих сведений. "
                         f"ЗАПРЕЩЕНО переходить в 'qualification_complete', пока эти поля пусты."
+                        f"Если ты получила недостающие данные, то сразу переходи в 'qualification_complete'"
                     )
 
                     sys_msg = {

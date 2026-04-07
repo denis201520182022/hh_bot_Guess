@@ -73,8 +73,11 @@ async def handle_reporting_task(message_body: dict):
             # 1. КАНАЛ: TELEGRAM (Карточки)
             if settings.services.telegram.enabled:
                 if event_type == 'qualified' and settings.services.telegram.interview_cards:
-                    await send_tg_notification(bot, dialogue, candidate, vacancy, account)
-                    results.append("Telegram ✅")
+                    success = await send_tg_notification(bot, dialogue, candidate, vacancy, account)
+                    if success:
+                        results.append("Telegram ✅")
+                    else:
+                        results.append("Telegram ❌")
                 # Здесь можно добавить другие типы карточек (reject_cards, reschedule_cards)
 
             # 2. КАНАЛ: GOOGLE SHEETS (Отчеты)

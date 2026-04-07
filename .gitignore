@@ -18,3 +18,4 @@ migrations/
 .qwen/
 
 tmp_test_logging.py
+talantix.py

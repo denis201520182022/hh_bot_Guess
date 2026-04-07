@@ -62,6 +62,10 @@ class ServicesConfig(BaseModel):
     telegram: TelegramServicesConfig
     google_sheets_report: GoogleSheetsReportConfig
     crm_integration: CRMIntegrationConfig
+    talantix: TalantixServiceConfig
+
+class TalantixServiceConfig(BaseModel):
+    enabled: bool
 
 class TalantixConfig(BaseModel):
     # Пока пусто в конфиге
@@ -151,6 +155,8 @@ class Settings(BaseModel):
     WEBHOOK_BASE_URL: Optional[str] = Field(default_factory=lambda: os.getenv("WEBHOOK_BASE_URL"))
     
     TALANTIX_COOKIES: Optional[str] = Field(default_factory=lambda: os.getenv("TALANTIX_COOKIES"))
+    TALANTIX_ACCESS_TOKEN: Optional[str] = Field(default_factory=lambda: os.getenv("TALANTIX_ACCESS_TOKEN"))
+    TALANTIX_REFRESH_TOKEN: Optional[str] = Field(default_factory=lambda: os.getenv("TALANTIX_REFRESH_TOKEN"))
     
     # Настройки Прокси
     SQUID_PROXY_HOST: Optional[str] = Field(default_factory=lambda: os.getenv("SQUID_PROXY_HOST"))

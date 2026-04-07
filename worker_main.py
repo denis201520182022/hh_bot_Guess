@@ -16,6 +16,58 @@ from app.utils.logger import logger, set_log_context, log_context
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
+async def init_dal_accounts():
+    """
+    Инициализация системных аккаунтов Talantix в базе данных.
+    Вызывается один раз при старте воркера.
+    """
+    from sqlalchemy import select
+    from app.db.models import Account
+    from app.db.session import AsyncSessionLocal
+    import datetime
+
+    async with AsyncSessionLocal() as db:
+        # 1. Аккаунт для Talantix API (OAuth)
+        stmt_api = select(Account).where(Account.platform == "talantix_api")
+        result_api = await db.execute(stmt_api)
+        talantix_oauth_account = result_api.scalar_one_or_none()
+
+        if not talantix_oauth_account:
+            talantix_oauth_account = Account(
+                platform="talantix_api",
+                name="Talantix API Integration",
+                auth_data={
+                    "access_token": settings.TALANTIX_ACCESS_TOKEN or "",
+                    "refresh_token": settings.TALANTIX_REFRESH_TOKEN or "",
+                    "created_at": int(datetime.datetime.now().timestamp()),
+                },
+                is_active=True,
+            )
+            db.add(talantix_oauth_account)
+            logger.info("✅ [worker_main] Создан аккаунт Talantix API (OAuth)")
+        else:
+            logger.info("ℹ️ [worker_main] Аккаунт Talantix API уже существует")
+
+        # 2. Аккаунт для Talantix Calendar (Cookies)
+        stmt_calend = select(Account).where(Account.platform == "talantix_calend")
+        result_calend = await db.execute(stmt_calend)
+        talantix_calend_account = result_calend.scalar_one_or_none()
+
+        if not talantix_calend_account:
+            talantix_calend_account = Account(
+                platform="talantix_calend",
+                name="Talantix Calendar Integration",
+                auth_data={"cookies": settings.TALANTIX_COOKIES or ""},
+                is_active=True,
+            )
+            db.add(talantix_calend_account)
+            logger.info("✅ [worker_main] Создан аккаунт Talantix Calendar (Cookies)")
+        else:
+            logger.info("ℹ️ [worker_main] Аккаунт Talantix Calendar уже существует")
+
+        await db.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -27,6 +79,10 @@ async def lifespan(app: FastAPI):
     try:
         # 1. Подключаемся к RabbitMQ
         await mq.connect()
+        
+        # 2. Инициализируем системные аккаунты (Talantix и др.)
+        await init_dal_accounts()
+        
     except Exception as e:
         from app.utils.tg_alerts import send_system_alert
         await send_system_alert(f"🚨 КРИТИЧЕСКАЯ ОШИБКА: RabbitMQ не доступен!\n{e}")

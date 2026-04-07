@@ -52,7 +52,7 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
 
     if not target_chat_id:
         logger.warning(f"Для аккаунта {account.name} не настроен tg_chat_id.")
-        return
+        return False
 
     def esc(text):
         """Безопасное экранирование текста для HTML"""
@@ -110,5 +110,6 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
                 "candidate": candidate.full_name
             }
         )
+        return True
     except Exception as e:
         logger.exception(f"❌ Ошибка отправки карточки в TG: {e}")

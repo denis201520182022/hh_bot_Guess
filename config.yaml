@@ -53,6 +53,9 @@ services:
 
   crm_integration:  # Интеграция с crm, пока просто заглушка
     enabled: false
+
+  talantix:  # Интеграция с Талантикс (создание кандидатов)
+    enabled: false
     
 
 # === КАЛЕНДАРЬ СОБЕСОВ===
