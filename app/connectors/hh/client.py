@@ -201,22 +201,18 @@ class HHClient:
         Универсальный метод запроса к HH API с автоматическим обновлением токенов,
         ретраями и распределенным ограничением нагрузки.
         """
-        logger.info(f"🌐 [HH Client] REQUEST: {method} {url} | Params: {kwargs.get('params')}")
-
         # 1. Получаем актуальный токен
         token = await self.get_token(account, db)
         if not token:
             raise ConnectionError(f"❌ Не удалось получить токен для аккаунта {account.name}")
 
         url = full_url or f"https://api.hh.ru/{endpoint}"
+        logger.info(f"🌐 [HH Client] REQUEST: {method} {url} | Params: {kwargs.get('params')}")
         
         # Настройка заголовков
         headers = kwargs.pop('headers', {})
         headers["Authorization"] = f"Bearer {token}"
         headers["HH-User-Agent"] = "ZaBota-Bot/1.0 (hbfys@mail.com)"
-
-        # Логирование запроса (для отладки)
-        logger.debug(f"🌐 HH REQUEST: {method} {url} | Params: {kwargs.get('params')}")
 
         # 2. Ограничение нагрузки через Redis (Rate Limit + Semaphore)
         async with HH_API_RATE_LIMITER_GLOBAL:
