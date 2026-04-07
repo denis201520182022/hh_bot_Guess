@@ -40,6 +40,7 @@ async def on_engine_task(message: IncomingMessage):
         )
         diag_id = task_data.get('dialogue_id', 'unknown')
         platform = task_data.get('platform', 'unknown')
+        processed_successfully = False
         try:
             logger.info(f"🧠 [Engine] Обработка ИИ-логики диалога ID: {diag_id} (Платформа: {platform})")
             
@@ -47,17 +48,17 @@ async def on_engine_task(message: IncomingMessage):
             
             # Если выполнение дошло до этой точки — подтверждаем успех
             await message.ack()
+            processed_successfully = True
             
-        except DialogueLockedError as e:
+        except DialogueLockedError:
             # Если диалог заблокирован — просто логируем предупреждение (без алертов в ТГ)
             logger.warning(f"⚠️ [Engine] Диалог {diag_id} заблокирован другим воркером. Пропуск и повтор...")
-            # Пропускаем блок mq.publish("tg_alerts", ...)
         except Exception as e:
-            # Логируем ошибку (твоя исходная логика для всех остальных ошибок)
+            # Логируем ошибку
             error_msg = f"❌ Ошибка в Движке (Engine):\nДиалог ID: `{diag_id}`\nТекст ошибки: {str(e)}"
             logger.exception("❌ Ошибка в Движке (Engine)")
 
-            # --- ОТПРАВКА АЛЕРТА АДМИНАМ (твоя исходная логика) ---
+            # --- ОТПРАВКА АЛЕРТА АДМИНАМ ---
             try:
                 await mq.publish("tg_alerts", {
                     "type": "system",
@@ -67,11 +68,10 @@ async def on_engine_task(message: IncomingMessage):
             except Exception as mq_err:
                 logger.error(f"Не удалось отправить системный алерт из Engine: {mq_err}")
 
-        # --- ВОЗВРАТ В ОЧЕРЕДЬ (Для обоих случаев кроме успеха) ---
-        # Если управление дошло сюда, значит ack() не был вызван (было исключение)
-        if 'e' in locals():
+        # --- ВОЗВРАТ В ОЧЕРЕДЬ (Если не обработано) ---
+        if not processed_successfully:
             logger.info(f"♻️ Возвращаем задачу диалога {diag_id} в очередь для повторной попытки...")
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
             await message.nack(requeue=True)
 
 async def main():
