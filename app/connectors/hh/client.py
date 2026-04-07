@@ -217,7 +217,9 @@ class HHClient:
         # 2. Ограничение нагрузки через Redis (Rate Limit + Semaphore)
         async with HH_API_RATE_LIMITER_GLOBAL:
             async with DistributedSemaphore(name="hh_api_global", limit=GLOBAL_HH_API_LIMIT):
+                logger.info(f"📡 [HH Client] Отправка {method} на {url}...")
                 response = await self._http_client.request(method, url, headers=headers, **kwargs)
+                logger.info(f"📊 [HH Client] Получен ответ {response.status_code}")
 
         # 3. Обработка ошибок (4xx, 5xx)
         if response.status_code >= 400:

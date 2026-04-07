@@ -168,7 +168,7 @@ class DistributedRateLimiter:
                     return True
                 
                 wait_time = max(res[1], 1)
-                logger.debug(f"🐢 [Action: rate_limit_hit] '{self.key}' exceeded. Waiting {wait_time}s")
+                logger.info(f"🐢 [Action: rate_limit_hit] '{self.key}' exceeded. Waiting {wait_time}s")
                 await asyncio.sleep(wait_time)
             except Exception as e:
                 logger.error(f"❌ Redis RateLimit Error: {e}")
