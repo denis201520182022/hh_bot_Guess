@@ -214,9 +214,11 @@ class HHConnectorService(BaseConnector):
                     account_ids = (await db.execute(stmt)).scalars().all()
 
                 if not account_ids:
-                    logger.debug("Нет активных HH аккаунтов для сканирования. Жду...")
+                    logger.info("🔎 [HH Poller] Активных HH аккаунтов не найдено. Жду...")
                     await asyncio.sleep(self.poll_interval)
                     continue
+
+                logger.info(f"🔎 [HH Poller] Начинаю цикл опроса для {len(account_ids)} аккаунтов...")
 
                 # 2. Запускаем опрос каждого аккаунта через семафор
                 async def run_with_sem(acc_id: int):
@@ -226,6 +228,7 @@ class HHConnectorService(BaseConnector):
                             await self._poll_single_account(acc_id, db)
 
                 await asyncio.gather(*[run_with_sem(aid) for aid in account_ids])
+                logger.info("✅ [HH Poller] Цикл опроса завершен.")
 
             except Exception as e:
                 logger.error(f"💥 Критическая ошибка в главном цикле поллинга HH: {e}", exc_info=True)
@@ -254,7 +257,7 @@ class HHConnectorService(BaseConnector):
             vacancy_ids = await self._sync_vacancies_for_account(account, db)
             
             if not vacancy_ids:
-                logger.debug(f"У аккаунта {account.name} нет активных вакансий.")
+                logger.info(f"ℹ️ У аккаунта {account.name} нет активных вакансий в работе.")
                 return
 
             # 2. Собираем события из всех папок (аналог Этапа 1 и Этапа 2)
