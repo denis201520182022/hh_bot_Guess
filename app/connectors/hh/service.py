@@ -365,7 +365,7 @@ class HHConnectorService(BaseConnector):
                         reason = f"данные устарели (прошло {(now - last_details_dt).total_seconds() / 3600:.1f} ч.)"
 
                 if need_details_sync:
-                    rec_logger.info(f"Вакансия {hh_id}: ТРЕБУЕТСЯ обновление деталей (Причина: {reason})")
+                    rec_logger.debug(f"Вакансия {hh_id}: ТРЕБУЕТСЯ обновление деталей (Причина: {reason})")
                     try:
                         full_data = await hh.get_vacancy_details(account, db, hh_id)
                         if full_data:
@@ -402,7 +402,7 @@ class HHConnectorService(BaseConnector):
                             desc_data['full_address'] = full_addr
 
                             job.description_data = desc_data
-                            rec_logger.info(f"Вакансия {hh_id}: детали успешно очищены и обновлены.")
+                            rec_logger.debug(f"Вакансия {hh_id}: детали успешно очищены и обновлены.")
                         else:
                             rec_logger.warning(f"Вакансия {hh_id}: API вернуло пустой ответ.")
                     except Exception as e:
@@ -463,7 +463,7 @@ class HHConnectorService(BaseConnector):
                 )
                 
                 if raw_responses:
-                    logger.info(f"📥 HH POLLING DATA (RESPONSES from {folder}): {json.dumps([r[0] for r in raw_responses], ensure_ascii=False)}")
+                    logger.debug(f"📥 HH POLLING DATA (RESPONSES from {folder}): {json.dumps([r[0] for r in raw_responses], ensure_ascii=False)}")
                 
                 for item, vid in raw_responses:
                     # Быстро пушим в очередь. Вся логика БД будет в Унификаторе.

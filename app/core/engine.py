@@ -1737,7 +1737,7 @@ class Engine:
                 is_contract_refine = (new_state == 'awaiting_employment_contract')
 
                 if (is_part_time_refine or is_shift_refine or is_contract_refine) and dialogue.current_state != new_state:
-                    ctx_logger.info(f"🔄 Переход в {new_state}. Сохраняем и отправляем на перегенерацию.")
+                    ctx_logger.debug(f"🔄 Переход в {new_state}. Сохраняем и отправляем на перегенерацию.")
                     
                     dialogue.current_state = new_state
                     dialogue.candidate.profile_data = profile

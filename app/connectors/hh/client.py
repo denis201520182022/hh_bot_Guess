@@ -209,7 +209,7 @@ class HHClient:
             raise ConnectionError(f"❌ Не удалось получить токен для аккаунта {account.name}")
 
         url = full_url or f"https://api.hh.ru/{endpoint}"
-        logger.info(f"🌐 [HH Client] REQUEST: {method} {url} | Params: {kwargs.get('params')}")
+        logger.debug(f"🌐 [HH Client] REQUEST: {method} {url} | Params: {kwargs.get('params')}")
         
         # Настройка заголовков
         headers = kwargs.pop('headers', {})
@@ -217,14 +217,14 @@ class HHClient:
         headers["HH-User-Agent"] = "ZaBota-Bot/1.0 (hbfys@mail.com)"
 
         # 2. Ограничение нагрузки через Redis (Rate Limit + Semaphore)
-        logger.info(f"  [Request Step 1] Вход в Rate Limiter: {HH_API_RATE_LIMITER_GLOBAL.key}")
+        logger.debug(f"  [Request Step 1] Вход в Rate Limiter: {HH_API_RATE_LIMITER_GLOBAL.key}")
         async with HH_API_RATE_LIMITER_GLOBAL:
-            logger.info(f"  [Request Step 2] Вход в Глобальный Семафор HH (limit={GLOBAL_HH_API_LIMIT})")
+            logger.debug(f"  [Request Step 2] Вход в Глобальный Семафор HH (limit={GLOBAL_HH_API_LIMIT})")
             async with DistributedSemaphore(name="hh_api_global", limit=GLOBAL_HH_API_LIMIT):
-                logger.info(f"  [Request Step 3] Подготовка заголовков и отправка...")
-                logger.info(f"📡 [HH Client] Отправка {method} на {url}...")
+                logger.debug(f"  [Request Step 3] Подготовка заголовков и отправка...")
+                logger.debug(f"📡 [HH Client] Отправка {method} на {url}...")
                 response = await self._http_client.request(method, url, headers=headers, **kwargs)
-                logger.info(f"📊 [HH Client] Получен ответ {response.status_code}")
+                logger.debug(f"📊 [HH Client] Получен ответ {response.status_code}")
 
         # 3. Обработка ошибок (4xx, 5xx)
         if response.status_code >= 400:
@@ -266,10 +266,10 @@ class HHClient:
         if response.content:
             try:
                 resp_json = response.json()
-                logger.info(f"📥 [HH Client] RESPONSE [{response.status_code}]: {json.dumps(resp_json, ensure_ascii=False)}")
+                logger.debug(f"📥 [HH Client] RESPONSE [{response.status_code}]: {json.dumps(resp_json, ensure_ascii=False)}")
                 return resp_json
             except Exception:
-                logger.info(f"📥 [HH Client] RESPONSE [{response.status_code}]: {response.text[:1000]}")
+                logger.debug(f"📥 [HH Client] RESPONSE [{response.status_code}]: {response.text[:1000]}")
                 return None
         return None
 
