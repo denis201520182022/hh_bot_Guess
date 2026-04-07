@@ -255,8 +255,8 @@ class HHClient:
                     # Рекурсивно вызываем этот же метод. get_token увидит сброшенный токен и сделает рефреш.
                     return await self._request(account, db, method, endpoint, full_url, **kwargs)
 
-            # Для 201/204 возвращаем None
-            if response.status_code in [201, 204]:
+            # Для 204 (No Content) возвращаем None. 201 (Created) может содержать ID сообщения.
+            if response.status_code == 204:
                 return None
 
             # Выбрасываем исключение для всех остальных 4xx/5xx

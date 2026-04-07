@@ -716,8 +716,16 @@ class HHConnectorService(BaseConnector):
         if all_api_msgs:
             logger.info(f"📥 HH POLLING DATA (MESSAGES for {dialogue.id}): {json.dumps(all_api_msgs, ensure_ascii=False)}")
         
-        # Собираем ID уже известных сообщений (из истории и из временного буфера, если он есть)
-        existing_ids = {str(m.get("message_id")) for m in (dialogue.history or [])}
+        # Собираем ID и отпечатки (роль + текст) для дедупликации
+        history_list = list(dialogue.history or [])
+        existing_ids = {str(m.get("message_id")) for m in history_list}
+        
+        # Отпечаток: (роль, текст). Помогает, когда ID временный (bot_...) не совпадает с реальным.
+        existing_fingerprints = {
+            (m.get("role"), m.get("content", "").strip()) 
+            for m in history_list 
+            if m.get("content")
+        }
         
         new_entries = []
         has_new_user_msg = False
@@ -726,11 +734,19 @@ class HHConnectorService(BaseConnector):
             m_id = str(msg.get('id'))
             text = msg.get('text')
             
-            if m_id not in existing_ids and text:
-                # В HH автор applicant — это наш 'user'
-                is_applicant = msg.get('author', {}).get('participant_type') == 'applicant'
-                role = "user" if is_applicant else "assistant"
-                
+            is_applicant = msg.get('author', {}).get('participant_type') == 'applicant'
+            role = "user" if is_applicant else "assistant"
+            fingerprint = (role, text.strip()) if text else None
+
+            # Дедупликация: по ID или (для бота) по тексту
+            if m_id in existing_ids:
+                continue
+            
+            if role == "assistant" and fingerprint in existing_fingerprints:
+                # Если это копия сообщения бота, которую мы уже сохранили в Engine (с временным ID)
+                continue
+
+            if text:
                 if is_applicant:
                     has_new_user_msg = True
                 
