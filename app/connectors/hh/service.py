@@ -247,25 +247,28 @@ class HHConnectorService(BaseConnector):
             account = (await db.execute(stmt)).scalar_one_or_none()
 
             if not account:
-                # Аккаунт уже обрабатывается другим процессом/воркером
+                logger.info(f"⏭️ Аккаунт ID {account_id} пропущен (заблокирован другим воркером).")
                 return
 
+            logger.info(f"⚙️ [HH Poller] Обработка аккаунта: {account.name} (ID: {account_id})")
             set_log_context(account_id=account.id, account_name=account.name, platform="hh")
 
-            # 1. Синхронизируем вакансии (метод, который мы написали ранее)
-            # Это аналог get_all_active_vacancies_for_recruiter
+            # 1. Синхронизируем вакансии
+            logger.info(f"🔄 [{account.name}] Синхронизация списка вакансий...")
             vacancy_ids = await self._sync_vacancies_for_account(account, db)
             
             if not vacancy_ids:
-                logger.info(f"ℹ️ У аккаунта {account.name} нет активных вакансий в работе.")
+                logger.info(f"ℹ️ [{account.name}] Нет активных вакансий в работе.")
                 return
 
-            # 2. Собираем события из всех папок (аналог Этапа 1 и Этапа 2)
-            # Этот метод пушит сообщения в RabbitMQ hh_inbound
+            # 2. Собираем события из всех папок
+            logger.info(f"📥 [{account.name}] Сбор новых событий из папок HH...")
             await self._collect_hh_events(account, db, vacancy_ids)
             
-            # Фиксируем изменения в Account (например, время синхронизации)
+            # Фиксируем изменения в Account
+            logger.info(f"💾 [{account.name}] Фиксация изменений в БД...")
             await db.commit()
+            logger.info(f"✅ [{account.name}] Обработка завершена.")
 
         except Exception as e:
             logger.error(f"❌ Ошибка сканирования аккаунта ID {account_id}: {e}", exc_info=True)
