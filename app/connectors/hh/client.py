@@ -456,14 +456,13 @@ class HHClient:
         logger.info(f"✉️ HH_API: Отправка сообщения в диалог {negotiation_id} (Аккаунт: {account.name})...")
         
         try:
-            await self._request(
+            return await self._request(
                 account,
                 db,
                 "POST",
                 f"negotiations/{negotiation_id}/messages",
                 data={"message": message_text},
             )
-            return 200
 
         except httpx.HTTPStatusError as e:
             # --- ТВОЯ ЛОГИКА ОБРАБОТКИ ФАТАЛЬНЫХ ОШИБОК ---

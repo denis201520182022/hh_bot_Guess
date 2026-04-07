@@ -745,8 +745,26 @@ class HHConnectorService(BaseConnector):
         if new_entries:
             history = list(dialogue.history or [])
             history.extend(new_entries)
-            # Сортируем историю по времени
-            history.sort(key=lambda x: x.get("timestamp_utc", ""))
+            
+            # Универсальный парсер для корректной сортировки по времени (обработка разных форматов таймзон)
+            def get_sort_key(m):
+                ts = m.get("timestamp_utc", "")
+                if not ts: 
+                    return datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+                try:
+                    # HH иногда шлет Z, иногда +0300. fromisoformat может капризничать в старых Python.
+                    t = ts.replace("Z", "+00:00")
+                    # Если есть смещение без двоеточия (+0300), добавляем его для совместимости
+                    if "+" in t and ":" not in t.split("+")[-1]:
+                        off = t.split("+")[-1]
+                        if len(off) == 4:
+                            t = t[:-4] + off[:2] + ":" + off[2:]
+                    return datetime.datetime.fromisoformat(t).astimezone(datetime.timezone.utc)
+                except Exception:
+                    return datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+
+            # Сортируем историю по реальным объектам datetime
+            history.sort(key=get_sort_key)
             
             dialogue.history = history
             dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
