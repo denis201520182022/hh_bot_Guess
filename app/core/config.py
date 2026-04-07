@@ -58,14 +58,14 @@ class GoogleSheetsReportConfig(BaseModel):
 class CRMIntegrationConfig(BaseModel):
     enabled: bool
 
+class TalantixServiceConfig(BaseModel):
+    enabled: bool
+
 class ServicesConfig(BaseModel):
     telegram: TelegramServicesConfig
     google_sheets_report: GoogleSheetsReportConfig
     crm_integration: CRMIntegrationConfig
     talantix: TalantixServiceConfig
-
-class TalantixServiceConfig(BaseModel):
-    enabled: bool
 
 class TalantixConfig(BaseModel):
     # Пока пусто в конфиге
