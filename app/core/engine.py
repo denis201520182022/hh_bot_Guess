@@ -9,11 +9,10 @@ import datetime
 from app.services.sheets import sheets_service
 import time
 from sqlalchemy import select, update, delete # Добавили delete
-from app.db.models import Dialogue, Candidate, JobContext, Account, LlmLog, AnalyticsEvent # Добавили AnalyticsEvent
+from app.db.models import Dialogue, Candidate, JobContext, Account, LlmLog, AnalyticsEvent, Director, InterviewReminder, InterviewFollowup # Добавили AnalyticsEvent, Director
 from app.core.rabbitmq import mq
 from typing import Dict, Any, List, Optional
 from decimal import Decimal
-from app.db.models import InterviewReminder, InterviewFollowup
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.services.sheets import sheets_service
@@ -95,9 +94,9 @@ class Engine:
         
         return any(marker in content_strip for marker in forbidden_markers)
     
-    async def _get_human_slots_block(self) -> str:
+    async def _get_human_slots_block(self, sheet_name: str = "Calendar") -> str:
         """Формирует текстовый блок со свободными слотами для промпта."""
-        all_slots = await sheets_service.get_all_slots_map()
+        all_slots = await sheets_service.get_all_slots_map(sheet_name)
         if not all_slots:
             return "\n[ИНФОРМАЦИЯ О СЛОТАХ] На данный момент свободных окон в графике нет."
 
@@ -555,7 +554,7 @@ class Engine:
         return missing_data_map
 
 
-    async def _assemble_dynamic_prompt(self, prompt_library: dict, dialogue_state: str, user_message: str, vacancy_description: str, dialogue: Dialogue = None) -> str:
+    async def _assemble_dynamic_prompt(self, prompt_library: dict, dialogue_state: str, user_message: str, vacancy_description: str, dialogue: Dialogue = None, sheet_name: str = "Calendar") -> str:
         """Сборка системного промпта из блоков библиотеки"""
         required_blocks = ['#ROLE_AND_STYLE#']
 
@@ -636,11 +635,11 @@ class Engine:
         # Если текущее состояние требует календаря, генерируем и добавляем его
         if dialogue_state in SCHEDULING_STATES:
             # 1. Добавляем "Человеческий" список слотов (твоя просьба)
-            human_slots = await self._get_human_slots_block()
+            human_slots = await self._get_human_slots_block(sheet_name)
             prompt_pieces.append(human_slots)
 
             # 2. Добавляем Динамический календарь (технический блок для выбора дат)
-            all_slots = await sheets_service.get_all_slots_map()
+            all_slots = await sheets_service.get_all_slots_map(sheet_name)
             calendar_block = self._generate_calendar_context_2(all_slots)
             prompt_pieces.append(calendar_block)
 
@@ -788,7 +787,8 @@ class Engine:
                     selectinload(Dialogue.candidate),   # Candidate
                     selectinload(Dialogue.account),     # Account (вместо Recruiter)
                     selectinload(Dialogue.reminders),   # InterviewReminder
-                    selectinload(Dialogue.followups)    # InterviewFollowup
+                    selectinload(Dialogue.followups),   # InterviewFollowup
+                    selectinload(Dialogue.vacancy).selectinload(JobContext.director)  # Director через vacancy
                 )
                 .with_for_update()      # Блокируем строку от других воркеров
             )
@@ -805,6 +805,30 @@ class Engine:
             if not account:
                 ctx_logger.error(f"Account for dialogue {dialogue_id} not found")
                 return
+
+            # === 2.1 ОПРЕДЕЛЕНИЕ ДИРЕКТОРА (для Google Sheets и TG) ===
+            director = None
+            sheet_name = "Calendar"  # Default fallback
+            
+            if dialogue.vacancy and dialogue.vacancy.director:
+                director = dialogue.vacancy.director
+                sheet_name = director.google_sheet_name
+            else:
+                # Fallback: ищем директора по account_id
+                director_stmt = select(Director).where(
+                    Director.account_id == account.id,
+                    Director.is_active == True
+                ).limit(1)
+                director_result = await db.execute(director_stmt)
+                director = director_result.scalar_one_or_none()
+                if director:
+                    sheet_name = director.google_sheet_name
+
+            ctx_logger.extra.update({
+                "director_id": director.id if director else None,
+                "director_name": director.name if director else "Unknown",
+                "sheet_name": sheet_name
+            })
 
             # === 3. ОБНОВЛЕНИЕ КОНТЕКСТА ЛОГГЕРА ===
             # Теперь логгер знает все детали, как в референсе
@@ -1058,12 +1082,16 @@ class Engine:
                 relevant_vacancy_desc = dialogue.vacancy.description_data.get("description_text", "")
 
             # Собираем системный промпт из блоков (#ROLE#, #FAQ# и т.д.)
+            # Получаем sheet_name из контекста (уже определен выше)
+            current_sheet_name = sheet_name
+            
             system_prompt = await self._assemble_dynamic_prompt(
                 prompt_library,
                 dialogue.current_state,
                 combined_masked_message.lower(),
                 relevant_vacancy_desc,
-                dialogue  # Передаем объект dialogue для замены плейсхолдеров
+                dialogue,  # Передаем объект dialogue для замены плейсхолдеров
+                current_sheet_name  # Передаем sheet_name
             )
 
             # Добавляем контекст задачи в конец промпта
@@ -1294,7 +1322,8 @@ class Engine:
                     if run_audit:
                         ctx_logger.info(f"🔍 Запуск аудита даты: {interview_date}")
                         full_hist = (dialogue.history or [])
-                        calendar_ctx = self._generate_calendar_context_2() 
+                        all_slots = await sheets_service.get_all_slots_map(sheet_name)
+                        calendar_ctx = self._generate_calendar_context_2(all_slots) 
                         
                         verified_date, audit_reason = await self._verify_date_audit(db, dialogue, interview_date, full_hist, calendar_ctx, ctx_logger.extra) 
                         ctx_logger.info(verified_date, ' ОБЪЯСНЕНИЕ МОДЕЛИ ', audit_reason)
@@ -1361,8 +1390,7 @@ class Engine:
                             current_hour = now_msk.hour
 
                             # 2. Запрашиваем РЕАЛЬНЫЕ свободные слоты из Google Sheets
-                            
-                            available_slots = await sheets_service.get_available_slots(interview_date)
+                            available_slots = await sheets_service.get_available_slots(interview_date, sheet_name)
 
                             # 3. Применяем фильтрацию для "Сегодня" (как в HH)
                             if interview_date == today_str:
@@ -1444,7 +1472,7 @@ class Engine:
             if new_state in DATE_CRITICAL_STATES and interview_date and interview_time:
                 try:
                     # 1. Получаем свежий список слотов для этой даты
-                    available_slots = await sheets_service.get_available_slots(interview_date)
+                    available_slots = await sheets_service.get_available_slots(interview_date, sheet_name)
                     
                     # 2. Фильтр "Сегодня"
                     now_msk = datetime.datetime.now(MOSCOW_TZ)
@@ -2215,13 +2243,14 @@ class Engine:
                             ctx_logger.info(f"🔄 ПЕРЕНОС В КАЛЕНДАРЕ: {old_date} {old_time} -> {interview_date} {interview_time}")
                             
                             # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем старый слот
-                            await sheets_service.release_slot(old_date, old_time)
-                            
+                            await sheets_service.release_slot(old_date, old_time, sheet_name)
+
                             # 2. ПРЯМОЕ ДЕЙСТВИЕ: Занимаем новый слот
                             await sheets_service.book_slot(
-                                target_date=interview_date, 
-                                target_time=interview_time, 
-                                candidate_name=dialogue.candidate.full_name or "Кандидат"
+                                target_date=interview_date,
+                                target_time=interview_time,
+                                candidate_name=dialogue.candidate.full_name or "Кандидат",
+                                sheet_name=sheet_name
                             )
                             
                             # 3. Пушим задачу на уведомление в RabbitMQ
@@ -2264,7 +2293,8 @@ class Engine:
                     await sheets_service.book_slot(
                         target_date=meta["interview_date"],
                         target_time=meta["interview_time"],
-                        candidate_name=dialogue.candidate.full_name or "Кандидат"
+                        candidate_name=dialogue.candidate.full_name or "Кандидат",
+                        sheet_name=sheet_name
                     )
                     # Планируем напоминания в БД
                     await self._schedule_interview_reminders(db, dialogue, meta["interview_date"], meta["interview_time"])
@@ -2385,7 +2415,7 @@ class Engine:
                     ctx_logger.info(f"🗑️ ОТМЕНА: Освобождаю слот {meta.get('interview_date')} {meta.get('interview_time')}")
                     
                     # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем слот
-                    await sheets_service.release_slot(meta.get("interview_date"), meta.get("interview_time"))
+                    await sheets_service.release_slot(meta.get("interview_date"), meta.get("interview_time"), sheet_name)
                     
                     # 2. Пушим задачу воркеру (например, отправить карточку отмены)
                     await mq.publish("services_output", {

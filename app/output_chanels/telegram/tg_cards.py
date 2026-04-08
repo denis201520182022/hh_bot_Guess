@@ -4,7 +4,7 @@ import html
 import datetime
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
-from app.db.models import Dialogue, Candidate, JobContext, Account
+from app.db.models import Dialogue, Candidate, JobContext, Account, Director
 
 logger = logging.getLogger("tg_cards")
 
@@ -44,14 +44,29 @@ def format_history_txt(dialogue: Dialogue, candidate: Candidate, vacancy: JobCon
 
 
 
-async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidate, vacancy: JobContext, account: Account):
-    """Логика формирования и отправки карточки в Telegram (HTML version)"""
+async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidate, vacancy: JobContext, account: Account, director: Director = None, event_type: str = 'qualified'):
+    """Логика формирования и отправки карточки в Telegram (HTML version)
+    
+    Args:
+        event_type: тип события - 'qualified' (запись), 'cancelled' (отмена), 'rescheduled' (перезапись)
+    """
     profile = candidate.profile_data or {}
     tg_settings = account.settings or {}
-    target_chat_id = tg_settings.get("tg_chat_id")
+    
+    # Приоритет: TG чат директора > TG чат аккаунта
+    target_chat_id = None
+    
+    if director and director.tg_chat_id:
+        target_chat_id = director.tg_chat_id
+        logger.info(f"Отправляю карточку в чат директора '{director.name}' (ID: {target_chat_id})")
+    else:
+        # Fallback на старый tg_chat_id из Account.settings
+        target_chat_id = tg_settings.get("tg_chat_id")
+        if target_chat_id:
+            logger.info(f"Отправляю карточку в чат аккаунта '{account.name}' (ID: {target_chat_id})")
 
     if not target_chat_id:
-        logger.warning(f"Для аккаунта {account.name} не настроен tg_chat_id.")
+        logger.warning(f"Для диалога {dialogue.id} не найден TG чат (ни у директора, ни у аккаунта)")
         return False
 
     def esc(text):
@@ -98,13 +113,21 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
     military = profile.get('has_military_document')
     military_label = "✅ Да" if military == "yes" else "❌ Нет" if military == "no" else "—"
 
-    # 2. ФОРМИРУЕМ УНИВЕРСАЛЬНЫЙ ТЕКСТ
+    # 2. ФОРМИРУЕМ ЗАГОЛОВОК В ЗАВИСИМОСТИ ОТ ТИПА СОБЫТИЯ
+    if event_type == 'cancelled':
+        header = f"❌ <b>Собеседование отменено ({platform_name})</b>"
+    elif event_type == 'rescheduled':
+        header = f"🔄 <b>Собеседование перезарегистрировано ({platform_name})</b>"
+    else:  # qualified
+        header = f"🚀 <b>Новый кандидат ({platform_name})</b>"
+
+    # 3. ФОРМИРУЕМ УНИВЕРСАЛЬНЫЙ ТЕКСТ
     message_text = (
-        f"🚀 <b>Новый кандидат ({platform_name})</b>\n\n"
+        f"{header}\n\n"
         f"📌 <b>Вакансия:</b> {esc(vacancy.title if vacancy else 'Не указана')}\n"
         f"👤 <b>ФИО:</b> {esc(candidate.full_name)}\n"
         f"📞 <b>Телефон:</b> <code>{esc(candidate.phone_number)}</code>\n\n"
-        
+
         f"🎂 <b>Возраст:</b> {esc(profile.get('age'))}\n"
         f"🌍 <b>Гражданство:</b> {esc(profile.get('citizenship'))}\n"
         f"⏳ <b>Занятость:</b> {esc(emp_label)}\n"
@@ -116,12 +139,28 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
     elif emp_type == "full":
         message_text += f"🕒 <b>Смена:</b> {esc(shift_label)}\n"
 
-    message_text += (
-        f"📜 <b>Оформление ТК:</b> {esc(contract_label)}\n"
-        f"🎖️ <b>Военный билет:</b> {esc(military_label)}\n\n"
-        f"📅 <b>Собеседование:</b> {esc(meta.get('interview_date'))} в {esc(meta.get('interview_time'))}\n\n"
-        f"🔗 <a href='{chat_link}'>{link_label}</a>"
-    )
+    # Добавляем информацию о собеседовании
+    if event_type == 'cancelled':
+        message_text += (
+            f"\n� <b>Отмененное собеседование:</b> {esc(meta.get('interview_date'))} в {esc(meta.get('interview_time'))}\n"
+        )
+        if meta.get('cancel_reason'):
+            message_text += f"📝 <b>Причина отмены:</b> {esc(meta.get('cancel_reason'))}\n"
+    elif event_type == 'rescheduled':
+        old_date = meta.get('old_interview_date')
+        old_time = meta.get('old_interview_time')
+        new_date = meta.get('interview_date')
+        new_time = meta.get('interview_time')
+        message_text += (
+            f"\n📅 <b>Было:</b> {esc(old_date)} в {esc(old_time)}\n"
+            f"📅 <b>Стало:</b> {esc(new_date)} в {esc(new_time)}\n"
+        )
+    else:  # qualified
+        message_text += (
+            f"\n📅 <b>Собеседование:</b> {esc(meta.get('interview_date'))} в {esc(meta.get('interview_time'))}\n"
+        )
+
+    message_text += f"\n🔗 <a href='{chat_link}'>{link_label}</a>"
 
     history_text = format_history_txt(dialogue, candidate, vacancy)
     file_name = f"chat_{dialogue.external_chat_id}.txt"
@@ -135,10 +174,11 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
             parse_mode="HTML"  # Указываем HTML вместо MarkdownV2
         )
         logger.info(
-            "✅ Карточка кандидата отправлена в TG", 
+            "✅ Карточка отправлена в TG",
             extra={
                 "target_chat": target_chat_id,
-                "candidate": candidate.full_name
+                "candidate": candidate.full_name,
+                "event_type": event_type
             }
         )
         return True

@@ -33,27 +33,31 @@ class Account(Base):
 
 class JobContext(Base):
     __tablename__ = 'job_contexts'
-    
+
     id = Column(Integer, primary_key=True)
     external_id = Column(String(50), unique=True, index=True)
     account_id = Column(Integer, ForeignKey('accounts.id'))
-    
+
     title = Column(String(255))
     city = Column(String(100))
     is_active = Column(Boolean, default=True) # <-- НОВЫЙ СТОЛБЕЦ
-    
+
     description_data = Column(JSONB, server_default='{}')
 
 
     # Остаток квот на открытие контактов именно для этой вакансии
     # Клиент вводит число в таблицу, бот обновляет это поле, а затем минусует при поиске
     search_remaining_quota = Column(Integer, default=0)
-    
+
     # Все поисковые параметры из строк Google Таблицы (age_min, nationality, query и т.д.)
     search_filters = Column(JSONB, server_default='{}')
-    
+
+    # Привязка к директору (директор отвечает за конкретную вакансию)
+    director_id = Column(Integer, ForeignKey('directors.id'), nullable=True)
+
     account = relationship("Account", back_populates="vacancies")
     dialogues = relationship("Dialogue", back_populates="vacancy")
+    director = relationship("Director", back_populates="vacancy", uselist=False)
 
 class Candidate(Base):
     """
@@ -226,16 +230,39 @@ class AnalyticsEvent(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class Director(Base):
+    """
+    Директор магазина - отвечает за конкретную вакансию/адрес.
+    Имеет свой лист в Google таблице и свой Telegram чат.
+    """
+    __tablename__ = 'directors'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)  # Имя директора
+    google_sheet_name = Column(String(255), nullable=False, unique=True)  # Название листа в Google таблице
+    tg_chat_id = Column(BigInteger, nullable=False, unique=True)  # ID Telegram чата директора
+    
+    # Привязка к аккаунту HH (чтобы понимать через какой аккаунт идут отклики)
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=True)
+    
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    vacancy = relationship("JobContext", back_populates="director", foreign_keys=[JobContext.director_id])
+    account = relationship("Account", foreign_keys=[account_id])
+
+
 class SearchStatus(Base):
     """Глобальный рубильник поиска для конкретного аккаунта (Авито, HH и др.)"""
     __tablename__ = 'search_statuses'
-    
+
     id = Column(Integer, primary_key=True)
     account_id = Column(Integer, ForeignKey('accounts.id'), unique=True)
-    
+
     # Тот самый рубильник: True - ищем, False - всё стоит на паузе
     is_enabled = Column(Boolean, default=False)
-    
+
     account = relationship("Account")
 
 class SearchStat(Base):

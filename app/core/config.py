@@ -49,6 +49,7 @@ class TelegramServicesConfig(BaseModel):
     reject_cards: bool
     molchun_cards: bool
     reschedule_cards: bool
+    cancel_cards: bool
 
 class GoogleSheetsReportConfig(BaseModel):
     enabled: bool
@@ -73,7 +74,7 @@ class TalantixConfig(BaseModel):
 
 class SchedulingGoogleSheetsConfig(BaseModel):
     spreadsheet_url: str
-    calendar_sheet_name: str
+    calendar_sheet_name: str = "Calendar"  # Default для обратной совместимости, теперь используется Director.google_sheet_name
 
 class SchedulingConfig(BaseModel):
     provider: str

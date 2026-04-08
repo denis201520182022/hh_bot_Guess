@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.core.config import settings
 from app.core.rabbitmq import mq
 from app.db.session import AsyncSessionLocal
-from app.db.models import Dialogue
+from app.db.models import Dialogue, Director, JobContext
 from app.utils.logger import logger, set_log_context, log_context
 from app.utils.tg_alerts import handle_alert_task
 
@@ -47,7 +47,7 @@ async def handle_reporting_task(message_body: dict):
             .where(Dialogue.id == dialogue_id)
             .options(
                 selectinload(Dialogue.candidate),
-                selectinload(Dialogue.vacancy),
+                selectinload(Dialogue.vacancy).selectinload(JobContext.director),
                 selectinload(Dialogue.account)
             )
         )
@@ -61,6 +61,10 @@ async def handle_reporting_task(message_body: dict):
         candidate = dialogue.candidate
         vacancy = dialogue.vacancy
         account = dialogue.account
+
+        # Получаем директора через связь с вакансией
+        director = vacancy.director if vacancy and vacancy.director else None
+        
         meta = dialogue.metadata_json or {}
 
         # --- ЗАДЕРЖКА (Race Condition Protection) ---
@@ -73,12 +77,24 @@ async def handle_reporting_task(message_body: dict):
             # 1. КАНАЛ: TELEGRAM (Карточки)
             if settings.services.telegram.enabled:
                 if event_type == 'qualified' and settings.services.telegram.interview_cards:
-                    success = await send_tg_notification(bot, dialogue, candidate, vacancy, account)
+                    success = await send_tg_notification(bot, dialogue, candidate, vacancy, account, director)
                     if success:
                         results.append("Telegram ✅")
                     else:
                         results.append("Telegram ❌")
-                # Здесь можно добавить другие типы карточек (reject_cards, reschedule_cards)
+                elif event_type == 'cancelled' and settings.services.telegram.cancel_cards:
+                    success = await send_tg_notification(bot, dialogue, candidate, vacancy, account, director, event_type='cancelled')
+                    if success:
+                        results.append("Telegram ✅")
+                    else:
+                        results.append("Telegram ❌")
+                elif event_type == 'rescheduled' and settings.services.telegram.reschedule_cards:
+                    success = await send_tg_notification(bot, dialogue, candidate, vacancy, account, director, event_type='rescheduled')
+                    if success:
+                        results.append("Telegram ✅")
+                    else:
+                        results.append("Telegram ❌")
+                # Здесь можно добавить другие типы карточек (reject_cards, molchun_cards)
 
             # 2. КАНАЛ: GOOGLE SHEETS (Отчеты)
             if settings.services.google_sheets_report.enabled:

@@ -14,10 +14,11 @@ from sqlalchemy.orm import selectinload
 import re
 from app.utils.redis_lock import get_redis_client
 from app.db.session import AsyncSessionLocal
-from app.db.models import Account, JobContext, Candidate, Dialogue, AppSettings, AnalyticsEvent # Добавили AnalyticsEvent
+from app.db.models import Account, JobContext, Candidate, Dialogue, AppSettings, AnalyticsEvent, Director # Добавили AnalyticsEvent, Director
 from app.core.rabbitmq import mq
 from app.core.schemas import IncomingEventDTO, CandidateDTO, JobContextDTO
 from app.connectors.base import BaseConnector
+from app.services.director_mapping import resolve_director_name
 from app.utils.logger import logger, set_log_context, log_context
 from app.utils.analytics import log_event
 from app.core.config import settings
@@ -84,6 +85,41 @@ class HHConnectorService(BaseConnector):
             if m_parts: parts.append(", ".join(m_parts))
                 
         return ", ".join(parts).strip()
+
+    async def _assign_director_to_vacancy(self, db: AsyncSession, job: JobContext, logger, vacancy_id: str):
+        """
+        Определяет директора по адресу вакансии (берёт address.raw из full_raw_data) и привязывает его.
+        """
+        raw_address = (job.description_data or {}).get("full_raw_data", {}).get("address", {}).get("raw")
+
+        if not raw_address:
+            logger.debug(f"Вакансия {vacancy_id}: address.raw не найден в full_raw_data")
+            return
+
+        director_name = resolve_director_name(raw_address)
+
+        if not director_name:
+            logger.debug(f"Вакансия {vacancy_id}: директор не найден по адресу '{raw_address}'")
+            return
+
+        # Ищем директора по имени в БД
+        stmt = select(Director).where(
+            Director.name == director_name,
+            Director.is_active == True
+        )
+        result = await db.execute(stmt)
+        director = result.scalar_one_or_none()
+
+        if not director:
+            logger.warning(f"Вакансия {vacancy_id}: директор '{director_name}' найден в маппинге, но отсутствует в БД")
+            return
+
+        # Привязываем директора к вакансии
+        if job.director_id != director.id:
+            job.director_id = director.id
+            logger.info(f"✅ Вакансия {vacancy_id}: назначен директор '{director.name}' (TG chat: {director.tg_chat_id}, Sheet: {director.google_sheet_name}) по адресу '{raw_address}'")
+        else:
+            logger.debug(f"Вакансия {vacancy_id}: директор '{director.name}' уже привязан")
 
     async def _accumulate_and_dispatch(self, dialogue: Dialogue, source: str):
         """
@@ -403,6 +439,9 @@ class HHConnectorService(BaseConnector):
 
                             job.description_data = desc_data
                             rec_logger.debug(f"Вакансия {hh_id}: детали успешно очищены и обновлены.")
+
+                            # === ПРИВЯЗКА ДИРЕКТОРА ПО АДРЕСУ (raw) ===
+                            await self._assign_director_to_vacancy(db, job, rec_logger, hh_id)
                         else:
                             rec_logger.warning(f"Вакансия {hh_id}: API вернуло пустой ответ.")
                     except Exception as e:

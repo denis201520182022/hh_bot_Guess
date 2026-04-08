@@ -1,0 +1,6313 @@
+"""Exposes a URL that specifies the behaviour of this scalar."""
+directive @specifiedBy(
+  """The URL that specifies the behaviour of this scalar."""
+  url: String!
+) on SCALAR
+
+enum ApiTokenErrorType {
+  ACCESS_DENIED
+}
+
+"""Информация о токене API"""
+type ApiTokenItem {
+  """Урл, по которому можно получить токен"""
+  accessLink: String!
+
+  """Количество дней жизни ссылки токена"""
+  accessLinkExpiredInDays: Int!
+
+  """Дата создания токена"""
+  createdAt: Instant!
+
+  """
+  Название токена. Можно использовать для идентификации системы, в которой используется
+  """
+  name: String!
+
+  """Статус токена"""
+  refreshTokenStatus: ApiTokenStatus!
+
+  """Id токена"""
+  tokenId: Int!
+}
+
+"""Токены API менеджера или ошибка доступа"""
+union ApiTokens = ApiTokensError | ApiTokensItem
+
+type ApiTokensError {
+  """Тип ошибки"""
+  errorType: ApiTokenErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+type ApiTokensItem {
+  """API токены Talantix"""
+  items: [ApiTokenItem!]!
+}
+
+"""Статус токена API"""
+enum ApiTokenStatus {
+  ACTIVE
+  EXPIRED
+}
+
+"""Событие отправки кандидата на согласование"""
+type ApprovalRequest implements PersonEventItem {
+  commentHtml: String
+
+  """Время, когда произошло событие"""
+  createdAt: Instant!
+  creatorManagerId: Int
+  id: Int!
+  manager: CompanyManager!
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Почта согласующего"""
+  recipientMail: String!
+
+  """Тип события"""
+  type: PersonEventType!
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Событие отправки на согласование"""
+type ApprovalRequested implements HistoryEvent {
+  approver: String
+  commentHtml: String
+
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Событие получения ответа на согласовании"""
+type ApprovalResponded implements HistoryEvent {
+  approved: Boolean!
+  approver: String
+  commentHtml: String
+
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Событие получение ответа на запрос на хранение ПД"""
+type ApprovalResponse implements PersonEventItem {
+  """Ответ согласования"""
+  approved: Boolean!
+
+  """Имя согласующего"""
+  approver: String!
+  commentHtml: String
+
+  """Время, когда произошло событие"""
+  createdAt: Instant!
+  creatorManagerId: Int
+  id: Int!
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Тип события"""
+  type: PersonEventType!
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Регион"""
+type Area implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Регион"""
+input AreaInput {
+  """Id региона из справочника areas"""
+  id: String!
+}
+
+"""Регионы"""
+type Areas {
+  """Элементы коллекции сущностей"""
+  items: [Area!]!
+}
+
+"""Значения фильтра про возможность релокации"""
+enum AreaSearch {
+  """Живут в указанном регионе"""
+  LOCATION
+
+  """Живут в указанном регионе или готовы переехать в него"""
+  LOCATION_OR_RELOCATION
+
+  """Живут в указанном регионе или готовы к переезду куда-либо"""
+  LOCATION_RELOCATION_POSSIBLE
+
+  """Не живут в указанном регионе, но готовы переехать в него"""
+  RELOCATION_NOT_LOCATION
+}
+
+"""Регионы"""
+input AreasInput {
+  """Элементы коллекции сущностей"""
+  items: [AreaInput!]!
+}
+
+"""Событие прикрепления кандидата к вакансии"""
+type AttachedToVacancy implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Вакансия"""
+  vacancy: Vacancy
+  vacancyMergeSourceWorkflowStatusSnapshot: VacancyMergeSourceWorkflowStatusSnapshot
+}
+
+"""События прикрепления кандидата к вакансии и этапу"""
+type AttachedToVacancyAndWorkflowStatus implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  status: WorkflowStatusSnapshot!
+
+  """Вакансия"""
+  vacancy: Vacancy
+
+  """
+  Слепок этапа и вакансии с которой кандидат был скопирован в результате объединения вакансий
+  """
+  vacancyMergeSourceWorkflowStatusSnapshot: VacancyMergeSourceWorkflowStatusSnapshot
+}
+
+"""Автодействие, настроенное на этапе"""
+type AutoAction {
+  """Выбранный шаблон сообщения для автодействия письма"""
+  messageTemplate: WithId_Integer
+
+  """Выбранный шаблон тестового задания для соответствующего автодействия"""
+  testTaskTemplate: WithId_Integer
+
+  """Тип автодействия"""
+  type: AutoActionType!
+}
+
+"""Автодействия, настроенные на этапе"""
+type AutoActions {
+  canEdit: Boolean!
+
+  """Данные автодействий"""
+  items: [AutoAction!]!
+}
+
+"""Тип автодействия"""
+enum AutoActionType {
+  """Отправка письма"""
+  letter
+
+  """Создание встречи"""
+  meeting
+
+  """Отправка тестового задания"""
+  testTask
+}
+
+enum AvitoConnectionStatus {
+  CONNECTED
+  NOT_CONNECTED
+  PAYMENT_REQUIRED
+}
+
+"""Публикация вакансии на Avito"""
+type AvitoExternalVacancyItem implements ExternalVacancyItem {
+  externalId: String!
+
+  """Причина ошибки импорта откликов"""
+  failReason: AvitoFailReason
+
+  """Время привязки публикации"""
+  importedAt: Instant!
+
+  """Ссылка на публикацию"""
+  link: String!
+
+  """Название вакансии"""
+  name: String!
+
+  """Статус импорта откликов с публикации"""
+  status: ExternalVacancyImportStatus!
+
+  """Время обновления данных или статуса публикации"""
+  updatedAt: Instant!
+}
+
+"""Причина ошибки импорта откликов с Avito"""
+enum AvitoFailReason {
+  ACCOUNT_RECONNECT_REQUIRED
+  ACCOUNT_UNSUITABLE_TARIFF
+  API_ERROR
+  SYSTEM
+}
+
+"""Интеграция с Avito"""
+type AvitoIntegration implements Integration {
+  """Статус подключения"""
+  connectionStatus: AvitoConnectionStatus!
+
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+
+  """Url редиректа для OAuth"""
+  redirectUrl: String
+}
+
+"""Базовый класс менеджера"""
+interface BaseManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+}
+
+interface BasePerson {
+  """Возраст"""
+  age: Long
+
+  """Город"""
+  area: Area
+
+  """Дата рождения"""
+  birthDay: Instant
+
+  """Гражданство"""
+  citizenships: Areas
+
+  """Контакты"""
+  contacts: Contacts
+
+  """Прикрепленные файлы"""
+  files: Files
+
+  """Имя"""
+  firstName: String!
+
+  """Пол"""
+  gender: Gender
+
+  """Имеются вакансии, к которым можно прикрепить кандидата"""
+  hasVacanciesToAttach: Boolean
+  hiddenFields: [PersonHiddenField]
+
+  """Фамилия"""
+  lastName: String
+
+  """Станция метро"""
+  metroStation: MetroStation
+
+  """Отчество"""
+  middleName: String
+  personalDataAgreement: PersonalDataAgreement
+
+  """Статус согласия на хранение ПД"""
+  personalDataAgreementStatus: PersonalDataAgreementStatus @deprecated(reason: "Replaced with personalDataAgreement field")
+
+  """Фотографии кандидата"""
+  photos: Photos
+
+  """Отклики"""
+  responses: PersonResponses
+
+  """Резюме"""
+  resumes: Resumes
+  score: Int
+
+  """Источник"""
+  source: PersonSource
+
+  """Метки на кандидате"""
+  tags: PersonTags
+
+  """Можно открыть контакты с работного сайта"""
+  updatableWithContacts: Boolean
+
+  """Можно открыть контакты с hh.ru"""
+  updatableWithHHContacts: Boolean @deprecated(reason: "Replaced by updatableWithContacts field")
+
+  """Время обновления"""
+  updatedAt: Instant!
+}
+
+type BatchLimits {
+  changeStatus: Int!
+  message: Int!
+  personApprovals: Int!
+  personsBindToVacancies: Int!
+}
+
+"""Базовый объект для нотификаций в колокольчике"""
+interface BellNotificationItem {
+  """Время события"""
+  createdAt: Instant!
+  eventUrl: String
+  id: Long!
+
+  """Прочитанность"""
+  read: Boolean!
+
+  """Тип события"""
+  type: BellNotificationType!
+}
+
+type BellNotificationPageInfo {
+  """
+  Курсор последнего элемента. Используется для запроса следующей страницы
+  """
+  endCursor: String
+
+  """Количество запрошенных элементов на странице"""
+  first: Int
+
+  """Имеются ли элементы на следующей странице"""
+  hasNextPage: Boolean!
+  startCursor: String
+}
+
+"""Тип уведомления в колокольчике"""
+enum BellNotificationType {
+  COMMENT_CREATE
+  MEETING_REMINDER
+}
+
+"""Готовность к переезду"""
+type BusinessTripReadiness implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+type BusinessTripReadinesses {
+  """Элементы коллекции сущностей"""
+  items: [BusinessTripReadiness!]!
+}
+
+"""Готовность к командировкам"""
+input BusinessTripReadinessInput {
+  """Id готовности к командировкам из справочника businessTripReadinesses"""
+  id: String!
+}
+
+"""Интеграция с внешним календарем"""
+type CalendarIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+  enabledType: CalendarIntegrationType
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+  redirectUrls: CalendarRedirectUrls!
+}
+
+"""Тип календаря в интеграции"""
+enum CalendarIntegrationType {
+  BITRIX
+  GOOGLE
+  OUTLOOK
+  YANDEX
+}
+
+type CalendarRedirectUrl {
+  type: CalendarIntegrationType!
+  url: String!
+}
+
+type CalendarRedirectUrls {
+  """Элементы коллекции сущностей"""
+  items: [CalendarRedirectUrl!]!
+}
+
+"""Канал нотификации"""
+enum ChannelType {
+  BELL
+  EMAIL
+  POPUP
+}
+
+"""Input string with possible html formatting"""
+scalar CleanedInputString
+
+"""Тип публикации на hh.ru"""
+enum CombinedHhVacancyType {
+  ANONYMOUS_PREMIUM
+  ANONYMOUS_STANDARD
+  DIRECT_PREMIUM
+  DIRECT_STANDARD
+  FREE
+  FREE_CLOSED
+  PREMIUM
+  STANDARD
+  STANDARD_CLOSED
+  STANDARD_PLUS
+  STANDARD_PLUS_CLOSED
+}
+
+"""Комментарий, оставленный в Talantix"""
+type Comment implements PersonEventItem {
+  canDelete: Boolean!
+
+  """Время, когда произошло событие"""
+  createdAt: Instant!
+  creatorManagerId: Int
+  editable: Boolean
+  hhCommentId: Int
+  html: String
+  id: Int!
+  manager: CompanyManager!
+
+  """Кандидат"""
+  person: PersonItem
+  personRating: PersonRating
+
+  """Тип события"""
+  type: PersonEventType!
+  updatedAt: Instant!
+
+  """Вакансия"""
+  vacancy: Vacancy
+  visibility: Visibility!
+}
+
+"""Событие добавления комментария"""
+type CommentAdded implements HistoryEvent {
+  canDelete: Boolean
+  commentId: Int!
+  editable: Boolean
+
+  """Время события"""
+  eventTime: Instant!
+  hhCommentId: Int
+  html: String
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  personRating: PersonRating
+  updatedAt: Instant
+
+  """Вакансия"""
+  vacancy: Vacancy
+  visibility: Visibility
+}
+
+"""Нотификация в колокольчике о создании комментария"""
+type CommentCreateBellNotificationItem implements BellNotificationItem {
+  authorId: Int!
+
+  """Имя автора"""
+  authorName: String!
+
+  """Время события"""
+  createdAt: Instant!
+  eventUrl: String
+  id: Long!
+  personId: Int!
+
+  """Имя кандидата"""
+  personName: String!
+
+  """Url фото кандидата"""
+  photoUrl: String
+
+  """Прочитанность"""
+  read: Boolean!
+
+  """Тип события"""
+  type: BellNotificationType!
+  vacancyId: Int
+
+  """Название вакансии, в рамках которой оставлен комментарий"""
+  vacancyName: String
+
+  """Этап, на котором оставлен комментарий"""
+  workflowStatusName: String
+}
+
+"""Комментарий"""
+input CommentInput {
+  text: CleanedInputString!
+}
+
+"""Настройки видимости комментария"""
+input CommentVisibilityInput {
+  """Видим для всех"""
+  visibleForAll: Boolean!
+
+  """ID менеджеров, для которых виден комментарий"""
+  visibleForManagerIds: [Int]
+}
+
+type CompanyApprovingManager implements BaseManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+}
+
+"""Результат изменения информации о компании"""
+union CompanyInfoUpdated = CompanyInfoUpdateError | CompanyItem
+
+"""Ошибка изменения информации о компании"""
+type CompanyInfoUpdateError {
+  """Тип ошибки"""
+  errorType: CompanyInfoUpdateErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки создания информации о компании"""
+enum CompanyInfoUpdateErrorType {
+  ACCESS_DENIED
+  FIELDS_VALIDATION
+}
+
+"""Модель изменения информации о компании"""
+input CompanyInfoUpdateInput {
+  """ИНН"""
+  inn: String!
+
+  """Юридический адрес компании"""
+  legalAddress: CleanedInputString!
+
+  """Юридическое название компании"""
+  legalName: CleanedInputString!
+
+  """Название компании"""
+  name: CleanedInputString!
+}
+
+"""Данные компании"""
+type CompanyItem {
+  """ИНН. Используется в согласии на хранение ПД"""
+  inn: String
+
+  """Юридический адрес компании. Используется в согласии на хранение ПД"""
+  legalAddress: String
+
+  """Юридическое название компании. Используется в согласии на хранение ПД"""
+  legalName: String
+
+  """Внутреннее название компании"""
+  name: String
+
+  """Список причин отказа кандидата"""
+  personDiscardReasons(initiator: PersonDiscardInitiator!, sortBy: PersonDiscardReasonSortType!): PersonDiscardReasons!
+
+  """Источники кандидатов"""
+  personSources(
+    """Фильтр источников кандидатов"""
+    filter: PersonSourceFilterInput
+
+    """Курсор пагинации"""
+    afterCursor: String
+
+    """Количество запрашиваемых источников, максимум 100"""
+    first: Int = 50
+  ): PersonSources!
+
+  """Теги кандидатов"""
+  personTags: PersonTags!
+
+  """Текущий тариф компании"""
+  tariff: CompanyTariff!
+}
+
+"""Менеджер в компании"""
+type CompanyManager implements BaseManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Вид лицензии"""
+  licenseType: ManagerLicenseType!
+
+  """Роль"""
+  managerRole: ManagerRole!
+
+  """Отчество"""
+  middleName: String
+}
+
+"""Менеджеры компании или ошибка доступа"""
+union CompanyManagers = Managers | ManagersError
+
+"""Данные о тарифе компании"""
+type CompanyTariff {
+  """Дата окончания срока действия тарифа"""
+  endAt: Instant
+
+  """Лицензии тарифа"""
+  licenses: [TariffLicense!]!
+
+  """Название тарифа"""
+  name: Tariff!
+
+  """Дата начала срока действия тарифа"""
+  startAt: Instant
+
+  """Тип платного тарифа"""
+  type: PaidTariffType
+}
+
+"""Основание для отзыва согласия на хранение ПД"""
+enum ConsentRevokeCause {
+  """Внешний аккаунт удален"""
+  EXTERNAL_ACCOUNT_DELETED
+}
+
+"""Событие отзыва согласия на хранение ПД"""
+type ConsentRevoked implements HistoryEvent {
+  """Основание для отзыва согласия"""
+  cause: ConsentRevokeCause!
+
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""Статус согласия на хранение ПД"""
+enum ConsentStatus {
+  APPROVED
+  DECLINED
+}
+
+"""Событие отправки согласия на хранение ПД"""
+type ConsentStatusRequested implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""Событие получения ответа на согласие на хранение ПД"""
+type ConsentStatusResponded implements HistoryEvent {
+  answer: ConsentStatus!
+
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""Контактная информация кандидата"""
+type ContactItem {
+  """Тип контакта"""
+  type: ContactType!
+
+  """Значение контакта"""
+  value: String!
+}
+
+"""Контактная информация кандидата"""
+input ContactItemInput {
+  """Тип контакта"""
+  type: ContactType!
+
+  """Значение контакта"""
+  value: String!
+}
+
+type Contacts {
+  items: [ContactItem]
+}
+
+"""Тип контакта"""
+enum ContactType {
+  """Мобильный телефон"""
+  cell
+
+  """Email"""
+  email
+
+  """Профиль facebook"""
+  facebook
+
+  """Профиль freelance"""
+  freelance
+
+  """Профиль Habr"""
+  habr
+
+  """Домашний телефон"""
+  home
+
+  """ICQ"""
+  icq
+
+  """Профиль LinkedIn"""
+  linkedin
+
+  """Профиль livejournal"""
+  livejournal
+
+  """Личный сайт"""
+  personal
+
+  """Skype"""
+  skype
+
+  """Telegram"""
+  telegram
+
+  """Профиль VK"""
+  vk
+
+  """Рабочий телефон"""
+  work
+}
+
+type Counters {
+  """Счетчики измененных кандидатов"""
+  edited: EditedCounters
+
+  """Общее количество кандидатов с учётом фильтров"""
+  total: Long!
+}
+
+"""Событие создания кандидата"""
+type Created implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  externalVacancy: ExternalVacancy
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  source: PersonSource!
+}
+
+enum Currency {
+  AZN
+  BYR
+  EUR
+  GEL
+  KGS
+  KZT
+  RUR
+  UAH
+  USD
+  UZS
+}
+
+"""Валюта зарплаты"""
+enum CurrencyCode {
+  """Евро"""
+  EUR
+
+  """Рубль"""
+  RUR
+
+  """Доллар США"""
+  USD
+}
+
+enum CursorDirection {
+  AFTER
+  BEFORE
+}
+
+"""Кастомное резюме, содержит html"""
+type CustomResume implements ResumeItem {
+  """Дата создания резюме в Talantix"""
+  createdAt: Instant!
+  id: Int!
+
+  """Ссылка на источник резюме"""
+  link: String
+
+  """Название резюме"""
+  name: String!
+
+  """Источник резюме"""
+  source: ResumeSource!
+
+  """Текст резюме"""
+  text: String
+
+  """Дата обновления резюме"""
+  updatedAt: Instant!
+}
+
+"""Создание резюме в свободной форме"""
+input CustomResumeSaveInput {
+  """Текст резюме"""
+  text: CleanedInputString!
+
+  """Тип резюме"""
+  type: CustomResumeType!
+}
+
+"""Тип резюме в свободной форме"""
+enum CustomResumeType {
+  TMS
+}
+
+"""Событие открепления кандидата от вакансии"""
+type DetachedFromVacancy implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Справочники"""
+type Dictionaries {
+  """Регионы"""
+  areas(
+    """Признак получения только гражданств"""
+    onlyCitizenships: Boolean = false
+  ): Areas!
+
+  """Готовность к командировкам"""
+  businessTripReadinesses: BusinessTripReadinesses!
+
+  """Уровни образования"""
+  educationLevels: EducationLevels!
+
+  """Типы занятости"""
+  employments: Employments!
+
+  """Отрасли (профобласти)"""
+  industries: Industries!
+
+  """Уровни владения языком"""
+  languageLevels: LanguageLevels!
+
+  """Языки"""
+  languages: Languages!
+
+  """Типы релокации (готовность к переезду)"""
+  relocationTypes: RelocationTypes!
+
+  """Графики работы"""
+  schedules: Schedules!
+
+  """Время в пути до работы"""
+  travelTimes: TravelTimes!
+}
+
+"""Базовый класс для справочных сущностей"""
+interface Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Информация об отказе"""
+type DiscardInfo {
+  """Инициатор отказа"""
+  initiator: PersonDiscardInitiator
+
+  """Причины отказа"""
+  reasons: [String]!
+}
+
+"""Модель создания причины отказа для кандидата"""
+input DiscardReasonCreateInput {
+  initiator: PersonDiscardInitiator!
+  text: CleanedInputString!
+}
+
+"""Тип отказа"""
+enum DiscardType {
+  """Не имеет значения"""
+  any
+
+  """Нам отказали"""
+  applicant
+
+  """Мы отказали"""
+  employer
+
+  """Причина не указана"""
+  unspecified
+}
+
+"""Водительское удостоверение"""
+enum DriverLicense {
+  A
+  B
+  BE
+  C
+  CE
+  D
+  DE
+  E
+  TB
+  TM
+}
+
+type EditedCounters {
+  """Количество кандидатов, измененных за сегодняшний день"""
+  today: Long
+
+  """Количество кандидатов, измененных за неделю"""
+  withinWeek: Long
+}
+
+enum EditedWithinPeriod {
+  MONTH
+  TODAY
+  WEEK
+  YEAR
+}
+
+type Education {
+  """Дополнительное образование"""
+  additionals: EducationItems
+
+  """Аттестации"""
+  attestations: EducationItems
+
+  """Начальное образование"""
+  elementaries: EducationItems
+
+  """Уровень образования"""
+  level: EducationLevel
+
+  """Основное образование"""
+  primaries: EducationItems
+}
+
+"""Образование"""
+input EducationInput {
+  """Дополнительное образование"""
+  additionals: [EducationItemInput]
+
+  """Аттестация"""
+  attestations: [EducationItemInput]
+
+  """Начальное образование"""
+  elementaries: [EducationItemInput]
+
+  """Уровень образования"""
+  level: EducationLevelInput
+
+  """Основное образование"""
+  primaries: [EducationItemInput]
+}
+
+type EducationItem {
+  """Название"""
+  name: String
+
+  """Организация, в которой получено образование"""
+  organization: String
+
+  """Специальность"""
+  result: String
+
+  """Год получения образования"""
+  year: Int
+}
+
+"""Образовательное учреждение"""
+input EducationItemInput {
+  """Название"""
+  name: String!
+
+  """Организация, в которой получено образование"""
+  organization: String
+
+  """Специальность"""
+  result: String
+
+  """Год получения образования"""
+  year: Int
+}
+
+type EducationItems {
+  items: [EducationItem]
+}
+
+"""Уровень образования"""
+type EducationLevel implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Образование (не ниже)"""
+enum EducationLevelEnum {
+  """Не имеет значения"""
+  any
+
+  """Высшее"""
+  higher
+
+  """Среднее"""
+  secondary
+
+  """Среднее специальное"""
+  special_secondary
+
+  """Неоконченное высшее"""
+  unfinished_higher
+}
+
+"""Уровень образования"""
+input EducationLevelInput {
+  """Id уровня образования из справочника educations"""
+  id: String!
+}
+
+type EducationLevels {
+  """Элементы коллекции сущностей"""
+  items: [EducationLevel!]!
+}
+
+"""Событие отправки email сообщения"""
+type EmailSent implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""Вид занятости"""
+type Employment implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Вид занятости"""
+input EmploymentInput {
+  """Id вида занятости из справочника employments"""
+  id: String!
+}
+
+type Employments {
+  """Элементы коллекции сущностей"""
+  items: [Employment!]!
+}
+
+type Experience {
+  """Регион компании"""
+  area: Area
+
+  """Компания"""
+  company: ExperienceCompany
+
+  """Описание опыта работы"""
+  description: String
+
+  """Профобласти"""
+  industries: Industries
+
+  """Период работы в компании"""
+  period: ExperiencePeriod
+
+  """Должность"""
+  position: String
+}
+
+type ExperienceCompany {
+  id: Int
+
+  """Название компании"""
+  name: String
+
+  """Ссылка на сайт компании"""
+  url: String
+}
+
+"""Информация о компании"""
+input ExperienceCompanyInput {
+  """Название компании"""
+  name: String!
+
+  """Ссылка на сайт компании"""
+  url: String
+}
+
+"""Опыт работы в компании"""
+input ExperienceInput {
+  """Регион компании"""
+  area: AreaInput
+
+  """Компания"""
+  company: ExperienceCompanyInput
+
+  """Описание опыта работы"""
+  description: String
+
+  """Профобласти"""
+  industries: [IndustryInput]
+
+  """Период работы в компании"""
+  period: ExperiencePeriodInput
+
+  """Должность"""
+  position: String
+}
+
+type ExperiencePeriod {
+  end: Instant
+  months: Int
+  start: Instant!
+}
+
+"""Период работы"""
+input ExperiencePeriodInput {
+  """Дата окончания работы"""
+  end: Instant
+
+  """Дата начала работы"""
+  start: Instant!
+}
+
+type Experiences {
+  """Элементы коллекции сущностей"""
+  items: [Experience!]!
+}
+
+"""Привязанные публикации на работных сайтах"""
+type ExternalVacancies {
+  avito(after: String, first: Int = 50): ExternalVacanciesInfo_AvitoExternalVacancyItem!
+  hh(after: String, first: Int = 50): ExternalVacanciesInfo_HhExternalVacancyItem!
+}
+
+"""Привязанные публикации с работного сайта"""
+type ExternalVacanciesInfo_AvitoExternalVacancyItem {
+  count: Int!
+  importLimit: Int!
+
+  """Привязанные публикации"""
+  items: [AvitoExternalVacancyItem!]!
+  pageInfo: PageInfo!
+}
+
+"""Привязанные публикации с работного сайта"""
+type ExternalVacanciesInfo_HhExternalVacancyItem {
+  count: Int!
+  importLimit: Int!
+
+  """Привязанные публикации"""
+  items: [HhExternalVacancyItem!]!
+  pageInfo: PageInfo!
+}
+
+type ExternalVacancy {
+  id: String!
+  link: String!
+  name: String!
+  type: ExternalVacancyType!
+}
+
+"""Статус импорта откликов с привязанной публикации"""
+enum ExternalVacancyImportStatus {
+  """Импорт выключен вручную или по причине тарифа"""
+  DISABLED
+
+  """Импорт включен"""
+  ENABLED
+
+  """Ошибка импорта"""
+  FAILED
+}
+
+"""Внешняя публикация вакансии на работном сайте"""
+interface ExternalVacancyItem {
+  externalId: String!
+
+  """Время привязки публикации"""
+  importedAt: Instant!
+
+  """Ссылка на публикацию"""
+  link: String!
+
+  """Название вакансии"""
+  name: String!
+
+  """Статус импорта откликов с публикации"""
+  status: ExternalVacancyImportStatus!
+
+  """Время обновления данных или статуса публикации"""
+  updatedAt: Instant!
+}
+
+enum ExternalVacancyType {
+  AVITO
+  HH
+}
+
+enum FeatureNotificationStatus {
+  NEW
+  SHOWN
+  VISITED
+}
+
+"""Ошибка в поле"""
+type FieldErrors {
+  field: String!
+  violatedConstraints: [String!]!
+}
+
+type File {
+  createdAt: Instant!
+  extension: String!
+  id: Int!
+  link: String! @deprecated(reason: "To be removed from API")
+  name: String!
+  size: Int
+}
+
+type Files {
+  count: Int
+
+  """Элементы коллекции сущностей"""
+  items: [File!]!
+}
+
+"""Пол"""
+enum Gender {
+  """Женский"""
+  female
+
+  """Мужской"""
+  male
+}
+
+"""Интеграция с Google Meet"""
+type GoogleMeetIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+
+  """URL редирект для OAuth"""
+  redirectUrl: String
+}
+
+"""Используемый поисковый движок"""
+enum GraphQLSearchEngine {
+  ELASTIC
+  POSTGRES
+}
+
+type HhChat {
+  chatId: Long
+  unreadCount: Int
+}
+
+"""Комментарий, оставленный на hh.ru"""
+type HHComment implements PersonEventItem {
+  """Время, когда произошло событие"""
+  createdAt: Instant!
+  creatorManagerId: Int
+  html: String
+  id: Int!
+  managerName: String!
+
+  """Тип события"""
+  type: PersonEventType!
+}
+
+"""Событие добавления комментария на hh.ru"""
+type HhCommentAdded implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  html: String
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+  managerName: String!
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""Публикация вакансии на hh.ru"""
+type HhExternalVacancyItem implements ExternalVacancyItem {
+  """Регион"""
+  area: Area
+
+  """Тип оплаты вакансии"""
+  billingType: HhVacancyBillingType
+
+  """Тип вакансии на hh.ru"""
+  combinedType: CombinedHhVacancyType
+  expiresAt: Instant!
+  externalId: String!
+
+  """Причина ошибки импорта откликов"""
+  failReason: HhFailReason
+
+  """Время привязки публикации"""
+  importedAt: Instant!
+
+  """Ссылка на публикацию"""
+  link: String!
+
+  """Название вакансии"""
+  name: String!
+
+  """Статус восстановления на hh.ru"""
+  restorationStatus: RestorationStatus
+
+  """Статус импорта откликов с публикации"""
+  status: ExternalVacancyImportStatus!
+
+  """Время обновления данных или статуса публикации"""
+  updatedAt: Instant!
+}
+
+enum HhFailReason {
+  API_ERROR
+  NO_ACCESS_TOKEN
+  PERMISSION_DENIED
+  SYSTEM
+  VACANCY_ARCHIVED
+}
+
+"""Интеграция с hh.ru. Подключена для всех"""
+type HhIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+}
+
+type HhManager {
+  email: String
+  firstName: String
+  hasAccountInHh: Boolean!
+  hasAccountInTalantix: Boolean! @deprecated(reason: "use talantixManagerId")
+  hhManagerId: Int!
+  lastName: String
+  middleName: String
+  talantixManagerId: Int
+}
+
+type HhManagers {
+  items: [HhManager]
+}
+
+input HhManagersFilterInput {
+  hasAccountInTalantix: Boolean
+}
+
+"""Событие отправки сообщения на hh.ru"""
+type HhMessageSent implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  hhVacancy: HhVacancy!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+  messageType: MessageType!
+
+  """Кандидат"""
+  person: PersonItem
+  withSMSNotification: Boolean!
+}
+
+"""Событие отклика кандидата на вакансию на hh.ru"""
+type HhResponse implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  hhVacancy: HhVacancy!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  responseType: ResponseType!
+}
+
+type HhStatusMapping {
+  hhName: String
+  hhType: String
+  statusType: WorkflowStatusType
+}
+
+type HhVacancy {
+  id: Int!
+
+  """Ссылка на вакансию на hh.ru"""
+  link: String!
+
+  """Название вакансии"""
+  name: String!
+}
+
+enum HhVacancyBillingType {
+  FREE
+  PREMIUM
+  STANDARD
+  STANDARD_PLUS
+}
+
+type HhVacancyTopic {
+  """Чат на hh.ru"""
+  hhChat: HhChat
+  hhResumeUrl: String
+  hhVacancyId: Int!
+}
+
+type HhWorkflowStatus {
+  name: String!
+}
+
+"""Событие перевода кандидата по этапам вакансии на hh.ru"""
+type HhWorkflowStatusChanged implements HistoryEvent {
+  apiFailReason: HhFailReason
+
+  """Время события"""
+  eventTime: Instant!
+  hhStatus: HhWorkflowStatus!
+  hhVacancy: HhVacancy!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""Счетчики по ставкам"""
+type HiringPositionCounters {
+  """Количество нанятых человек"""
+  hired: Int!
+
+  """Необходимое количество человек"""
+  planned: Int!
+}
+
+"""Источник ставки"""
+union HiringPositionSource = HiringRequestError | HiringRequestItem
+
+"""Источник ставки"""
+input HiringPositionSourceInput {
+  id: Int!
+  type: HiringPositionSourceType!
+}
+
+"""Тип источник ставки"""
+enum HiringPositionSourceType {
+  HIRING_REQUEST
+}
+
+"""Заявка на вакансию"""
+union HiringRequest = HiringRequestError | HiringRequestItem
+
+"""Утвержденная заявка на подбор или ошибка утверждения"""
+union HiringRequestApproved = HiringRequestApproveError | HiringRequestItem
+
+"""Ошибка утверждения заявки на подбор"""
+type HiringRequestApproveError {
+  """Тип ошибки"""
+  errorType: HiringRequestApproveErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки утверждения заявки на подбор"""
+enum HiringRequestApproveErrorType {
+  ACCESS_DENIED
+  INVALID_STATUS
+  INVALID_VACANCY_OWNER_MANAGER
+  NOT_FOUND
+  VACANCY_NOT_FOUND
+  VACANCY_OWNER_MANAGER_REQUIRED
+}
+
+"""Запрос согласования заявки или ошибка"""
+union HiringRequestApproveRequested = HiringRequestApproveRequestError | HiringRequestApproveRequestSuccess
+
+"""Ошибка запроса согласования заявки на подбор"""
+type HiringRequestApproveRequestError {
+  """Тип ошибки"""
+  errorType: HiringRequestApproveRequestErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки запроса согласования заявки на подбор"""
+enum HiringRequestApproveRequestErrorType {
+  """Отсутствие прав доступа к заявке на подбор"""
+  ACCESS_DENIED
+
+  """Запрос невозможен (заявка согласована, принята в работу или отозвана)"""
+  REQUEST_IMPOSSIBLE
+}
+
+"""Успешный запрос согласования заявки на подбор"""
+type HiringRequestApproveRequestSuccess {
+  message: String
+}
+
+"""Менеджер, который должен подтвердить заявку"""
+type HiringRequestApprovingManager implements BaseManager & HiringRequestManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+}
+
+"""Сохраненная заявка на подбор или ошибка создания"""
+union HiringRequestCreated = HiringRequestCreateError | HiringRequestItem
+
+"""Ошибка создания заявки на подбор"""
+type HiringRequestCreateError {
+  """Тип ошибки"""
+  errorType: HiringRequestCreateErrorType!
+
+  """Ошибки валидации полей модели заявки на подбор"""
+  errors: [HiringRequestErrorField!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки создания заявки на подбор"""
+enum HiringRequestCreateErrorType {
+  ACCESS_DENIED
+  VALIDATION
+}
+
+"""Модель создания заявки на подбор"""
+input HiringRequestCreateInput {
+  """Менеджер, утверждающий заявку на подбор"""
+  approvingManagerId: Int!
+
+  """Регионы"""
+  areaIds: [String!]!
+
+  """Причина создания заявки на подбор"""
+  creationReason: HiringRequestCreationReason!
+
+  """Настраиваемые поля из шаблона заявки"""
+  customFields: [HiringRequestCustomFieldInput!]
+
+  """Подразделение"""
+  department: String
+
+  """Обязанности и требования"""
+  description: CleanedInputString
+
+  """Название должности"""
+  name: String!
+
+  """Сколько человек нужно нанять по заявке"""
+  plannedPositionCount: Int
+
+  """Желаемый срок закрытия вакансии"""
+  proposedDateOfClose: Instant
+
+  """Заработная плата"""
+  salary: HiringRequestSalaryInput
+}
+
+enum HiringRequestCreationReason {
+  FIRING
+  NEW_POSITION
+  REPLACEMENT
+}
+
+"""Создатель заявки"""
+type HiringRequestCreatorManager implements BaseManager & HiringRequestManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+}
+
+interface HiringRequestCustomField {
+  id: Int!
+  name: String!
+  required: Boolean!
+}
+
+input HiringRequestCustomFieldInput {
+  fileIds: [Int!]
+  id: Int!
+  text: CleanedInputString
+}
+
+type HiringRequestCustomFields {
+  """Элементы коллекции сущностей"""
+  items: [HiringRequestCustomField!]!
+}
+
+enum HiringRequestCustomFieldType {
+  FILES
+  GROUP_HEADER
+  MULTI_LINE_TEXT
+  SINGLE_LINE_TEXT
+}
+
+"""Отклоненная заявка на подбор или ошибка отклонения"""
+union HiringRequestDeclined = HiringRequestDeclineError | HiringRequestItem
+
+"""Ошибка отклонения заявки на подбор"""
+type HiringRequestDeclineError {
+  """Тип ошибки"""
+  errorType: HiringRequestDeclineErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки отклонения заявки на подбор"""
+enum HiringRequestDeclineErrorType {
+  ACCESS_DENIED
+  INVALID_STATUS
+  NOT_FOUND
+}
+
+type HiringRequestError {
+  """Тип ошибки"""
+  errorType: HiringRequestErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Ошибка в поле модели заявки на подбор"""
+type HiringRequestErrorField {
+  field: String!
+  violatedConstraints: [String]!
+}
+
+enum HiringRequestErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+}
+
+type HiringRequestFile {
+  createdAt: Instant!
+  extension: String!
+  id: Int!
+  name: String!
+  size: Int
+}
+
+type HiringRequestFiles {
+  """Элементы коллекции сущностей"""
+  items: [HiringRequestFile!]!
+}
+
+type HiringRequestFilesField implements HiringRequestCustomField {
+  files: HiringRequestFiles!
+  id: Int!
+  name: String!
+  required: Boolean!
+}
+
+"""Фильтр заявок"""
+input HiringRequestFilterInput {
+  """Статус заявки"""
+  byStatus: [HiringRequestStatus]
+}
+
+type HiringRequestGroupHeaderField implements HiringRequestCustomField {
+  id: Int!
+  name: String!
+  required: Boolean!
+}
+
+"""Заявка на подбор"""
+type HiringRequestItem {
+  """Время утверждения заявки"""
+  approvedAt: Instant
+
+  """Регионы"""
+  areas: Areas!
+
+  """Возможность редактирования заявки"""
+  canEdit: Boolean!
+
+  """Возможность запроса согласования заявки"""
+  canRequestApprove: Boolean!
+
+  """Возможность отзыва заявки"""
+  canWithdraw: Boolean!
+
+  """Время создания заявки"""
+  createdAt: Instant!
+
+  """Причина создания заявки на подбор"""
+  creationReason: HiringRequestCreationReason!
+  customFields: HiringRequestCustomFields
+
+  """Подразделение"""
+  department: String
+
+  """Обязанности и требования"""
+  description: String
+
+  """Счетчики по ставкам"""
+  hiringPositionCounters: HiringPositionCounters
+  id: Int!
+
+  """Менеджеры, участвующие в заявке"""
+  managers: HiringRequestManagers!
+
+  """Название должности"""
+  name: String!
+
+  """Планируемая дата закрытия"""
+  proposedDateOfClose: Instant
+
+  """Заработная плата"""
+  salary: SalaryRange
+
+  """Статус заявки"""
+  status: HiringRequestStatus!
+
+  """Время изменения заявки"""
+  updatedAt: Instant!
+
+  """Вакансия, созданная из заявки"""
+  vacancy: Vacancy
+
+  """Комментарий к отзыву заявки"""
+  withdrawComment: String
+
+  """Причина отзыва заявки"""
+  withdrawReason: HiringRequestWithdrawReason
+
+  """Время отзыва заявки"""
+  withdrawnAt: Instant
+}
+
+interface HiringRequestManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+}
+
+"""Менеджеры, участвующие в заявке"""
+type HiringRequestManagers {
+  items: [HiringRequestManager!]!
+}
+
+type HiringRequestMultiLineField implements HiringRequestCustomField {
+  id: Int!
+  innerHint: String
+  name: String!
+  outerHint: String
+  required: Boolean!
+  text: String
+}
+
+type HiringRequests {
+  """Данные заявок"""
+  items: [HiringRequestItem!]!
+
+  """Доступные менеджеры для назначения заявки"""
+  managers(
+    """Роль менеджера в заявке"""
+    role: HiringRequestsAvailableManagerRole!
+
+    """Часть имени менеджера"""
+    name: String
+
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых менеджеров"""
+    first: Int = 50
+  ): Managers!
+  pageInfo: PageInfo!
+}
+
+"""Заработная плата"""
+input HiringRequestSalaryInput {
+  currency: Currency!
+  from: Long
+  to: Long
+}
+
+enum HiringRequestsAvailableManagerRole {
+  APPROVER
+  VACANCY_OWNER
+}
+
+type HiringRequestSingleLineField implements HiringRequestCustomField {
+  id: Int!
+  innerHint: String
+  name: String!
+  required: Boolean!
+  text: String
+}
+
+"""Статус заявки"""
+enum HiringRequestStatus {
+  """Завершена"""
+  COMPLETED
+
+  """На утверждении"""
+  CREATED
+
+  """Отклонена"""
+  DECLINED
+
+  """В работе"""
+  IN_PROGRESS
+
+  """Отозвана"""
+  WITHDRAWN
+}
+
+"""Шаблон заявки на подбор"""
+union HiringRequestTemplate = HiringRequestTemplateError | HiringRequestTemplateItem
+
+"""Модель создания поля шаблона заявки на подбор"""
+input HiringRequestTemplateCreateFieldInput {
+  innerHint: CleanedInputString
+  name: CleanedInputString!
+  outerHint: CleanedInputString
+  required: Boolean!
+  type: HiringRequestCustomFieldType!
+}
+
+type HiringRequestTemplateError {
+  """Тип ошибки"""
+  errorType: HiringRequestTemplateErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Ошибка в модели поля шаблона заявки на подбор"""
+type HiringRequestTemplateErrorField {
+  field: String!
+  violatedConstraints: [String]!
+}
+
+enum HiringRequestTemplateErrorType {
+  ACCESS_DENIED
+}
+
+interface HiringRequestTemplateField {
+  id: Int!
+  name: String!
+  required: Boolean!
+  type: HiringRequestTemplateFieldType!
+}
+
+"""Измененный шаблон заявки на подбор или ошибка создания"""
+union HiringRequestTemplateFieldCreated = HiringRequestTemplateFieldCreateError | HiringRequestTemplateItem
+
+"""Ошибка создания поля шаблона заявки на подбор"""
+type HiringRequestTemplateFieldCreateError {
+  """Тип ошибки"""
+  errorType: HiringRequestTemplateFieldCreateErrorType!
+
+  """Ошибки валидации поля шаблона заявки на подбор"""
+  errors: [HiringRequestTemplateErrorField!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки создания поля шаблона заявки на подбор"""
+enum HiringRequestTemplateFieldCreateErrorType {
+  ACCESS_DENIED
+  MAX_FIELDS_COUNT_EXCEEDED
+  VALIDATION
+}
+
+"""Измененный шаблон заявки на подбор или ошибка удаления"""
+union HiringRequestTemplateFieldDeleted = HiringRequestTemplateFieldDeleteError | HiringRequestTemplateItem
+
+"""Ошибка удаления поля шаблона заявки на подбор"""
+type HiringRequestTemplateFieldDeleteError {
+  """Тип ошибки"""
+  errorType: HiringRequestTemplateFieldDeleteErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки удаления поля шаблона заявки на подбор"""
+enum HiringRequestTemplateFieldDeleteErrorType {
+  ACCESS_DENIED
+}
+
+type HiringRequestTemplateFields {
+  """Элементы коллекции сущностей"""
+  items: [HiringRequestTemplateField!]!
+}
+
+enum HiringRequestTemplateFieldType {
+  FILES
+  GROUP_HEADER
+  MULTI_LINE_TEXT
+  SINGLE_LINE_TEXT
+}
+
+"""Измененный шаблон заявки на подбор или ошибка изменения"""
+union HiringRequestTemplateFieldUpdated = HiringRequestTemplateFieldUpdateError | HiringRequestTemplateItem
+
+"""Ошибка изменения поля шаблона заявки на подбор"""
+type HiringRequestTemplateFieldUpdateError {
+  """Тип ошибки"""
+  errorType: HiringRequestTemplateFieldUpdateErrorType!
+
+  """Ошибки валидации поля шаблона заявки на подбор"""
+  errors: [HiringRequestTemplateErrorField!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки изменения поля шаблона заявки на подбор"""
+enum HiringRequestTemplateFieldUpdateErrorType {
+  ACCESS_DENIED
+  VALIDATION
+}
+
+type HiringRequestTemplateFilesField implements HiringRequestTemplateField {
+  id: Int!
+  name: String!
+  required: Boolean!
+  type: HiringRequestTemplateFieldType!
+}
+
+type HiringRequestTemplateGroupHeaderField implements HiringRequestTemplateField {
+  id: Int!
+  name: String!
+  required: Boolean!
+  type: HiringRequestTemplateFieldType!
+}
+
+"""Шаблон заявки на подбор"""
+type HiringRequestTemplateItem {
+  fields: HiringRequestTemplateFields
+}
+
+type HiringRequestTemplateMultiLineField implements HiringRequestTemplateField {
+  id: Int!
+  innerHint: String
+  name: String!
+  outerHint: String
+  required: Boolean!
+  type: HiringRequestTemplateFieldType!
+}
+
+type HiringRequestTemplateSingleLineField implements HiringRequestTemplateField {
+  id: Int!
+  innerHint: String
+  name: String!
+  required: Boolean!
+  type: HiringRequestTemplateFieldType!
+}
+
+"""Модель изменения поля шаблона заявки на подбор"""
+input HiringRequestTemplateUpdateFieldInput {
+  innerHint: CleanedInputString
+  name: CleanedInputString!
+  outerHint: CleanedInputString
+  required: Boolean!
+}
+
+"""Измененная заявка на подбор или ошибка изменения"""
+union HiringRequestUpdated = HiringRequestItem | HiringRequestUpdateError
+
+"""Ошибка изменения заявки на подбор"""
+type HiringRequestUpdateError {
+  """Тип ошибки"""
+  errorType: HiringRequestUpdateErrorType!
+
+  """Ошибки валидации полей модели заявки на подбор"""
+  errors: [HiringRequestErrorField!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки изменения заявки на подбор"""
+enum HiringRequestUpdateErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+  VALIDATION
+}
+
+"""Модель изменения заявки на подбор"""
+input HiringRequestUpdateInput {
+  """Регионы"""
+  areaIds: [String!]!
+
+  """Причина создания заявки на подбор"""
+  creationReason: HiringRequestCreationReason!
+
+  """Настраиваемые поля из шаблона заявки"""
+  customFields: [HiringRequestCustomFieldInput!]
+
+  """Подразделение"""
+  department: String
+
+  """Обязанности и требования"""
+  description: CleanedInputString
+  id: Int!
+
+  """Название должности"""
+  name: String!
+
+  """Сколько человек нужно нанять по заявке"""
+  plannedPositionCount: Int
+
+  """Желаемый срок закрытия вакансии"""
+  proposedDateOfClose: Instant
+
+  """Заработная плата"""
+  salary: HiringRequestSalaryInput
+
+  """Ответственный менеджер за вакансию из заявки"""
+  vacancyOwnerManagerId: Int!
+}
+
+"""Ответственный менеджер за вакансию из заявки"""
+type HiringRequestVacancyOwnerManager implements BaseManager & HiringRequestManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+}
+
+"""Ошибка отзыва заявки на подбор"""
+type HiringRequestWithdrawError {
+  """Тип ошибки"""
+  errorType: HiringRequestWithdrawErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки отзыва заявки на подбор"""
+enum HiringRequestWithdrawErrorType {
+  ACCESS_DENIED
+  INVALID_STATUS
+  NOT_FOUND
+}
+
+"""Менеджер, отклонивший заявку"""
+type HiringRequestWithdrawingManager implements BaseManager & HiringRequestManager {
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+
+  """Email"""
+  email: String!
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+}
+
+"""Модель отзыва заявки на подбор"""
+input HiringRequestWithdrawInput {
+  """Комментарий к отзыву"""
+  comment: String
+  id: Int!
+
+  """Причина отзыва заявки"""
+  reason: HiringRequestWithdrawReason!
+}
+
+"""Отозванная заявка на подбор или ошибка отзыва"""
+union HiringRequestWithdrawn = HiringRequestItem | HiringRequestWithdrawError
+
+"""Причина отзыва заявки"""
+enum HiringRequestWithdrawReason {
+  """Отмена бюджета"""
+  CANCEL_BUDGET
+
+  """Отмена подбора"""
+  CANCEL_RECRUITMENT
+
+  """Ошибочная заявка"""
+  ERRONEOUS
+
+  """Другое"""
+  OTHER
+}
+
+type History {
+  """Элементы коллекции сущностей"""
+  items: [HistoryEvent!]!
+  pageInfo: PageInfo!
+}
+
+interface HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""Событие добавления кандидата"""
+type Imported implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  externalVacancy: ExternalVacancy
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  personSource: PersonSource!
+  status: WorkflowStatusSnapshot!
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Профобласти"""
+type Industries {
+  """Элементы коллекции сущностей"""
+  items: [Industry!]!
+}
+
+"""Отрасль"""
+type Industry implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Отрасль"""
+input IndustryInput {
+  """Id отрасли из справочника industries"""
+  id: String!
+}
+
+"""Инициатор действия"""
+union Initiator = CompanyManager | SystemInitiator
+
+"""Built-in scalar representing instant in milliseconds"""
+scalar Instant
+
+"""Базовый объект интеграций"""
+interface Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+}
+
+"""Результат отключения интеграции"""
+union IntegrationDisabled = IntegrationDisabledError | IntegrationDisabledSuccess
+
+"""Ошибка отключения интеграции"""
+type IntegrationDisabledError {
+  """Тип ошибки"""
+  errorType: IntegrationDisabledErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки отключения интеграции"""
+enum IntegrationDisabledErrorType {
+  NOT_IMPLEMENTED
+}
+
+"""Успешное отключение интеграции"""
+type IntegrationDisabledSuccess {
+  message: String
+}
+
+enum IntegrationLevelInput {
+  COMPANY
+  MANAGER
+}
+
+"""Список доступных интеграций"""
+type Integrations {
+  """Элементы коллекции сущностей"""
+  items: [Integration!]!
+}
+
+"""Тип интеграции"""
+enum IntegrationType {
+  AVITO
+  CALENDAR
+  GOOGLE_MEET
+  HH
+  MAIL
+  START_LINK
+  TELEMOST
+  VOXIMPLANT
+  ZARPLATA
+  ZOOM
+}
+
+"""Общий объект для диапазона дат"""
+type Interval {
+  """Конечная дата"""
+  end: Instant!
+
+  """Начальная дата"""
+  start: Instant!
+}
+
+type ItemsWithId_Integer {
+  items: [WithId_Integer]!
+}
+
+"""Any JSON value"""
+scalar Json
+
+type LandingEducation {
+  level: EducationLevel
+}
+
+"""Резюме, сформированное на публичной странице (лендинге) вакансии"""
+type LandingResume implements ResumeItem {
+  """Дата создания резюме в Talantix"""
+  createdAt: Instant!
+
+  """Список категорий водительских прав соискателя"""
+  driverLicenses: [DriverLicense]
+
+  """Уровень образования"""
+  education: LandingEducation
+  id: Int!
+
+  """Список языков, которыми владеет соискатель"""
+  languages: Languages
+
+  """Название резюме"""
+  name: String!
+
+  """Список подходящих соискателю графиков работы"""
+  schedules: Schedules
+
+  """Источник резюме"""
+  source: ResumeSource!
+
+  """Дата обновления резюме"""
+  updatedAt: Instant!
+}
+
+"""Язык"""
+type Language implements Dictionary {
+  id: String!
+  languageLevel: LanguageLevel
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Знание языка"""
+enum LanguageEnum {
+  """Не имеет значения"""
+  any
+
+  """Арабский"""
+  ara
+
+  """Азербайджанский"""
+  aze
+
+  """Белорусский"""
+  bel
+
+  """Чешский"""
+  ces
+
+  """Немецкий"""
+  deu
+
+  """Английский"""
+  eng
+
+  """Французский"""
+  fra
+
+  """Армянский"""
+  hye
+
+  """Итальянский"""
+  ita
+
+  """Японский"""
+  jpn
+
+  """Казахский"""
+  kaz
+
+  """Польский"""
+  pol
+
+  """Русский"""
+  rus
+
+  """Испанский"""
+  spa
+
+  """Татарский"""
+  tat
+
+  """Турецкий"""
+  tur
+
+  """Украинский"""
+  ukr
+
+  """Узбекский"""
+  uzb
+
+  """Китайский"""
+  zho
+}
+
+"""Уровень знания языка"""
+type LanguageLevel implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Уровень владения языком"""
+enum LanguageLevelEnum {
+  """A1 — Начальный"""
+  a1
+
+  """A2 — Элементарный"""
+  a2
+
+  """Не имеет значения"""
+  any
+
+  """B1 — Средний"""
+  b1
+
+  """B2 — Средне-продвинутый"""
+  b2
+
+  """C1 — Продвинутый"""
+  c1
+
+  """C2 — В совершенстве"""
+  c2
+}
+
+"""Уровень знания языка"""
+input LanguageLevelInput {
+  id: String!
+}
+
+type LanguageLevels {
+  """Элементы коллекции сущностей"""
+  items: [LanguageLevel!]!
+}
+
+"""Знание языков"""
+type Languages {
+  items: [LanguageWithLevel]
+}
+
+"""Язык с указанием уровня"""
+type LanguageWithLevel implements Dictionary {
+  id: String!
+  level: LanguageLevel
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Язык с указанием уровня"""
+input LanguageWithLevelInput {
+  """Id языка из справочника languages"""
+  languageId: String!
+
+  """Уровень владения языком"""
+  level: LanguageLevelInput
+}
+
+enum LicenseType {
+  NONE_LICENSE
+  NON_RECRUITING
+  RECRUITING
+}
+
+"""Built-in scalar representing a local date"""
+scalar LocalDate
+
+"""A 64-bit signed integer"""
+scalar Long
+
+"""Интеграция с внешней элетронной почтой"""
+type MailIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+}
+
+"""Менеджер компании или ошибка доступа"""
+union Manager = CompanyManager | ManagerError
+
+type ManagerBellNotifications {
+  events(
+    cursor: String
+
+    """Количество запрашиваемых событий"""
+    first: Int = 50
+    direction: CursorDirection = AFTER
+  ): ManagerBellNotificationsEvents!
+
+  """Количество непрочитанных нотификаций"""
+  unreadCount: Long!
+}
+
+type ManagerBellNotificationsEvents {
+  """Элементы коллекции сущностей"""
+  items: [BellNotificationItem!]!
+  pageInfo: BellNotificationPageInfo!
+}
+
+"""Ошибка доступа к менеджеру"""
+type ManagerError {
+  """Тип ошибки"""
+  errorType: ManagerErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum ManagerErrorType {
+  NOT_FOUND
+}
+
+"""Нотификация о новом функционале"""
+type ManagerFeatureNotification {
+  """Текст кнопки"""
+  buttonLabel: String!
+  createdDate: LocalDate!
+
+  """Файл с изображением"""
+  file: File
+  id: Int!
+
+  """Статус нотификации"""
+  status: FeatureNotificationStatus!
+
+  """Текст"""
+  text: String!
+
+  """Заголовок"""
+  title: String!
+
+  """Url кнопки"""
+  url: String!
+}
+
+type ManagerFeatureNotifications {
+  """Элементы коллекции сущностей"""
+  items: [ManagerFeatureNotification!]!
+  lastUnseenNotification: ManagerFeatureNotification
+  pageInfo: PageInfo!
+  unseenCount: Int!
+}
+
+"""Фильтры менеджеров"""
+input ManagerFilterInput {
+  """Идентификаторы менеджеров"""
+  ids: [Int!]
+
+  """Лицензии менеджеров"""
+  licenseTypes: [LicenseType!]
+
+  """Лицензии менеджеров"""
+  managerLicenseTypes: [ManagerLicenseType!]
+
+  """Роли менеджеров"""
+  roles: [ManagerRole!]
+
+  """Поиск по email"""
+  searchByEmail: String
+
+  """Поиск по имени"""
+  searchByName: String
+}
+
+"""managerHHVacancyImportSettings"""
+union ManagerHHVacancyImportSettings = ManagerHHVacancyImportSettingsError | ManagerHHVacancyImportSettingsItem
+
+type ManagerHHVacancyImportSettingsError {
+  """Тип ошибки"""
+  errorType: ManagerHHVacancyImportSettingsErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum ManagerHHVacancyImportSettingsErrorType {
+  ACCESS_DENIED
+}
+
+type ManagerHHVacancyImportSettingsItem {
+  createNewVacancyOnImport: Boolean!
+  enabled: Boolean!
+  resumeImportSettings: ManagerResumeImportSettings
+}
+
+enum ManagerLicenseType {
+  NONE_LICENSE
+  NON_RECRUITING
+  RECRUITING
+}
+
+type ManagerNotificationChannel {
+  channelType: ChannelType!
+  enabled: Boolean!
+  readOnly: Boolean!
+}
+
+type ManagerNotificationChannels {
+  """Элементы коллекции сущностей"""
+  items: [ManagerNotificationChannel!]!
+}
+
+type ManagerNotificationSetting {
+  notificationChannels: ManagerNotificationChannels!
+  notificationType: String!
+}
+
+type ManagerNotificationSettings {
+  """Элементы коллекции сущностей"""
+  items: [ManagerNotificationSetting!]!
+}
+
+type ManagerResumeImportSettings {
+  enabled: Boolean!
+  importWithoutDiscard: Boolean!
+  importWithoutResponse: Boolean!
+}
+
+enum ManagerRole {
+  ADMIN
+  BLOCKED
+  LINE_MANAGER
+  MEMBER
+  RECRUITER
+}
+
+type Managers {
+  items: [CompanyManager!]!
+  pageInfo: PageInfo!
+}
+
+"""Ошибка доступа к менеджерам"""
+type ManagersError {
+  """Тип ошибки"""
+  errorType: ManagersErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum ManagersErrorType {
+  ACCESS_DENIED
+  LIMIT_EXCEEDED
+}
+
+enum ManagerSortTypeInput {
+  BY_MANAGER_ID
+  BY_NAME
+}
+
+type Me implements BaseManager {
+  apiTokens: ApiTokens!
+
+  """Нотификации в колокольчике"""
+  bellNotifications: ManagerBellNotifications!
+
+  """Менеджер заблокирован"""
+  blocked: Boolean!
+  canCreateHhVacancy: Boolean
+
+  """Email"""
+  email: String!
+
+  """Нотификации о новом функционале"""
+  featureNotifications(
+    cursor: String
+
+    """Количество запрашиваемых нотификаций"""
+    first: Int = 50
+  ): ManagerFeatureNotifications
+
+  """Имя"""
+  firstName: String!
+
+  """Id менеджера на hh.ru"""
+  hhManagerId: Int!
+
+  """Настройки автоматического импорта вакансий с hh.ru"""
+  hhVacancyImportSettings: ManagerHHVacancyImportSettings
+  id: Int!
+
+  """Доступные интеграции"""
+  integrations(types: [IntegrationType!] = [], levels: [IntegrationLevelInput!] = []): Integrations!
+
+  """Фамилия"""
+  lastName: String
+
+  """Вид лицензии"""
+  licenseType: ManagerLicenseType!
+
+  """Роль"""
+  managerRole: ManagerRole!
+
+  """Отчество"""
+  middleName: String
+
+  """Настройки нотификаций"""
+  notificationSettings: ManagerNotificationSettings!
+}
+
+"""Событие создания встречи с кандидатом"""
+type Meeting implements PersonEventItem {
+  """Время, когда произошло событие"""
+  createdAt: Instant!
+  creatorManagerId: Int
+  id: Int!
+  manager: CompanyManager!
+
+  """Время встречи"""
+  period: Period!
+
+  """Тема встречи"""
+  topic: String
+
+  """Тип события"""
+  type: PersonEventType!
+}
+
+"""Нотификация в колокольчике о предстоящей встрече"""
+type MeetingReminderBellNotificationItem implements BellNotificationItem {
+  """Время события"""
+  createdAt: Instant!
+  eventUrl: String
+  id: Long!
+  meetingId: Int!
+
+  """Приглашенные кандидаты"""
+  personsInfo: MeetingReminderPersonsInfo!
+
+  """Прочитанность"""
+  read: Boolean!
+
+  """Начало встречи"""
+  startAt: Instant!
+
+  """Тема встречи"""
+  topic: String!
+
+  """Тип события"""
+  type: BellNotificationType!
+
+  """Вакансии, по которым назначена встреча"""
+  vacanciesInfo: MeetingReminderVacanciesInfo!
+}
+
+type MeetingReminderIdNameInfo {
+  id: Int!
+  name: String!
+}
+
+type MeetingReminderPersonsInfo {
+  """Элементы коллекции сущностей"""
+  items: [MeetingReminderIdNameInfo!]!
+}
+
+type MeetingReminderVacanciesInfo {
+  """Элементы коллекции сущностей"""
+  items: [MeetingReminderIdNameInfo!]!
+}
+
+"""Событие объединения кандидатов"""
+type Merged implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+"""merge preview person"""
+union MergePreviewPerson = MergePreviewPersonError | MergePreviewPersonItem
+
+type MergePreviewPersonError {
+  """Тип ошибки"""
+  errorType: PersonErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+type MergePreviewPersonItem implements BasePerson {
+  """Возраст"""
+  age: Long
+
+  """Город"""
+  area: Area
+
+  """Дата рождения"""
+  birthDay: Instant
+
+  """Гражданство"""
+  citizenships: Areas
+
+  """Контакты"""
+  contacts: Contacts
+  events: PersonEvents
+
+  """Прикрепленные файлы"""
+  files: Files
+
+  """Имя"""
+  firstName: String!
+
+  """Пол"""
+  gender: Gender
+
+  """Имеются вакансии, к которым можно прикрепить кандидата"""
+  hasVacanciesToAttach: Boolean
+  hiddenFields: [PersonHiddenField]
+
+  """История работы с кандидатом"""
+  history: History
+
+  """Фамилия"""
+  lastName: String
+  messages: PersonMessages
+
+  """Станция метро"""
+  metroStation: MetroStation
+
+  """Отчество"""
+  middleName: String
+  personalDataAgreement: PersonalDataAgreement
+
+  """Статус согласия на хранение ПД"""
+  personalDataAgreementStatus: PersonalDataAgreementStatus @deprecated(reason: "Replaced with personalDataAgreement field")
+
+  """Фотографии кандидата"""
+  photos: Photos
+  responses: PersonResponses
+
+  """Резюме"""
+  resumes: Resumes
+  score: Int
+
+  """Источник"""
+  source: PersonSource
+
+  """Метки на кандидате"""
+  tags: PersonTags
+  testTasks: TestTasks
+
+  """Можно открыть контакты с работного сайта"""
+  updatableWithContacts: Boolean
+
+  """Можно открыть контакты с hh.ru"""
+  updatableWithHHContacts: Boolean @deprecated(reason: "Replaced by updatableWithContacts field")
+
+  """Время обновления"""
+  updatedAt: Instant!
+}
+
+type MessageTemplateItem {
+  id: Int!
+
+  """Название шаблона"""
+  name: String!
+
+  """Тема"""
+  subject: String
+
+  """Сообщение"""
+  text: String!
+
+  """Тип шаблона"""
+  type: MessageTemplateType!
+}
+
+input MessageTemplateReplaceParamsInput {
+  """Id вакансии на hh.ru, в рамках которой отправляется письмо"""
+  hhVacancyId: Int
+
+  """Id кандидата, которому направляется письмо"""
+  personId: Int
+
+  """Тип замены параметров"""
+  type: MessageTemplateReplaceType!
+
+  """Id вакансии, в рамках которой отправляется письмо"""
+  vacancyId: Int
+}
+
+enum MessageTemplateReplaceType {
+  HH
+  TALANTIX
+}
+
+"""Шаблоны сообщений"""
+type MessageTemplates {
+  count: Int!
+  items: [MessageTemplateItem]!
+}
+
+enum MessageTemplateType {
+  common
+  discard
+  meeting
+  phoneInterview
+  testTask
+}
+
+enum MessageType {
+  INVITATION
+}
+
+"""Линия метро"""
+type MetroLine implements Dictionary {
+  """Цвет линии"""
+  color: String!
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Станция метро"""
+type MetroStation implements Dictionary {
+  id: String!
+
+  """Линия метро"""
+  line: MetroLine!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Mutation root"""
+type Mutation {
+  """Отзыв заявки на подбор"""
+  withdrawHiringRequest(hiringRequestInput: HiringRequestWithdrawInput!): HiringRequestWithdrawn!
+
+  """Отправка кандидата в Start Link"""
+  sendPersonToStartLink(personId: Int!, vacancyId: Int): StartLinkPersonSent!
+
+  """Создание заявки на подбор"""
+  createHiringRequest(hiringRequestInput: HiringRequestCreateInput!): HiringRequestCreated!
+
+  """Удаление поля шаблона заявки на подбор"""
+  deleteHiringRequestTemplateField(hiringRequestTemplateFieldId: Int!): HiringRequestTemplateFieldDeleted!
+
+  """Создание источника кандидата"""
+  createPersonSource(personSourceCreate: String!): PersonSourceCreated!
+
+  """Перемещение кандидатов на этап "Выход на работу" вакансии"""
+  hirePersons(hiringPositionSource: HiringPositionSourceInput, personIds: [Int!]!, vacancyId: Int!): PersonsHired!
+
+  """Запрос согласования заявки"""
+  requestHiringRequestApprove(hiringRequestId: Int!): HiringRequestApproveRequested!
+
+  """Редактирование кандидата"""
+  editPerson(personEdit: PersonEditInput!): PersonCreated!
+
+  """Создание комментария по кандидату"""
+  createPersonComment(commentCreate: PersonCommentCreateInput!): PersonCommentCreated!
+
+  """Удаление отклика кандидата на вакансии"""
+  deleteResponse(personId: Int!, vacancyId: Int!): ResponseDeleted!
+
+  """Отправка запроса на обработку персональных данных"""
+  sendPersonalDataRequest(personIds: [Int!]!): PersonalDataRequestSent!
+
+  """Перемещение кандидатов на этап вакансии"""
+  transferPersonsToWorkflowStatus(personIds: [Int!]!, workflowStatusId: Int!): PersonsToWorkflowStatusTransferred!
+
+  """Удаление источника у кандидата"""
+  deletePersonSource(personId: Int!): PersonSourceDeleted!
+
+  """Создание причины отказа по кандидату"""
+  createPersonDiscardReason(discardReasonCreate: DiscardReasonCreateInput!): PersonDiscardReasonCreated!
+
+  """Отклонение заявки на подбор"""
+  declineHiringRequest(hiringRequestId: Int!): HiringRequestDeclined!
+
+  """Открепление кандидата от вакансии"""
+  detachVacancyResponse(personId: Int!, vacancyId: Int!): VacancyResponseDetached! @deprecated(reason: "use deleteResponse mutation")
+
+  """Отключение интеграции"""
+  disableIntegration(integrationType: IntegrationType!): IntegrationDisabled!
+
+  """Изменение заявки на подбор"""
+  updateHiringRequest(hiringRequestInput: HiringRequestUpdateInput!): HiringRequestUpdated!
+
+  """Создание откликов кандидатов на вакансиях"""
+  createResponses(vacancyIds: [Int!]!, personIds: [Int!]!): ResponsesCreated!
+
+  """Приглашение кандидатов на hh.ru"""
+  invitePersonsOnHhRu(inviteMessage: PersonHhInviteMessageInput, personIds: [Int!]!, workflowStatusId: Int, vacancyId: Int!): PersonsHhInvited!
+
+  """Обновление комментария по кандидату"""
+  updatePersonComment(commentUpdate: PersonCommentUpdateInput!): PersonCommentUpdated!
+
+  """Создание кандидата"""
+  createPerson(personCreate: PersonCreateInput!): PersonCreated!
+
+  """Перемещение кандидатов на этап "Отказ" вакансии"""
+  discardPersons(personIds: [Int!]!, comment: CommentInput, discardMessage: PersonDiscardMessageInput, discardReasonIds: [Int!], vacancyId: Int!): PersonsDiscarded!
+
+  """Добавление поля шаблона заявки на подбор"""
+  createHiringRequestTemplateField(hiringRequestTemplateFieldInput: HiringRequestTemplateCreateFieldInput!): HiringRequestTemplateFieldCreated!
+
+  """Создание тега кандидата"""
+  createPersonTag(personTagCreate: PersonTagCreateInput!): PersonTagCreated!
+
+  """Изменение поля шаблона заявки на подбор"""
+  updateHiringRequestTemplateField(hiringRequestTemplateFieldInput: HiringRequestTemplateUpdateFieldInput!, hiringRequestTemplateFieldId: Int!): HiringRequestTemplateFieldUpdated!
+
+  """Открытие контактов кандидата"""
+  openPersonContacts(personId: Int!): PersonContactsOpened!
+
+  """Удаление комментария по кандидату"""
+  deletePersonComment(commentId: Int!): PersonCommentDeleted!
+
+  """Изменение источника у кандидата"""
+  updatePersonSource(personSourceUpdate: PersonSourceUpdateInput!): PersonSourceUpdated!
+
+  """Утверждение заявки на подбор и создание вакансии"""
+  approveHiringRequest(hiringRequestId: Int!, vacancyOwnerManagerId: Int, vacancyId: Int): HiringRequestApproved!
+
+  """Изменение информации о компании"""
+  updateCompanyInformation(companyInfo: CompanyInfoUpdateInput!): CompanyInfoUpdated!
+}
+
+"""Канал уведомления"""
+enum NotificationChannel {
+  EMAIL
+  HH_RU
+}
+
+"""Объект для пагинации"""
+type PageInfo {
+  """
+  Курсор последнего элемента. Используется для запроса следующей страницы
+  """
+  endCursor: String
+
+  """Количество запрошенных элементов на странице"""
+  first: Int
+
+  """Имеются ли элементы на следующей странице"""
+  hasNextPage: Boolean!
+}
+
+enum PaidTariffType {
+  BASE
+  OPTIMAL
+}
+
+type Period {
+  end: Instant
+  start: Instant!
+}
+
+"""Событие обновления кандидата за период"""
+type PeriodUpdated implements HistoryEvent {
+  """Период обновлений резюме"""
+  dateInterval: Interval!
+  diff: Json!
+
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Количество обновлений резюме за период"""
+  updatesCount: Int!
+}
+
+"""Кандидат или ошибка доступа к нему"""
+union Person = PersonError | PersonItem
+
+type PersonalDataAgreement {
+  """Дата истечения согласия. Отсутствие = до исполнения целей"""
+  expiredAt: Instant
+
+  """Статус согласия на хранения ПД"""
+  personalDataAgreementStatus: PersonalDataAgreementStatus!
+
+  """Дата изменения статуса"""
+  updatedAt: Instant!
+}
+
+enum PersonalDataAgreementStatus {
+  """Кандидат дал согласие"""
+  agree
+
+  """Кандидат отказал в хранении ПД"""
+  disagree
+
+  """У согласия истек срок хранения"""
+  expired
+
+  """Не отправлено"""
+  not_sent
+
+  """Отправлено"""
+  sent
+}
+
+"""Ошибка отправки запроса обработки персональных данных кандидату(ам)"""
+type PersonalDataRequestSendError {
+  """Тип ошибки"""
+  errorType: PersonalDataRequestSendErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки отправки запроса обработки персональных данных кандидатам"""
+enum PersonalDataRequestSendErrorType {
+  ACCESS_DENIED
+  ALL_PERSONS_WITHOUT_EMAIL
+  COMPANY_INFO_NOT_FOUND
+  INVALID_PERSONS
+}
+
+"""Результат отправки запроса обработки персональных данных кандидату(ам)"""
+union PersonalDataRequestSent = PersonalDataRequestSendError | PersonalDataRequestSentSuccess
+
+"""Успешная отправка запроса обработки персональных данных кандидату(ам)"""
+type PersonalDataRequestSentSuccess {
+  successPersonIds: [Int!]!
+}
+
+"""Статус запроса на хранение ПД"""
+enum PersonalDataStatus {
+  """Получено согласие"""
+  AGREE
+
+  """Не важен"""
+  ALL
+
+  """Получен отказ"""
+  DISAGREE
+
+  """У согласия истек срок хранения"""
+  EXPIRED
+
+  """Запрос не отправлен"""
+  NOT_SENT
+
+  """Запрос отправлен"""
+  SENT
+}
+
+type PersonApprovalLink {
+  personApprovalLink: String
+  personId: Int
+}
+
+"""persons approval links"""
+union PersonApprovalLinks = PersonApprovalLinksError | PersonApprovalLinksItem
+
+type PersonApprovalLinksError {
+  """Тип ошибки"""
+  errorType: PersonApprovalLinksErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum PersonApprovalLinksErrorType {
+  FORBIDDEN
+  INVALID_PERSONS_COUNT
+  NOT_FOUND
+}
+
+type PersonApprovalLinksItem {
+  """Элементы коллекции сущностей"""
+  items: [PersonApprovalLink!]!
+  personsApprovalListLink: String
+}
+
+"""Результат создания комментария по кандидату"""
+union PersonCommentCreated = Comment | PersonCommentCreateError
+
+"""Ошибка создания комментария по кандидату"""
+type PersonCommentCreateError {
+  """Тип ошибки"""
+  errorType: PersonCommentCreateErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки создания комментария по кандидату"""
+enum PersonCommentCreateErrorType {
+  ACCESS_DENIED
+  EMPTY_COMMENT_AND_RATING
+  INVALID_COMMENT
+  INVALID_PERSON
+  INVALID_PERSON_RATING
+  INVALID_VACANCY
+  INVALID_VISIBILITY
+}
+
+"""Модель создания комментария кандидата"""
+input PersonCommentCreateInput {
+  """Настройки видимости комментария"""
+  commentVisibility: CommentVisibilityInput!
+
+  """ID кандидата"""
+  personId: Int!
+
+  """Оценка кандидата"""
+  personRating: PersonRatingInput
+
+  """Текст комментария"""
+  text: CleanedInputString
+
+  """ID вакансии"""
+  vacancyId: Int
+}
+
+"""Результат удаления комментария по кандидату"""
+union PersonCommentDeleted = PersonCommentDeleteError | PersonCommentDeleteSuccess
+
+"""Ошибка удаления комментария по кандидату"""
+type PersonCommentDeleteError {
+  """Тип ошибки"""
+  errorType: PersonCommentDeleteErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки удаления комментария по кандидату"""
+enum PersonCommentDeleteErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+}
+
+"""Успешное удаление комментария по кандидату"""
+type PersonCommentDeleteSuccess {
+  message: String
+}
+
+"""Результат изменения комментария по кандидату"""
+union PersonCommentUpdated = Comment | PersonCommentUpdateError
+
+"""Ошибка изменения комментария по кандидату"""
+type PersonCommentUpdateError {
+  """Тип ошибки"""
+  errorType: PersonCommentUpdateErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки изменения комментария по кандидату"""
+enum PersonCommentUpdateErrorType {
+  ACCESS_DENIED
+  EMPTY_COMMENT_AND_RATING
+  INVALID_COMMENT
+  INVALID_PERSON_RATING
+  INVALID_VISIBILITY
+  NOT_FOUND
+}
+
+"""Модель изменения комментария кандидата"""
+input PersonCommentUpdateInput {
+  """ID комментария"""
+  commentId: Int!
+
+  """Настройки видимости комментария"""
+  commentVisibility: CommentVisibilityInput!
+
+  """Оценка кандидата"""
+  personRating: PersonRatingInput
+
+  """Текст комментария"""
+  text: CleanedInputString
+}
+
+"""Результат открытия контактов кандидата"""
+union PersonContactsOpened = PersonContactsOpenedError | PersonItem
+
+"""Ошибка открытия контактов кандидата"""
+type PersonContactsOpenedError {
+  """Тип ошибки"""
+  errorType: PersonContactsOpenedErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки открытия контактов"""
+enum PersonContactsOpenedErrorType {
+  CONTACTS_OPEN_NOT_AVAILABLE
+  INTEGRATION_DISABLED
+  NO_PERMISSION
+  OPEN_CONTACTS_MANAGER_PERMISSIONS
+  OPEN_CONTACTS_NO_AVAILABLE_SERVICE
+  OPEN_CONTACTS_NO_PERSON_BASE_ACCESS
+  OPEN_CONTACTS_QUOTA_EXCEEDED
+  PERSON_NOT_FOUND
+  RESUME_NOT_FOUND
+  VIEW_LIMIT_EXCEEDED
+}
+
+"""Объект со счетчиками кандидатов на этапе или вакансии"""
+type PersonCounters {
+  """Всего кандидатов"""
+  all: Long!
+
+  """Количество непрочитанных кандидатов"""
+  unread: Long!
+}
+
+"""Сохраненный кандидат или ошибка сохранения"""
+union PersonCreated = PersonItem | PersonSaveError
+
+"""Модель создания кандидата"""
+input PersonCreateInput {
+  """Город"""
+  areaId: String
+
+  """Дата рождения"""
+  birthDay: Instant
+
+  """Гражданство"""
+  citizenshipIds: [String!]
+
+  """Контакты"""
+  contacts: [ContactItemInput!]
+
+  """Резюме в свободной форме"""
+  customResumes: [CustomResumeSaveInput!]
+
+  """Имя"""
+  firstName: String!
+
+  """Пол"""
+  gender: Gender
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+
+  """Источник"""
+  sourceId: Int
+
+  """Структурированное резюме"""
+  structuredResume: StructuredResumeInput
+
+  """Вакансии"""
+  vacancyIds: [Int!]
+}
+
+enum PersonDiscardInitiator {
+  APPLICANT
+  EMPLOYER
+}
+
+"""Сообщение кандидату об отказе"""
+input PersonDiscardMessageInput {
+  channel: NotificationChannel!
+  subject: String
+  text: CleanedInputString!
+}
+
+"""Причина отказа по кандидату"""
+type PersonDiscardReason {
+  id: Int!
+  initiator: PersonDiscardInitiator!
+  text: String!
+}
+
+"""Результат создания причины отказа по кандидату"""
+union PersonDiscardReasonCreated = PersonDiscardReason | PersonDiscardReasonCreateError
+
+"""Ошибка создания причины отказа кандидату"""
+type PersonDiscardReasonCreateError {
+  """Тип ошибки"""
+  errorType: PersonDiscardReasonCreateErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки создания причины отказа кандидату"""
+enum PersonDiscardReasonCreateErrorType {
+  ACCESS_DENIED
+  INVALID_DISCARD_REASON
+  MAX_LIMIT_EXCEEDED
+}
+
+"""Причины отказа кандидату"""
+type PersonDiscardReasons {
+  """Элементы коллекции сущностей"""
+  items: [PersonDiscardReason!]!
+}
+
+enum PersonDiscardReasonSortType {
+  CREATION_DATE_DESC
+  FREQUENCY_OF_USE_DESC
+}
+
+"""Модель редактирования кандидата"""
+input PersonEditInput {
+  """Город"""
+  areaId: String
+
+  """Дата рождения"""
+  birthDay: Instant
+
+  """Гражданство"""
+  citizenshipIds: [String!]
+
+  """Контакты"""
+  contacts: [ContactItemInput!]
+
+  """Резюме в свободной форме"""
+  customResumes: [CustomResumeSaveInput!]
+
+  """Имя"""
+  firstName: String!
+
+  """Пол"""
+  gender: Gender
+
+  """Идентификатор кандидата"""
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Отчество"""
+  middleName: String
+
+  """Источник"""
+  sourceId: Int
+
+  """Вакансии"""
+  vacancyIds: [Int!]
+}
+
+type PersonError {
+  """Тип ошибки"""
+  errorType: PersonErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum PersonErrorType {
+  ILLEGAL_PERSON_COUNT
+  NOT_FOUND
+}
+
+"""Базовый тип для событий с кандидатом"""
+interface PersonEventItem {
+  """Время, когда произошло событие"""
+  createdAt: Instant!
+  creatorManagerId: Int
+  id: Int!
+
+  """Тип события"""
+  type: PersonEventType!
+}
+
+type PersonEvents {
+  count: Int!
+
+  """Элементы коллекции сущностей"""
+  items: [PersonEventItem!]!
+  pageInfo: PageInfo!
+}
+
+enum PersonEventType {
+  approvalRequest
+  approvalResponse
+  comment
+  hh_comment
+  meeting
+}
+
+"""Фильтры кандидатов"""
+input PersonFilterInput {
+  """Возраст от"""
+  ageFrom: Int
+
+  """Возраст до"""
+  ageTo: Int
+
+  """Регионы"""
+  areaIds: [String]
+
+  """Возможность релокации. Учитывается при выборе регионов"""
+  areaSearch: AreaSearch
+
+  """Гражданство"""
+  citizenshipId: String
+
+  """Конец диапазона даты создания"""
+  creationDateEnd: Long
+
+  """Начало диапазона даты создания"""
+  creationDateStart: Long
+
+  """Валюта фильтра по зарплате"""
+  currencyCode: CurrencyCode
+
+  """Этапы, на которых сейчас кандидат"""
+  currentWfStatusNames: [String]
+
+  """Причины отказа"""
+  discardReasonIds: [Int]
+
+  """Тип отказа"""
+  discardType: DiscardType
+
+  """Водительское удостоверение"""
+  driverLicenseIds: [DriverLicense]
+
+  """Период обновления резюме"""
+  editedWithin: EditedWithinPeriod
+
+  """Образование (не ниже)"""
+  educationLevelId: EducationLevelEnum
+
+  """Пол"""
+  gender: Gender
+
+  """Знание языка"""
+  languageId: LanguageEnum
+
+  """Уровень владения языком"""
+  languageLevel: LanguageLevelEnum
+
+  """Кандидаты пользователя или все доступные кандидаты"""
+  personVisibilityScope: PersonVisibilityScope
+
+  """Статус согласия на хранение ПД"""
+  personalData: PersonalDataStatus
+
+  """Начало диапазона фильтра зарплаты"""
+  salaryFrom: Int
+
+  """Конец диапазона фильтра зарплаты"""
+  salaryTo: Int
+
+  """Поисковая строка"""
+  search: String
+
+  """Данные кандидата, по которым осуществляется поиск"""
+  searchFrom: [SearchSource]
+
+  """Источники"""
+  sourceIds: [Int]
+
+  """Метки"""
+  tagIds: [Int]
+
+  """Вакансии"""
+  vacancyIds: [Int]
+
+  """Этапы, через которые проходил кандидат"""
+  wfStatusNames: [String]
+
+  """Опыт работы"""
+  workExperience: [WorkExperience]
+
+  """График работы"""
+  workSchedule: WorkSchedule
+}
+
+"""Примененные фильтры кандидатов"""
+type PersonFilters {
+  """Возраст от"""
+  ageFrom: UsedGenericFilter_Integer
+
+  """Возраст до"""
+  ageTo: UsedGenericFilter_Integer
+
+  """Регионы"""
+  areaIds: UsedAreaIdsFilter
+
+  """Возможность релокации. Учитывается при выборе регионов"""
+  areaSearch: UsedEnumFilter
+
+  """Гражданство"""
+  citizenshipId: UsedCitizenshipIdFilter
+
+  """Конец диапазона даты создания"""
+  creationDateEnd: UsedGenericFilter_Long
+
+  """Начало диапазона даты создания"""
+  creationDateStart: UsedGenericFilter_Long
+
+  """Валюта фильтра по зарплате"""
+  currencyCode: UsedEnumFilter
+
+  """Этапы, на которых сейчас кандидат"""
+  currentWfStatusNames: UsedGenericMultiFilter_String
+
+  """Причины отказа"""
+  discardReasonIds: UsedGenericMultiFilter_Integer
+
+  """Тип отказа"""
+  discardType: UsedEnumFilter
+
+  """Водительское удостоверение"""
+  driverLicenseIds: UsedDriverLicenseIdsFilter
+
+  """Период обновления резюме"""
+  editedWithin: UsedEnumFilter!
+
+  """Образование (не ниже)"""
+  educationLevelId: UsedEnumFilter
+
+  """Пол"""
+  gender: UsedEnumFilter
+
+  """Знание языка"""
+  languageId: UsedEnumFilter
+
+  """Уровень владения языком"""
+  languageLevel: UsedEnumFilter
+
+  """Кандидаты пользователя или все доступные кандидаты"""
+  personVisibilityScope: UsedEnumFilter
+
+  """Статус согласия на хранение ПД"""
+  personalData: UsedEnumFilter!
+
+  """Начало диапазона фильтра зарплаты"""
+  salaryFrom: UsedGenericFilter_Integer
+
+  """Конец диапазона фильтра зарплаты"""
+  salaryTo: UsedGenericFilter_Integer
+
+  """Где искать"""
+  searchFrom: UsedPersonSourceFilter!
+
+  """Источники"""
+  sourceIds: UsedGenericMultiFilter_Integer
+
+  """Метки"""
+  tagIds: UsedGenericMultiFilter_Integer
+
+  """Вакансии"""
+  vacancyIds: UsedGenericMultiFilter_Integer
+
+  """Этапы, через которые проходил кандидат"""
+  wfStatusNames: UsedGenericMultiFilter_String
+
+  """Опыт работы"""
+  workExperience: UsedWorkExperienceFilter
+
+  """График работы"""
+  workSchedule: UsedEnumFilter
+}
+
+"""Оценка компетенции кандидата"""
+type PersonGrade {
+  """Название компетенции"""
+  title: String!
+
+  """Значение оценки компетенции"""
+  value: Int
+}
+
+"""Оценка компетенции кандидата"""
+input PersonGradeInput {
+  """Название компетенции"""
+  title: String!
+
+  """Значение оценки компетенции"""
+  value: Int
+}
+
+"""Сообщение о приглашении на hh.ru"""
+input PersonHhInviteMessageInput {
+  text: CleanedInputString!
+  withSMSNotification: Boolean!
+}
+
+"""Результат теста на hh.ru"""
+type PersonHHTestResult {
+  score: Int
+  url: String
+}
+
+enum PersonHiddenField {
+  email
+  names_and_photo
+  other_contacts
+  phones
+}
+
+type PersonItem implements BasePerson {
+  """Возраст"""
+  age: Long
+
+  """Город"""
+  area: Area
+
+  """Дата рождения"""
+  birthDay: Instant
+
+  """Гражданство"""
+  citizenships: Areas
+
+  """Контакты"""
+  contacts: Contacts
+
+  """Краткая история работы с кандидатом"""
+  events(
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых событий"""
+    first: Int = 50
+  ): PersonEvents
+
+  """Файлы кандидата"""
+  files: Files
+
+  """Имя"""
+  firstName: String!
+
+  """Пол"""
+  gender: Gender
+
+  """Имеются вакансии, к которым можно прикрепить кандидата"""
+  hasVacanciesToAttach: Boolean
+  hiddenFields: [PersonHiddenField]
+
+  """История работы с кандидатом"""
+  history(
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых событий"""
+    first: Int = 50
+  ): History
+  id: Int!
+
+  """Фамилия"""
+  lastName: String
+
+  """Превью результата объединения кандидатов"""
+  mergePreviewPerson(personIds: [Int]!): MergePreviewPerson
+
+  """Переписка с кандидатом по почте"""
+  messages(
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых сообщений"""
+    first: Int = 50
+  ): PersonMessages
+
+  """Станция метро"""
+  metroStation: MetroStation
+
+  """Отчество"""
+  middleName: String
+  personalDataAgreement: PersonalDataAgreement
+
+  """Статус согласия на хранение ПД"""
+  personalDataAgreementStatus: PersonalDataAgreementStatus @deprecated(reason: "Replaced with personalDataAgreement field")
+
+  """Фотографии кандидата"""
+  photos: Photos
+
+  """Отклики кандидата"""
+  responses: PersonResponses
+
+  """Резюме кандидата"""
+  resumes: Resumes
+  score: Int
+  similarPersons: Persons
+
+  """Источник"""
+  source: PersonSource
+
+  """Статус отправки кандидата в Start Link"""
+  startLinkPersonStatus: StartLinkPersonStatus
+
+  """Метки на кандидате"""
+  tags: PersonTags
+
+  """Тестовые задания кандидата"""
+  testTasks(
+    """Курсор пагинации"""
+    after: String = "0"
+
+    """Количество запрашиваемых тестовых заданий"""
+    first: Int = 50
+  ): TestTasks
+
+  """Можно открыть контакты с работного сайта"""
+  updatableWithContacts: Boolean
+
+  """Можно открыть контакты с hh.ru"""
+  updatableWithHHContacts: Boolean @deprecated(reason: "Replaced by updatableWithContacts field")
+
+  """Время обновления"""
+  updatedAt: Instant!
+}
+
+"""Событие создания встречи с кандидатом"""
+type PersonMeetingCreated implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+  meetingId: Int!
+
+  """Время встречи"""
+  period: Period!
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Тема встречи"""
+  topic: String
+}
+
+type PersonMessage {
+  canDelete: Boolean!
+  category: PersonMessageCategory
+  channel: PersonMessageChannel
+  createdAt: Instant!
+  files: PersonMessageFiles
+  id: String!
+  manager: CompanyManager!
+  managerId: Int
+  sendStatus: PersonMessageSendStatus
+  status: PersonMessageStatus!
+  subject: String
+  text: String
+  type: PersonMessageType!
+}
+
+enum PersonMessageCategory {
+  discard
+  invitation
+  other
+}
+
+enum PersonMessageChannel {
+  email
+  hh
+}
+
+type PersonMessageFile {
+  createdAt: Instant!
+  extension: String!
+  id: Int!
+  name: String!
+  size: Int
+}
+
+type PersonMessageFiles {
+  count: Int
+
+  """Элементы коллекции сущностей"""
+  items: [PersonMessageFile!]!
+}
+
+type PersonMessages {
+  count: Long!
+
+  """Элементы коллекции сущностей"""
+  items: [PersonMessage!]!
+  pageInfo: PageInfo!
+}
+
+enum PersonMessageSendStatus {
+  read
+  sent
+}
+
+enum PersonMessageStatus {
+  active
+  deleted
+}
+
+enum PersonMessageType {
+  inbox
+  outbox
+}
+
+"""Событие оценки кандидата"""
+type PersonRating {
+  """Список компетенций с оценками"""
+  grades: [PersonGrade]
+
+  """Средняя оценка компетенций"""
+  gradesAverage: Int
+
+  """Шаблон с формой оценки"""
+  ratingFormTemplate: PersonRatingFormTemplate
+}
+
+"""Шаблон формы оценки кандидата"""
+type PersonRatingFormTemplate {
+  """ID шаблона"""
+  id: Int!
+
+  """Название шаблона формы оценки"""
+  title: String!
+}
+
+"""Шаблон формы оценки кандидата"""
+input PersonRatingFormTemplateInput {
+  """ID шаблона"""
+  id: Int!
+
+  """Название шаблона формы оценки"""
+  title: String!
+}
+
+"""Событие оценки кандидата"""
+input PersonRatingInput {
+  """Список компетенций с оценками"""
+  grades: [PersonGradeInput]
+
+  """Средняя оценка компетенций"""
+  gradesAverage: Int
+
+  """Шаблон с формой оценки"""
+  ratingFormTemplate: PersonRatingFormTemplateInput
+}
+
+"""Отклики кандидата"""
+type PersonResponses {
+  count: Int!
+  items: [Response]
+  singleAvailableResponse: Response!
+}
+
+"""Список кандидатов"""
+type Persons {
+  """
+  Максимальное количество элементов для разового группового использования, в зависимости от действия
+  """
+  batchLimits: BatchLimits!
+
+  """Счетчики кандидатов"""
+  counters: Counters
+
+  """
+  Используемый поисковой движок. Регулируется бекендом, в штатных ситуациях всегда эластик
+  """
+  engine: GraphQLSearchEngine!
+
+  """Используемые в запросе фильтры"""
+  filters: PersonFilters!
+
+  """Данные кандидатов"""
+  items: [PersonItem]!
+
+  """Объект для пагинации"""
+  pageInfo: PageInfo!
+}
+
+"""Ошибка сохранения кандидата"""
+type PersonSaveError {
+  """Тип ошибки"""
+  errorType: PersonSaveErrorType!
+
+  """Ошибки валидации полей модели кандидата"""
+  errors: [PersonSaveErrorField!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Ошибка в поле модели сохранения кандидата"""
+type PersonSaveErrorField {
+  field: String!
+  violatedConstraints: [String]!
+}
+
+"""Тип ошибки сохранения кандидата"""
+enum PersonSaveErrorType {
+  ACCESS_DENIED
+  VALIDATION
+}
+
+"""Результат перевода кандидатов на этап "Отказ" вакансии"""
+union PersonsDiscarded = PersonsDiscardError | PersonsDiscardedSuccess
+
+"""Успешный перевод кандидатов на этап "Отказ" вакансии"""
+type PersonsDiscardedSuccess {
+  message: String
+}
+
+"""Ошибка перевода кандидатов на этап "Отказ" вакансии"""
+type PersonsDiscardError {
+  """Тип ошибки"""
+  errorType: PersonsDiscardErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки перевода кандидатов на этап "Отказ" вакансии"""
+enum PersonsDiscardErrorType {
+  ACCESS_DENIED
+  INVALID_COMMENT
+  INVALID_DISCARD_REASONS
+  INVALID_MANAGER_EMAIL_SETTINGS
+  INVALID_MESSAGE
+  INVALID_PERSONS
+  INVALID_PERSONS_COUNT
+  INVALID_VACANCY
+  MANAGER_EMAIL_SERVER_NOT_AVAILABLE
+}
+
+"""Ошибка приглашения кандидатов на hh.ru"""
+type PersonsHhInvitationFailureReason {
+  failureReason: PersonsHhInviteFailReason!
+  personIds: [Int!]!
+}
+
+"""Результат приглашения кандидатов на HH.RU"""
+union PersonsHhInvited = PersonsHhInviteError | PersonsHhInvitedSuccess
+
+"""Успешное приглашение кандидатов на HH.RU"""
+type PersonsHhInvitedSuccess {
+  """Ошибки приглашения кандидатов на hh.ru"""
+  inviteFailureReasons: [PersonsHhInvitationFailureReason!]!
+
+  """Список кандидатов, приглашенных на hh.ru"""
+  invitedPersonIds: [Int]!
+}
+
+"""Ошибка приглашения кандидатов на HH.RU"""
+type PersonsHhInviteError {
+  """Тип ошибки"""
+  errorType: PersonsHhInviteErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки приглашения кандидатов на HH.RU"""
+enum PersonsHhInviteErrorType {
+  ACCESS_DENIED
+  HH_VACANCY_ACCESS_DENIED
+  HH_VACANCY_ACCESS_VERIFICATION_ERROR
+  HH_VACANCY_MULTI_BINDING_BATCH
+  INVALID_INVITE_MESSAGE
+  INVALID_PERSONS
+  INVALID_PERSONS_COUNT
+  INVALID_VACANCY
+  INVALID_WORKFLOW_STATUS
+  NO_CORRESPONDING_HH_WORKFLOW_STATUS_EXISTS
+  NO_HH_VACANCY_BOUND
+  NO_PERSONS_ATTACHED_TO_BOUND_HH_VACANCY
+}
+
+"""Статус приглашения кандидатов на hh.ru"""
+enum PersonsHhInviteFailReason {
+  PERSONS_BOUND_TO_UNRELATED_HH_VACANCY
+  PERSONS_NOT_BOUND_TO_HH_VACANCY
+}
+
+"""Результат перевода кандидатов на этап "Выход на работу" вакансии"""
+union PersonsHired = PersonsHireError | PersonsHiredSuccess
+
+"""Успешный перевод кандидатов на этап "Выход на работу" вакансии"""
+type PersonsHiredSuccess {
+  message: String
+}
+
+"""Ошибка перевода кандидатов на этап "Выход на работу" вакансии"""
+type PersonsHireError {
+  """Тип ошибки"""
+  errorType: PersonsHireErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки перевода кандидатов на этап "Выход на работу" вакансии"""
+enum PersonsHireErrorType {
+  ACCESS_DENIED
+  INVALID_HIRING_POSITION_SOURCE
+  INVALID_PERSONS
+  INVALID_PERSONS_COUNT
+  INVALID_VACANCY
+}
+
+"""Источник кандидата"""
+type PersonSource {
+  """Идентификатор источника"""
+  id: Int!
+
+  """Наименование источника"""
+  name: String!
+
+  """Тип источника"""
+  type: PersonSourceType!
+}
+
+"""Сохраненный источник или ошибка сохранения"""
+union PersonSourceCreated = PersonSource | PersonSourceMutationError
+
+"""Результат удаления источника кандидата"""
+union PersonSourceDeleted = PersonSourceDeleteError | PersonSourceDeleteSuccess
+
+"""Ошибка удаления источника кандидата"""
+type PersonSourceDeleteError {
+  """Тип ошибки"""
+  errorType: PersonSourceDeleteErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки удаления источника у кандидата"""
+enum PersonSourceDeleteErrorType {
+  ACCESS_DENIED
+}
+
+"""Успешное удаление источника кандидата"""
+type PersonSourceDeleteSuccess {
+  message: String
+}
+
+"""Фильтр источников кандидатов"""
+input PersonSourceFilterInput {
+  search: String
+  withoutSystemSources: Boolean
+}
+
+"""Ошибка сохранения источника кандидата"""
+type PersonSourceMutationError {
+  """Тип ошибки"""
+  errorType: PersonSourceMutationErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки сохранения источника кандидата"""
+enum PersonSourceMutationErrorType {
+  ACCESS_DENIED
+  MAX_LENGTH
+  MIN_LENGTH
+}
+
+type PersonSources {
+  """Элементы коллекции сущностей"""
+  items: [PersonSource!]!
+  pageInfo: PageInfo!
+}
+
+"""Тип источника кандидата"""
+enum PersonSourceType {
+  AmazingHiring
+  Artstation
+  Avito
+  AvitoResponse
+  AvitoResponseByCall
+  Facultetus
+  Farpost
+  Github
+  Habr
+  JobMo
+  LinkedIn
+  Rabota
+  SuperJob
+  Trudvsem
+  Worki
+  Zarplata
+  custom
+  e_staff
+  empty
+  file
+  hh
+  hh_favorite
+  hh_invite
+  hh_webext
+  landing
+  scoring
+  suggest
+  tms
+}
+
+"""Результат изменения источника кандидата"""
+union PersonSourceUpdated = PersonSource | PersonSourceUpdateError
+
+"""Ошибка изменения источника кандидата"""
+type PersonSourceUpdateError {
+  """Тип ошибки"""
+  errorType: PersonSourceUpdateErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки изменения источника кандидата"""
+enum PersonSourceUpdateErrorType {
+  ACCESS_DENIED
+  INVALID_SOURCE
+}
+
+"""Модель изменения источника кандидата"""
+input PersonSourceUpdateInput {
+  """ID кандидата"""
+  personId: Int!
+
+  """Название источника кандидата"""
+  personSourceName: CleanedInputString!
+}
+
+"""Ошибка перевода кандидатов на этап вакансии"""
+type PersonsToWorkflowStatusTransferError {
+  """Тип ошибки"""
+  errorType: PersonsToWorkflowStatusTransferErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки перевода кандидатов на этап вакансии"""
+enum PersonsToWorkflowStatusTransferErrorType {
+  ACCESS_DENIED
+  INVALID_PERSONS
+  INVALID_PERSONS_COUNT
+  INVALID_WORKFLOW_STATUS
+}
+
+"""Результат перевода кандидатов на этап вакансии"""
+union PersonsToWorkflowStatusTransferred = PersonsToWorkflowStatusTransferError | PersonsToWorkflowStatusTransferredSuccess
+
+"""Успешный перевод кандидатов на этап вакансии"""
+type PersonsToWorkflowStatusTransferredSuccess {
+  message: String
+}
+
+type PersonTag {
+  id: Int!
+  name: String!
+}
+
+"""Результат создания тега кандидата"""
+union PersonTagCreated = PersonTag | PersonTagCreateError
+
+"""Ошибка создания тега кандидата"""
+type PersonTagCreateError {
+  """Тип ошибки"""
+  errorType: PersonTagCreateErrorType!
+
+  """Ошибки валидации"""
+  errors: [FieldErrors!]
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки создания тега кандидата"""
+enum PersonTagCreateErrorType {
+  ACCESS_DENIED
+  INVALID_TAG
+}
+
+"""Модель создания тега кандидата"""
+input PersonTagCreateInput {
+  """Название тега"""
+  name: CleanedInputString!
+
+  """ID кандидата"""
+  personId: Int!
+}
+
+type PersonTags {
+  """Элементы коллекции сущностей"""
+  items: [PersonTag!]!
+}
+
+"""Кандидаты пользователя или все доступные кандидаты"""
+enum PersonVisibilityScope {
+  ALL
+  MANAGER
+}
+
+"""Фотография кандидата"""
+type PhotoItem {
+  """ID фотографии"""
+  id: Int!
+
+  """Размер изображения"""
+  size: PhotoSize
+
+  """Url изображения"""
+  url: String
+}
+
+type Photos {
+  items: [PhotoItem]
+}
+
+"""Размер фотографии"""
+enum PhotoSize {
+  medium
+  small
+}
+
+enum ProcessType {
+  VACANCY_MERGE
+  WEBHOOK
+}
+
+"""Query root"""
+type Query {
+  """Этап вакансии"""
+  workflowStatus(id: Int!): WorkflowStatus!
+
+  """Заявка на вакансию"""
+  hiringRequest(id: Int!): HiringRequest!
+
+  """Регионы"""
+  areas(
+    """Признак получения только гражданств"""
+    onlyCitizenships: Boolean = false
+  ): Areas! @deprecated(reason: "Use dictionaries { areas } instead")
+
+  """Информация о себе"""
+  me: Me!
+
+  """Список кандидатов"""
+  persons(
+    """Фильтры списка кандидатов"""
+    filter: PersonFilterInput
+
+    """Значения курсора пагинации"""
+    after: String
+
+    """Количество запрашиваемых кандидатов, максимум 50"""
+    first: Int = 50
+  ): Persons!
+
+  """Ссылки на согласование кандидата"""
+  personApprovalLinks(personIds: [Int!]!, vacancyId: Int!): PersonApprovalLinks
+
+  """Кандидат по id"""
+  person(
+    """id кандидата"""
+    id: Int!
+  ): Person
+
+  """Вакансия"""
+  vacancy(id: Int!): Vacancy!
+
+  """Шаблон заявки на подбор"""
+  hiringRequestTemplate: HiringRequestTemplate!
+
+  """Менеджеры в вашей регистрации"""
+  managers(
+    """Фильтры списка менеджеров"""
+    filter: ManagerFilterInput
+
+    """Тип сортировки менеджеров"""
+    sortType: ManagerSortTypeInput
+
+    """Значения курсора пагинации"""
+    after: String
+
+    """Количество запрашиваемых менеджеров, максимум 50"""
+    first: Int
+  ): CompanyManagers!
+
+  """Справочники"""
+  dictionaries: Dictionaries!
+
+  """Источники кандидатов"""
+  personSources(
+    """Фильтр по имени"""
+    filterByName: String
+
+    """Курсор пагинации"""
+    afterCursor: String
+
+    """Количество запрашиваемых источников, максимум 50"""
+    first: Int = 50
+  ): PersonSources!
+
+  """Менеджеры в компании, добавленные на hh.ru"""
+  hhManagers(filter: HhManagersFilterInput): HhManagers
+
+  """Заявки на вакансии"""
+  hiringRequests(
+    """Фильтр списка заявок"""
+    filter: HiringRequestFilterInput
+
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых заявок"""
+    first: Int = 50
+  ): HiringRequests!
+
+  """Компания текущей регистрации"""
+  company: CompanyItem!
+
+  """Информация о менеджере компании"""
+  manager(id: Int!): Manager!
+
+  """Список вакансий"""
+  vacancies(
+    """Фильтры списка вакансий"""
+    filter: VacancyFilterInput
+
+    """Признак сортировки по возрастанию"""
+    sortAsc: Boolean = true
+
+    """Тип сортировки"""
+    sortBy: VacancySortType = NAME
+
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых вакансий, максимум 200"""
+    first: Int = 50
+  ): Vacancies!
+
+  """Шаблоны сообщений"""
+  messageTemplates(
+    """Параметры для замены плейсхолдеров"""
+    replaceParams: MessageTemplateReplaceParamsInput
+  ): MessageTemplates
+
+  """Отклик по кандидату и вакансии"""
+  response(personId: Int!, vacancyId: Int!): Response
+}
+
+type RangeDto {
+  from: Long
+  to: Long
+}
+
+"""Рекомендации"""
+type Recommendation {
+  """Имя рекомендателя"""
+  name: String!
+
+  """Организация"""
+  organization: String!
+
+  """Должность рекомендателя"""
+  position: String!
+}
+
+"""Рекомендация"""
+input RecommendationInput {
+  """Имя рекомендателя"""
+  name: String!
+
+  """Организация"""
+  organization: String!
+
+  """Должность рекомендателя"""
+  position: String!
+}
+
+type Recommendations {
+  items: [Recommendation]
+}
+
+type Relocation {
+  areas: Areas
+  id: String!
+  type: String!
+}
+
+"""Информация о возможности переезда"""
+input RelocationInput {
+  """Регионы для переезда из справочника areas"""
+  areas: AreasInput
+
+  """Id типа релокации из справочника relocationTypes"""
+  relocationTypeId: String!
+}
+
+"""Тип релокации"""
+type RelocationType implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+type RelocationTypes {
+  """Элементы коллекции сущностей"""
+  items: [RelocationType!]!
+}
+
+"""Отклик или ошибка доступа"""
+union Response = ResponseError | ResponseItem | ResponsePublicItem
+
+"""Тип ошибки создания отклика кандидатов на вакансиях"""
+enum ResponseCreateErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+  PERSON_SIZE_OUT_OF_BOUNDS
+  VACANCY_SIZE_OUT_OF_BOUNDS
+}
+
+"""Результат удаления отклика кандидата на вакансии"""
+union ResponseDeleted = ResponseDeleteError | ResponseDeletedSuccess
+
+"""Успешное удаление отклика кандидата на вакансии"""
+type ResponseDeletedSuccess {
+  message: String
+}
+
+"""Ошибка удаления отклика кандидата на вакансии"""
+type ResponseDeleteError {
+  """Тип ошибки"""
+  errorType: ResponseDeleteErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки удаления отклика кандидата на вакансии"""
+enum ResponseDeleteErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+}
+
+type ResponseError {
+  """Тип ошибки"""
+  errorType: ResponseErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum ResponseErrorType {
+  NOT_EXISTS
+  NOT_FOUND
+}
+
+"""Фильтры кандидатов на вакансии"""
+input ResponseFilterInput {
+  """Возраст от"""
+  ageFrom: Int
+
+  """Возраст до"""
+  ageTo: Int
+
+  """Регионы"""
+  areaIds: [String]
+
+  """Возможность релокации. Учитывается при выборе регионов"""
+  areaSearch: AreaSearch
+
+  """Гражданство"""
+  citizenshipId: String
+
+  """Валюта зарплаты"""
+  currencyCode: CurrencyCode
+
+  """Водительское удостоверение"""
+  driverLicenseIds: [DriverLicense]
+
+  """Образование (не ниже)"""
+  educationLevelId: EducationLevelEnum
+
+  """Пол"""
+  gender: Gender
+
+  """Знание языка"""
+  languageId: LanguageEnum
+
+  """Уровень владения языком"""
+  languageLevel: LanguageLevelEnum
+
+  """Статус согласия на обработку ПД"""
+  personalData: PersonalDataStatus
+
+  """Зарплата от"""
+  salaryFrom: Int
+
+  """Зарплата до"""
+  salaryTo: Int
+
+  """Метки"""
+  tagIds: [Int]
+
+  """Прочитанность отклика"""
+  unread: UnreadFilter
+
+  """Опыт работы"""
+  workExperience: [WorkExperience]
+
+  """График работы"""
+  workSchedule: WorkSchedule
+}
+
+"""Примененные фильтры кандидатов на вакансии"""
+type ResponseFilters {
+  """Возраст от"""
+  ageFrom: UsedGenericFilter_Integer!
+
+  """Возраст до"""
+  ageTo: UsedGenericFilter_Integer!
+
+  """Регионы"""
+  areaIds: UsedAreaIdsFilter!
+
+  """Возможность релокации. Учитывается при выборе регионов"""
+  areaSearch: UsedEnumFilter!
+
+  """Гражданство"""
+  citizenshipId: UsedCitizenshipIdFilter!
+
+  """Валюта зарплаты"""
+  currencyCode: UsedEnumFilter!
+
+  """Водительское удостоверение"""
+  driverLicenseIds: UsedDriverLicenseIdsFilter!
+
+  """Образование (не ниже)"""
+  educationLevelId: UsedEnumFilter!
+
+  """Пол"""
+  gender: UsedEnumFilter!
+
+  """Знание языка"""
+  languageId: UsedEnumFilter!
+
+  """Уровень владения языком"""
+  languageLevel: UsedEnumFilter!
+
+  """Статус согласия на обработку ПД"""
+  personalData: UsedEnumFilter!
+
+  """Зарплата от"""
+  salaryFrom: UsedGenericFilter_Integer!
+
+  """Зарплата до"""
+  salaryTo: UsedGenericFilter_Integer!
+
+  """Метки"""
+  tagIds: UsedGenericMultiFilter_Integer!
+
+  """Прочитанность отклика"""
+  unread: UsedEnumFilter!
+
+  """Опыт работы"""
+  workExperience: UsedWorkExperienceFilter!
+
+  """График работы"""
+  workSchedule: UsedEnumFilter!
+}
+
+"""Данные отклика"""
+type ResponseItem {
+  """Сопроводительное письмо"""
+  coverLetter: String
+
+  """Результат тестов на hh.ru"""
+  hhTestResult: PersonHHTestResult
+  hhVacancyTopic: HhVacancyTopic
+
+  """Кандидат в отклике"""
+  person: PersonItem
+
+  """Результат оценки"""
+  rating: Int
+
+  """Прочитанность"""
+  unread: Boolean!
+
+  """Дата обновления отклика"""
+  updatedAt: Instant!
+  url: String!
+
+  """Этап вакансии, относящийся к отклику"""
+  workflowStatus: WorkflowStatus
+}
+
+"""Общедоступные данные отклика кандидата"""
+type ResponsePublicItem {
+  """Кандидат в отклике"""
+  person: PersonItem
+
+  """Этап вакансии, относящийся к отклику"""
+  workflowStatus: WorkflowStatus
+}
+
+"""Кандидаты на вакансии"""
+type Responses {
+  availableSearchEngines: [SearchEngine]!
+
+  """
+  Максимальное количество элементов для разового группового использования, в зависимости от действия
+  """
+  batchLimits: BatchLimits!
+
+  """Используемые в запросе фильтры"""
+  filters: ResponseFilters!
+
+  """Данные списка кандидатов на вакансии"""
+  items: [ResponseItem]!
+
+  """Объект для пагинации"""
+  pageInfo: PageInfo
+
+  """Сортировка кандидатов на вакансии"""
+  sortBy: Sort_ResponsesSortType!
+}
+
+"""Результат создания откликов кандидатов на вакансиях"""
+union ResponsesCreated = ResponsesCreatedError | ResponsesCreatedSuccess
+
+"""Ошибка создания откликов кандидатов на вакансиях"""
+type ResponsesCreatedError {
+  """Тип ошибки"""
+  errorType: ResponseCreateErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Успешное создание откликов кандидатов на вакансиях"""
+type ResponsesCreatedSuccess {
+  message: String
+}
+
+"""Сортировка кандидатов на вакансии"""
+enum ResponsesSortType {
+  """По дате: от старых к новым"""
+  dateAsc
+
+  """По дате: от новых к старым"""
+  dateDesc
+
+  """По релевантности: от подходящих к неподходящим"""
+  score
+}
+
+enum ResponseType {
+  INVITATION
+  RESPONSE
+}
+
+enum RestorationStatus {
+  FAILED
+  IN_PROGRESS
+  SUCCESS
+}
+
+enum ResumeHiddenField {
+  experience
+  none
+}
+
+type ResumeImportSettings {
+  """Включен ли импорт"""
+  enabled: Boolean!
+  hhStatusMapping: [HhStatusMapping]!
+
+  """
+  Исключать ли кандидатов с этапа "Отказ"
+  """
+  importWithoutDiscard: Boolean!
+
+  """
+  Исключать ли кандидатов с этапа "Неразобранные"
+  """
+  importWithoutResponse: Boolean!
+}
+
+"""Базовый тип для всех типов резюме"""
+interface ResumeItem {
+  """Дата создания резюме в Talantix"""
+  createdAt: Instant!
+  id: Int!
+
+  """Название резюме"""
+  name: String!
+
+  """Источник резюме"""
+  source: ResumeSource!
+
+  """Дата обновления резюме"""
+  updatedAt: Instant!
+}
+
+type Resumes {
+  items: [ResumeItem]
+}
+
+type ResumeSource {
+  """Тип источника резюме"""
+  type: ResumeType!
+}
+
+"""Тип источника резюме"""
+enum ResumeType {
+  AmazingHiring
+  Artstation
+  Avito
+  Facultetus
+  Farpost
+  Github
+  Habr
+  JobMo
+  LinkedIn
+  Rabota
+  SuperJob
+  Trudvsem
+  Worki
+  Zarplata
+  clientFileImport
+  e_staff
+  file
+  hh
+  landing
+  scoring
+  tms
+  tms_structured
+}
+
+type Salary {
+  """Значение зарплаты"""
+  amount: Int
+
+  """Валюта зарплаты"""
+  currency: Currency
+}
+
+input SalaryInput {
+  """Значение зарплаты"""
+  amount: Int
+
+  """Валюта зарплаты"""
+  currency: Currency
+}
+
+type SalaryRange {
+  currency: Currency!
+  from: Long
+  to: Long
+}
+
+"""График работы"""
+type Schedule implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""График работы"""
+input ScheduleInput {
+  """Id графика работы из справочника schedules"""
+  id: String!
+}
+
+type Schedules {
+  """Элементы коллекции сущностей"""
+  items: [Schedule!]!
+}
+
+type ScoringData {
+  answer: String
+  description: String
+  text: String
+}
+
+"""Резюме из чат-бота XOR"""
+type ScoringResume implements ResumeItem {
+  """Дата создания резюме в Talantix"""
+  createdAt: Instant!
+  crits: ScoringResumeData
+  id: Int!
+
+  """Название резюме"""
+  name: String!
+  others: ScoringResumeData
+  scored: ScoringResumeData
+
+  """Источник резюме"""
+  source: ResumeSource!
+
+  """Дата обновления резюме"""
+  updatedAt: Instant!
+  videos: ScoringResumeData
+}
+
+type ScoringResumeData {
+  items: [ScoringData]
+}
+
+enum SearchEngine {
+  ELASTIC
+  POSTGRES
+}
+
+enum SearchSource {
+  """Искать в комментариях"""
+  COMMENTS
+
+  """Искать в контактах"""
+  CONTACTS
+
+  """Искать в резюме"""
+  RESUMES
+}
+
+type SLA {
+  """Возможность установки SLA"""
+  canEdit: Boolean!
+
+  """Плановое количество дней нахождения кандидата на этапе"""
+  slaDays: Int
+}
+
+type Sort_ResponsesSortType {
+  available: [ResponsesSortType!]!
+  used: ResponsesSortType!
+}
+
+"""Событие смены источника кандидата"""
+type SourceChanged implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  from: PersonSource!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  to: PersonSource!
+}
+
+"""Интеграция со Start Link"""
+type StartLinkIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+
+  """URL кабинета"""
+  spaceUrl: String
+
+  """Информация о лицензиях Start Link"""
+  startLinkLicenses: StartLinkLicensesInfo!
+}
+
+type StartLinkLicensesInfo {
+  available: Int
+}
+
+"""Результат отправки запроса в Start Link"""
+union StartLinkPersonSent = StartLinkPersonSentError | StartLinkPersonSentSuccess
+
+"""Ошибка отправки кандидата в Start Link"""
+type StartLinkPersonSentError {
+  """Тип ошибки"""
+  errorType: StartLinkPersonSentErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки отправки кандидата в Start Link"""
+enum StartLinkPersonSentErrorType {
+  BAD_REQUEST
+  CONTACT_ALREADY_EXISTS
+  EXTERNAL_ID_ALREADY_EXISTS
+  FORBIDDEN
+  GENERAL_ERROR
+  INVALID_EMAIL
+  INVALID_PHONE
+  NO_CONTACT_PROVIDED
+  NO_FIRST_NAME_PROVIDED
+  NO_LAST_NAME_PROVIDED
+  NO_LICENSES
+  NO_PERMISSION
+  PERSON_ALREADY_EXISTS
+  PERSON_NOT_FOUND
+}
+
+type StartLinkPersonSentItem {
+  """Статус в Start Link"""
+  status: StartLinkStatusType!
+
+  """Дата последнего изменения"""
+  updatedAt: Instant!
+}
+
+"""Успешная отправка кандидата в Start Link"""
+type StartLinkPersonSentSuccess {
+  startLinkRequestSentItem: StartLinkPersonSentItem!
+}
+
+type StartLinkPersonStatus {
+  id: Int
+  status: StartLinkStatusType
+  updatedAt: Instant
+}
+
+"""Событие отправки кандидата в Start Link"""
+type StartLinkSent implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  startLinkCandidateUrl: String
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+enum StartLinkStatusType {
+  NEW
+}
+
+"""Структурированное резюме"""
+type StructuredResume implements ResumeItem {
+  """Ссылка на резюме через API работного сайта"""
+  apiUrl: String
+
+  """Готовность к командировкам"""
+  businessTripReadiness: BusinessTripReadiness
+
+  """Дата создания резюме в Talantix"""
+  createdAt: Instant!
+
+  """Ссылка на скачивание резюме"""
+  downloadLink: String
+
+  """Список категорий водительских прав соискателя"""
+  driverLicenses: [DriverLicense]
+
+  """Образование"""
+  education: Education
+
+  """Список подходящих соискателю типов занятостей"""
+  employments: Employments
+
+  """Опыт работы"""
+  experiences: Experiences
+
+  """Id резюме на работном сайте"""
+  externalId: String
+
+  """Список скрытых полей"""
+  hiddenFields: [ResumeHiddenField]
+  id: Int!
+
+  """Ключевые навыки (список уникальных строк)"""
+  keySkills: [String]
+
+  """Список языков, которыми владеет соискатель"""
+  languages: Languages
+
+  """Ссылка на резюме на работном сайте"""
+  link: String
+
+  """Название резюме"""
+  name: String!
+
+  """Список рекомендаций"""
+  recommendations: Recommendations
+
+  """Информация о возможности переезда в другой город"""
+  relocation: Relocation
+
+  """Желаемая зарплата"""
+  salary: Salary
+
+  """Список подходящих соискателю графиков работы"""
+  schedules: Schedules
+
+  """Дополнительная информация, описание навыков в свободной форме"""
+  skills: String
+
+  """Источник резюме"""
+  source: ResumeSource!
+
+  """Заголовок резюме"""
+  title: String!
+
+  """Опыт работы в месяцах"""
+  totalExperienceInMonths: Int
+
+  """Желательное время в пути до работы"""
+  travelTime: TravelTime
+
+  """Дата обновления резюме"""
+  updatedAt: Instant!
+
+  """Список регионов, в которых соискатель имеет разрешение на работу"""
+  workTickets: WorkTickets
+}
+
+"""Создание структурированного резюме"""
+input StructuredResumeInput {
+  """Готовность к командировкам"""
+  businessTripReadiness: BusinessTripReadinessInput
+
+  """Список категорий водительских прав соискателя"""
+  driverLicenses: [DriverLicense]
+
+  """Образование"""
+  education: EducationInput
+
+  """Список подходящих соискателю типов занятостей"""
+  employments: [EmploymentInput]
+
+  """Опыт работы"""
+  experiences: [ExperienceInput]
+
+  """Ключевые навыки (список уникальных строк)"""
+  keySkills: [String]
+
+  """Список языков, которыми владеет соискатель"""
+  languages: [LanguageWithLevelInput]
+
+  """Ссылка на резюме на работном сайте"""
+  link: String
+
+  """Список рекомендаций"""
+  recommendations: [RecommendationInput]
+
+  """Информация о возможности переезда в другой город"""
+  relocation: RelocationInput
+
+  """Желаемая зарплата"""
+  salary: SalaryInput
+
+  """Список подходящих соискателю графиков работы"""
+  schedules: [ScheduleInput]
+
+  """Дополнительная информация, описание навыков в свободной форме"""
+  skills: String
+
+  """Заголовок резюме"""
+  title: String
+
+  """Желательное время в пути до работы"""
+  travelTime: TravelTimeInput
+
+  """Список регионов, в который соискатель имеет разрешение на работу"""
+  workTickets: [WorkTicketInput]
+}
+
+"""Подписки на уведомления по кандидатам на этапах"""
+union Subscriptions = VacancySubscriptionsError | VacancySubscriptionsItem
+
+"""Система Talantix как инициатор действия"""
+type SystemInitiator {
+  type: String
+}
+
+enum Tariff {
+  DEMO
+  PAID
+  UNPAID
+}
+
+type TariffLicense {
+  """Лицензия доступна для ролей"""
+  availableForRoles: [ManagerRole!]!
+
+  """Количество лицензий"""
+  licenseCount: Int!
+
+  """Вид лицензии"""
+  licenseType: TariffLicenseType!
+}
+
+enum TariffLicenseType {
+  NON_RECRUITING
+  RECRUITING
+}
+
+"""Интеграция с Яндекс Телемост"""
+type TelemostIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+
+  """Url редиректа для OAuth"""
+  redirectUrl: String
+}
+
+type TestTask {
+  """Решение тестового задания"""
+  answer: TestTaskAnswer
+  id: Int!
+  manager: CompanyManager!
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Слепок шаблона тестового задания"""
+  templateSnapshot: TestTaskTemplateSnapshot!
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Решение тестового задания"""
+type TestTaskAnswer {
+  createdAt: Instant!
+
+  """Файлы, приложенные к решению"""
+  files: Files
+
+  """Текст решения"""
+  text: String!
+
+  """Ссылка, приложенная к решению"""
+  url: String!
+}
+
+type TestTasks {
+  count: Int
+
+  """Элементы коллекции сущностей"""
+  items: [TestTask!]!
+  pageInfo: PageInfo
+}
+
+type TestTaskTemplateSnapshot {
+  createdAt: Instant!
+
+  """Файлы, приложенные к тестовому заданию"""
+  files: Files
+  testTaskTemplateId: Int!
+
+  """Текст задания"""
+  text: String!
+
+  """Заголовок"""
+  title: String!
+}
+
+type TravelTime implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Время в пути до работы"""
+input TravelTimeInput {
+  """Id времени в пути из справочника travelTimes"""
+  id: String!
+}
+
+type TravelTimes {
+  """Элементы коллекции сущностей"""
+  items: [TravelTime!]!
+}
+
+"""Прочитанность отклика"""
+enum UnreadFilter {
+  """Прочитан"""
+  READ
+
+  """Не прочитан"""
+  UNREAD
+}
+
+"""Событие обновления кандидата"""
+type Updated implements HistoryEvent {
+  diff: Json!
+
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+}
+
+type UsedAreaIdsFilter {
+  available: [String!]!
+  used: [String!]
+}
+
+type UsedCitizenshipIdFilter {
+  available: [String!]!
+  used: String
+}
+
+type UsedDriverLicenseIdsFilter {
+  available: [DriverLicense!]!
+  used: [DriverLicense!]
+}
+
+type UsedEnumFilter {
+  available: [String!]!
+  default: String
+  used: String
+}
+
+type UsedGenericFilter_Integer {
+  used: Int
+}
+
+type UsedGenericFilter_Long {
+  used: Long
+}
+
+type UsedGenericMultiFilter_Integer {
+  used: [Int!]
+}
+
+type UsedGenericMultiFilter_String {
+  used: [String!]
+}
+
+type UsedPersonSourceFilter {
+  available: [String!]!
+  default: [String!]!
+  used: [String!]
+}
+
+type UsedWorkExperienceFilter {
+  available: [WorkExperience!]!
+  used: [WorkExperience!]
+}
+
+type Vacancies {
+  """Общее количество вакансий с учетом фильтров"""
+  count: Int!
+
+  """Есть ли активные вакансии"""
+  hasActive: Boolean!
+
+  """Данные вакансии"""
+  items: [VacancyItem!]!
+  pageInfo: PageInfo!
+}
+
+"""Вакансия или ошибка"""
+union Vacancy = VacancyError | VacancyItem | VacancyPublicItem
+
+"""Автофильтр на вакансии"""
+union VacancyAutoFilter = VacancyAutoFilterError | VacancyAutoFilterItem
+
+enum VacancyAutoFilterEducationLevel {
+  bachelor
+  candidate
+  higher
+  master
+  primary
+  secondary
+  special_secondary
+  unfinished_higher
+}
+
+type VacancyAutoFilterError {
+  """Тип ошибки"""
+  errorType: VacancyAutoFilterErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum VacancyAutoFilterErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+}
+
+type VacancyAutoFilterItem {
+  age: RangeDto
+  areas: Areas
+  citizenship: Area
+  destinationWorkflowId: Int
+  driverLicenses: [DriverLicense]
+  educationLevel: VacancyAutoFilterEducationLevel
+  gender: Gender
+  isActive: Boolean!
+  language: Language
+  salary: SalaryRange
+  sourceWorkflowId: Int
+  workExperiences: [VacancyAutoFilterWorkExperience]
+  workSchedule: String
+}
+
+enum VacancyAutoFilterWorkExperience {
+  NO_WORK_EXPERIENCE
+  WORK_EXPERIENCE_FROM_1_YEAR_TO_3_YEAR
+  WORK_EXPERIENCE_FROM_3_YEAR_TO_6_YEAR
+  WORK_EXPERIENCE_LESS_THAN_1_YEAR
+  WORK_EXPERIENCE_MORE_THAN_6_YEAR
+}
+
+type VacancyError {
+  """Тип ошибки"""
+  errorType: VacancyErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum VacancyErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+}
+
+"""Фильтры вакансий"""
+input VacancyFilterInput {
+  """Регионы"""
+  areaIds: [String]
+
+  """Департаменты"""
+  departments: [String]
+
+  """Роли менеджеров"""
+  managerRoles: [VacancyRole]
+
+  """Вакансии"""
+  vacancyIds: [Int]
+
+  """Ответственные"""
+  vacancyOwners: [Int]
+
+  """Статус вакансии"""
+  vacancyStatus: VacancyStatus
+
+  """Название вакансии"""
+  vacancyTitle: String
+}
+
+"""Вакансия"""
+type VacancyItem {
+  """Город вакансии"""
+  areas: Areas
+
+  """Настройки автофильтра"""
+  autoFilter: VacancyAutoFilter!
+
+  """Доступные вам права в рамках этой вакансии"""
+  contextPermissions: [String]!
+
+  """Дата создания вакансии"""
+  createdAt: Instant!
+
+  """Департамент"""
+  department: String
+
+  """Описание вакансии"""
+  description: String
+
+  """Привязанные внешние публикации вакансии на работных сайтах"""
+  externalVacancies: ExternalVacancies!
+
+  """Публикация на работном сайте"""
+  externalVacancy(id: String!, type: ExternalVacancyType!): ExternalVacancyItem
+
+  """Счетчики по ставкам"""
+  hiringPositionCounters: HiringPositionCounters
+
+  """Заявка, из которой была создана вакансия"""
+  hiringRequest: HiringRequest!
+
+  """Заявки по вакансии"""
+  hiringRequests(
+    filter: HiringRequestFilterInput
+
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых заявок"""
+    first: Int = 50
+  ): HiringRequests!
+  id: Int!
+
+  """Публичная страница (лендинг) вакансии для сбора откликов"""
+  landing: VacancyLanding!
+
+  """Планируемая дата закрытия вакансии"""
+  proposedDateOfClose: Instant
+
+  """Настройки импорта откликов с hh.ru"""
+  resumeImportSettings: ResumeImportSettings!
+
+  """Диапазон зарплаты"""
+  salary: SalaryRange
+
+  """Источник вакансии"""
+  source: VacancySource!
+
+  """Статус вакансии"""
+  status: VacancyStatus!
+
+  """
+  Дата последнего обновления статуса вакансии, например, архивирования или восстановления
+  """
+  statusUpdatedAt: Instant!
+
+  """Подписки на уведомления по кандидатам на этапах"""
+  subscriptions: Subscriptions!
+
+  """Название вакансии"""
+  title: String!
+  unreadByOwner: Boolean!
+
+  """URL вакансии в Talantix"""
+  url: String!
+
+  """
+  Список блокировок вакансии. Используется при длительных операциях, таких как смена шаблона этапов
+  """
+  vacancyLocks: [VacancyLockType]
+
+  """Менеджеры на вакансии"""
+  vacancyManagers(filter: [VacancyRole] = []): VacancyManagers
+
+  """
+  Выбранный этап вакансии, если id не указано, вернется первый этап в списке
+  """
+  workflowStatus(id: Int): WorkflowStatus! @deprecated(reason: "Используйте { workflowStatus(id: $id) }")
+
+  """Этапы вакансии"""
+  workflowStatuses: WorkflowStatuses!
+}
+
+"""Публичная страница (лендинг) вакансии для сбора откликов или ошибка"""
+union VacancyLanding = VacancyLandingError | VacancyLandingItem
+
+type VacancyLandingError {
+  """Тип ошибки"""
+  errorType: VacancyLandingErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum VacancyLandingErrorType {
+  ACCESS_DENIED
+}
+
+"""Публичная страница (лендинг) вакансии для сбора откликов"""
+type VacancyLandingItem {
+  """Включена ли страница"""
+  active: Boolean!
+
+  """Список дополнительных полей, которые нужно запрашивать у кандидата"""
+  additionalFields: [String]!
+
+  """Файл с фоном для страницы"""
+  backgroundImage: File
+  id: Int!
+
+  """Файл с лого"""
+  logoImage: File
+
+  """Ссылка на страницу"""
+  reference: String
+}
+
+enum VacancyLockType {
+  WORKFLOW
+}
+
+"""Связь менеджера с вакансией"""
+type VacancyManager {
+  """Менеджер"""
+  manager: CompanyManager!
+
+  """Роль менеджера на вакансии"""
+  vacancyRole: VacancyRole!
+}
+
+type VacancyManagers {
+  items: [VacancyManager]!
+}
+
+"""
+Слепок этапа и вакансии с которой кандидат был скопирован в результате объединения вакансий
+"""
+type VacancyMergeSourceWorkflowStatusSnapshot {
+  """ID вакансии"""
+  vacancyId: Int!
+
+  """Название вакансии"""
+  vacancyName: String
+
+  """URL вакансии в Talantix"""
+  vacancyUrl: String
+
+  """Имя этапа, на котором находился кандидат"""
+  workflowStatusName: String!
+}
+
+"""Общедоступные данные вакансии кандидата"""
+type VacancyPublicItem {
+  id: Int!
+
+  """Название вакансии"""
+  title: String!
+
+  """Менеджеры на вакансии"""
+  vacancyManagers(filter: [VacancyRole] = []): VacancyManagers
+}
+
+"""Результат открепления кандидата от вакансии"""
+union VacancyResponseDetached = VacancyResponseDetachError | VacancyResponseDetachedSuccess
+
+"""Успешное открепление кандидата от вакансии"""
+type VacancyResponseDetachedSuccess {
+  message: String
+}
+
+"""Ошибка открепления кандидата от вакансии"""
+type VacancyResponseDetachError {
+  """Тип ошибки"""
+  errorType: VacancyResponseDetachErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+"""Тип ошибки открепления кандидата от вакансии"""
+enum VacancyResponseDetachErrorType {
+  ACCESS_DENIED
+  NOT_FOUND
+}
+
+"""Роль менеджера на вакансии"""
+enum VacancyRole {
+  """Ответственный"""
+  owner
+
+  """Рекрутер"""
+  recruiter
+
+  """Наблюдатель"""
+  watcher
+}
+
+"""Тип сортировки вакансий"""
+enum VacancySortType {
+  """По дате прикрепления кандидата"""
+  LAST_USED_DATE
+
+  """По имени"""
+  NAME
+  OPENED_DATE @deprecated(reason: "Используйте STATUS_UPDATED_DATE")
+
+  """По планируемой дате закрытия"""
+  PROPOSED_DATE_OF_CLOSE
+
+  """По дате смены статуса"""
+  STATUS_UPDATED_DATE
+}
+
+type VacancySource {
+  href: String
+  type: VacancySourceType!
+}
+
+enum VacancySourceType {
+  hh
+  scoring
+  tms
+}
+
+"""Статус вакансии"""
+enum VacancyStatus {
+  """Активная вакансия"""
+  ACTIVE
+
+  """Архивная вакансия"""
+  ARCHIVE
+}
+
+type VacancySubscriptionsError {
+  """Тип ошибки"""
+  errorType: VacancySubscriptionsErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum VacancySubscriptionsErrorType {
+  NOT_FOUND
+}
+
+type VacancySubscriptionsItem {
+  workflowStatuses: ItemsWithId_Integer!
+}
+
+type Visibility {
+  managerIds: [Int] @deprecated(reason: "use managers")
+  managers: [CompanyManager!]!
+  visibleForAll: Boolean!
+}
+
+"""Интеграция с IP телефонией Voximplant"""
+type VoximplantIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+  node: String
+}
+
+"""Событие неуспешного звонка"""
+type WebCallFailure implements HistoryEvent {
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  phoneNumber: String!
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Событие успешного звонка"""
+type WebCallSuccess implements HistoryEvent {
+  durationSeconds: Int!
+
+  """Время события"""
+  eventTime: Instant!
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+  phoneNumber: String!
+  recordUrl: String
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+"""Класс для простых объектов, содержащих только id"""
+type WithId_Integer {
+  id: Int!
+}
+
+"""Опыт работы"""
+enum WorkExperience {
+  """Без опыта"""
+  NO_WORK_EXPERIENCE
+
+  """От 1 года до 3 лет"""
+  WORK_EXPERIENCE_FROM_1_YEAR_TO_3_YEAR
+
+  """От 3 до 6 лет"""
+  WORK_EXPERIENCE_FROM_3_YEAR_TO_6_YEAR
+
+  """Менее 1 года"""
+  WORK_EXPERIENCE_LESS_THAN_1_YEAR
+
+  """Более 6 лет"""
+  WORK_EXPERIENCE_MORE_THAN_6_YEAR
+}
+
+"""Этап вакансии или ошибка"""
+union WorkflowStatus = WorkflowStatusError | WorkflowStatusItem | WorkflowStatusPublicItem
+
+"""Событие перевода кандидата по вакансии"""
+type WorkflowStatusChanged implements HistoryEvent {
+  discardInfo: DiscardInfo
+
+  """Время события"""
+  eventTime: Instant!
+
+  """Источник ставки"""
+  hiringPositionSource: HiringPositionSource
+  id: String!
+
+  """Инициатор события"""
+  initiator: Initiator
+
+  """Кандидат"""
+  person: PersonItem
+
+  """Тип операции перевода кандидата"""
+  processType: ProcessType
+  status: WorkflowStatusSnapshot!
+
+  """Вакансия"""
+  vacancy: Vacancy
+}
+
+type WorkflowStatusError {
+  """Тип ошибки"""
+  errorType: WorkflowStatusErrorType!
+
+  """Сообщение об ошибке"""
+  message: String
+}
+
+enum WorkflowStatusErrorType {
+  NOT_FOUND
+}
+
+"""Этапы вакансии"""
+type WorkflowStatuses {
+  """Первый этап вакансии"""
+  first: WorkflowStatusItem!
+
+  """Данные этапов"""
+  items: [WorkflowStatusItem]!
+}
+
+"""Этап вакансии"""
+type WorkflowStatusItem {
+  """Автодействия, настроенные на этапе"""
+  autoActions: AutoActions!
+
+  """Список id этапов, на которые можно перевести кандидата с текущего"""
+  availableForTransferWorkflowStatuses: ItemsWithId_Integer
+  id: Int!
+
+  """
+  Список этапов на hh.ru с которых производится импорта откликов на данный этап
+  """
+  importFromHhStatuses: [String]!
+
+  """Является ли статус источником автофильтра"""
+  isAutoFilterSource: Boolean
+  name: String!
+
+  """Счетчики кандидатов"""
+  personCounters: PersonCounters
+  position: Int!
+
+  """Отклики на этапе вакансии"""
+  responses(
+    """Фильтры кандидатов на вакансии"""
+    filter: ResponseFilterInput
+
+    """Сортировка кандидатов на вакансии"""
+    sortBy: ResponsesSortType
+
+    """Курсор пагинации"""
+    after: String
+
+    """Количество запрашиваемых откликов"""
+    first: Int = 50
+  ): Responses!
+
+  """Настройки ограничения времени нахождения на этапе"""
+  sla: SLA!
+
+  """Тип этапа"""
+  statusType: WorkflowStatusType!
+
+  """Вакансия, которой принадлежит этап"""
+  vacancy: Vacancy
+}
+
+"""Данные этапа, доступные через список откликов кандидата"""
+type WorkflowStatusPublicItem {
+  id: Int!
+  name: String!
+
+  """Вакансия, которой принадлежит этап"""
+  vacancy: Vacancy
+}
+
+"""Слепок этапа вакансии в момент события с кандидатом"""
+type WorkflowStatusSnapshot {
+  id: Int!
+  name: String!
+}
+
+"""Тип этапа"""
+enum WorkflowStatusType {
+  """Оценка"""
+  ASSESSMENT
+
+  """Подумать"""
+  CONSIDER
+
+  """Пользовательский"""
+  CUSTOM
+
+  """Отказ"""
+  DISCARDED
+
+  """Выход на работу"""
+  HIRED
+
+  """Неразобранные"""
+  INBOX
+
+  """Интервью"""
+  INTERVIEW
+
+  """Предложение о работе"""
+  OFFER
+
+  """Телефонное интервью"""
+  PHONE_INTERVIEW
+
+  """Из предложенных"""
+  SUGGEST
+}
+
+"""График работы"""
+enum WorkSchedule {
+  """Не имеет значения"""
+  any
+
+  """Гибкий график"""
+  flexible
+
+  """Вахтовый метод"""
+  flyinflyout
+
+  """Полный день"""
+  fullday
+
+  """Удаленная работа"""
+  remote
+
+  """Сменный график"""
+  shift
+}
+
+type WorkTicket implements Dictionary {
+  id: String!
+
+  """Значение элемента справочника"""
+  name: String!
+
+  """Id родительского элемента справочника"""
+  parentId: String
+}
+
+"""Регион, в котором соискатель имеет разрешение на работу"""
+input WorkTicketInput {
+  """Id региона из справочника areas"""
+  id: String!
+}
+
+type WorkTickets {
+  """Элементы коллекции сущностей"""
+  items: [WorkTicket!]!
+}
+
+"""Интеграция с Zarplata"""
+type ZarplataIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+
+  """Url редиректа для OAuth"""
+  redirectUrl: String
+}
+
+"""Интеграция с Zoom"""
+type ZoomIntegration implements Integration {
+  """Можно ли настроить"""
+  customizable: Boolean!
+
+  """Является ли временной заглушкой-анонсом"""
+  dummy: Boolean!
+
+  """Подключена ли интеграция"""
+  enabled: Boolean!
+
+  """Логин в интеграции, отдается если подключена"""
+  login: String
+
+  """URL редирект для OAuth"""
+  redirectUrl: String
+}
