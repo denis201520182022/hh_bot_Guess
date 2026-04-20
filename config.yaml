@@ -48,7 +48,7 @@ services:
     cancel_cards: false
 
   google_sheets_report:  # Отчет в гугл таблицы
-    enabled: true
+    enabled: false
     spreadsheet_url: "https://docs.google.com/spreadsheets/d/1q6Qtcek57WAHDcN3IdS_6GUDTCsAebIjfvzs91fIHCA/edit"
     candidates_sheet_name: "Candidates"
 

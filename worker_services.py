@@ -3,7 +3,9 @@ import asyncio
 import json
 import logging
 import datetime
+import os
 from aiogram import Bot, Dispatcher
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -23,8 +25,24 @@ from app.output_chanels.google_sheets.gs_card import gs_reporter
 from app.tg_bot.handlers import router as main_router
 from app.tg_bot.middlewares import DbSessionMiddleware
 
+# Настраиваем прокси-сессию для бота
+PROXY_HOST = os.getenv("SQUID_PROXY_HOST")
+PROXY_PORT = os.getenv("SQUID_PROXY_PORT")
+PROXY_USER = os.getenv("SQUID_PROXY_USER")
+PROXY_PASSWORD = os.getenv("SQUID_PROXY_PASSWORD")
+
+bot_session = None
+if PROXY_HOST and PROXY_PORT:
+    host = PROXY_HOST.strip('"').strip("'")
+    port = PROXY_PORT.strip('"').strip("'")
+    user = PROXY_USER.strip('"').strip("'") if PROXY_USER else ""
+    password = PROXY_PASSWORD.strip('"').strip("'") if PROXY_PASSWORD else ""
+    proxy_url = f"http://{user}:{password}@{host}:{port}"
+    bot_session = AiohttpSession(proxy=proxy_url)
+    logging.info(f"Бот запущен через прокси: {host}:{port}")
+
 # Инициализация ТГ-бота
-bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
+bot = Bot(token=settings.TELEGRAM_BOT_TOKEN, session=bot_session) if bot_session else Bot(token=settings.TELEGRAM_BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 

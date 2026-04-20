@@ -392,5 +392,458 @@ class TalantixService:
 
         return None
 
+    async def find_persons_by_phone(
+        self, phone: str, account: Account, db: AsyncSession
+    ) -> list[dict]:
+        """
+        Поиск всех кандидатов по номеру телефона.
+        Возвращает список кандидатов с базовой информацией.
+        
+        Args:
+            phone: Номер телефона (в любом формате)
+            account: Аккаунт Talantix
+            db: Сессия БД
+            
+        Returns:
+            Список словарей с полями: id, firstName, lastName, area, source
+        """
+        normalized_phone = self._normalize_phone(phone)
+        if not normalized_phone:
+            self.logger.warning("find_persons_by_phone: пустой номер телефона")
+            return []
+
+        self.logger.info(f"🔍 Поиск кандидатов в Talantix по номеру: {phone}")
+
+        query = """
+        query JustCandidate($phone: String!) {
+          persons(filter: {search: $phone, searchFrom: CONTACTS}) {
+            items {
+              id
+              firstName
+              lastName
+              area {
+                name
+              }
+              source {
+                name
+              }
+            }
+          }
+        }
+        """
+        variables = {"phone": phone}
+        
+        response = await self.graphql_client._send_graphql_request(
+            query, variables, account, db
+        )
+        
+        if response.errors:
+            self.logger.error(f"❌ Ошибка поиска в Talantix: {response.errors}")
+            return []
+        
+        persons_data = ((response.data or {}).get("persons") or {}).get("items") or []
+        self.logger.info(f"✅ Найдено {len(persons_data)} кандидатов в Talantix")
+        
+        return persons_data
+
+    async def get_person_responses(
+        self, person_id: int, account: Account, db: AsyncSession
+    ) -> dict | None:
+        """
+        Получение информации о кандидате и его откликах.
+        
+        Args:
+            person_id: ID кандидата в Talantix
+            account: Аккаунт Talantix
+            db: Сессия БД
+            
+        Returns:
+            Словарь с данными кандидата и его откликами или None при ошибке
+        """
+        self.logger.info(f"🔍 Получение данных кандидата Talantix (person_id={person_id})")
+
+        query = """
+        query GetFinalData($personId: Int!) {
+          person(id: $personId) {
+            ... on PersonItem {
+              id
+              firstName
+              lastName
+              responses {
+                items {
+                  ... on ResponseItem {
+                    workflowStatus {
+                      ... on WorkflowStatusItem {
+                        vacancy {
+                          ... on VacancyItem {
+                            id
+                            title
+                            vacancyManagers {
+                              items {
+                                vacancyRole
+                                manager {
+                                  firstName
+                                  lastName
+                                  email
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+        variables = {"personId": person_id}
+        
+        response = await self.graphql_client._send_graphql_request(
+            query, variables, account, db
+        )
+        
+        if response.errors:
+            self.logger.error(f"❌ Ошибка получения данных кандидата {person_id}: {response.errors}")
+            return None
+        
+        person_data = (response.data or {}).get("person")
+        if not person_data:
+            self.logger.warning(f"⚠️ Кандидат {person_id} не найден")
+            return None
+        
+        self.logger.info(f"✅ Получены данные кандидата {person_id}")
+        return person_data
+
+    async def get_all_vacancies_with_managers(
+        self, account: Account, db: AsyncSession
+    ) -> dict[int, list[dict]]:
+        """
+        Получение списка всех вакансий с их менеджерами.
+        
+        Args:
+            account: Аккаунт Talantix
+            db: Сессия БД
+            
+        Returns:
+            Словарь {vacancy_id: [managers]} где managers — список с полями:
+            manager_id, firstName, lastName, middleName, vacancyRole
+        """
+        self.logger.info("🔍 Получение списка всех вакансий с менеджерами из Talantix")
+
+        query = """
+        query VacanciesManagerList {
+          vacancies {
+            items {
+              id
+              vacancyManagers {
+                items {
+                  manager {
+                    id
+                    lastName
+                    firstName
+                    middleName
+                  }
+                  vacancyRole
+                }
+              }
+            }
+          }
+        }
+        """
+        
+        response = await self.graphql_client._send_graphql_request(
+            query, None, account, db
+        )
+        
+        if response.errors:
+            self.logger.error(f"❌ Ошибка получения вакансий: {response.errors}")
+            return {}
+        
+        vacancies_data = ((response.data or {}).get("vacancies") or {}).get("items") or []
+        
+        # Преобразуем в удобный словарь {vacancy_id: [managers]}
+        result = {}
+        for vacancy in vacancies_data:
+            vacancy_id = vacancy.get('id')
+            if not vacancy_id:
+                continue
+            
+            managers_list = []
+            vacancy_managers = ((vacancy.get('vacancyManagers') or {}).get('items') or [])
+            
+            for manager_item in vacancy_managers:
+                manager = manager_item.get('manager') or {}
+                managers_list.append({
+                    'manager_id': manager.get('id'),
+                    'firstName': manager.get('firstName'),
+                    'lastName': manager.get('lastName'),
+                    'middleName': manager.get('middleName'),
+                    'vacancyRole': manager_item.get('vacancyRole')
+                })
+            
+            result[vacancy_id] = managers_list
+        
+        self.logger.info(f"✅ Получено {len(result)} вакансий с менеджерами")
+        return result
+
+    async def create_person_comment(
+        self,
+        person_id: int,
+        text: str,
+        account: Account,
+        db: AsyncSession,
+        visible_for_all: bool = True
+    ) -> int | None:
+        """
+        Создание комментария к кандидату в Talantix.
+        
+        Args:
+            person_id: ID кандидата в Talantix
+            text: Текст комментария
+            account: Аккаунт Talantix
+            db: Сессия БД
+            visible_for_all: Видимость комментария (True = виден всем)
+            
+        Returns:
+            ID созданного комментария или None при ошибке
+        """
+        self.logger.info(f"💬 Создание комментария для кандидата {person_id} в Talantix")
+
+        mutation = """
+        mutation CreatePersonComment($commentCreate: PersonCommentCreateInput!) {
+          createPersonComment(commentCreate: $commentCreate) {
+            __typename
+            ... on Comment {
+              id
+            }
+            ... on PersonCommentCreateError {
+              errorType
+              errors {
+                field
+                violatedConstraints
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {
+            "commentCreate": {
+                "personId": person_id,
+                "text": text,
+                "commentVisibility": {
+                    "visibleForAll": visible_for_all
+                }
+            }
+        }
+        
+        response = await self.graphql_client._send_graphql_request(
+            mutation, variables, account, db
+        )
+        
+        payload = (response.data or {}).get("createPersonComment")
+        
+        if not payload:
+            self.logger.error(f"❌ Пустой ответ при создании комментария для {person_id}")
+            return None
+        
+        typename = payload.get("__typename")
+        
+        if typename == "Comment":
+            comment_id = payload.get("id")
+            self.logger.info(f"✅ Комментарий создан для кандидата {person_id} (comment_id={comment_id})")
+            return int(comment_id) if comment_id else None
+        
+        elif typename == "PersonCommentCreateError":
+            errors = payload.get("errors", [])
+            self.logger.error(
+                f"❌ Ошибка создания комментария для {person_id}: {payload.get('errorType')}, errors={errors}"
+            )
+            return None
+        
+        else:
+            self.logger.error(f"❌ Неизвестный тип ответа: {typename}")
+            return None
+
+    @staticmethod
+    def format_comment_text(
+        event_type: str,
+        candidate_name: str,
+        vacancy_title: str,
+        profile_data: dict = None,
+        interview_date: str = None,
+        interview_time: str = None,
+        old_date: str = None,
+        old_time: str = None,
+        reason: str = None,
+        platform: str = None
+    ) -> str:
+        """
+        Формирует текст комментария для Talantix в зависимости от типа события.
+        Данные как в TG-карточке, но без ФИО и телефона.
+        
+        Args:
+            event_type: 'qualified', 'rescheduled', 'cancelled', 'rejected', 'silence'
+            candidate_name: Имя кандидата
+            vacancy_title: Название вакансии
+            profile_data: Профиль кандидата (age, citizenship, employment_type и т.д.)
+            interview_date/time: Дата и время собеседования
+            old_date/time: Старая дата/время (для переноса)
+            reason: Причина (для отмены/отказа)
+            platform: Платформа (HH, Avito)
+        """
+        platform_str = f" ({platform.upper()})" if platform else ""
+        profile = profile_data or {}
+        
+        # Перевод значений как в TG-карточках
+        emp_type = profile.get('employment_type')
+        emp_label = "Полная" if emp_type == "full" else "Частичная" if emp_type == "part" else "—"
+        
+        hours = profile.get('ready_20_40_hours')
+        hours_label = "✅ Да" if hours == "yes" else "❌ Нет" if hours == "no" else "—"
+        
+        shift = profile.get('shift_preference')
+        shift_map = {"morning": "🌅 Утро", "evening": "🌆 Вечер", "any": "🔄 Любая"}
+        shift_label = shift_map.get(shift, "—")
+        
+        contract = profile.get('employment_contract_ready')
+        contract_label = "✅ Да" if contract == "yes" else "❌ Нет" if contract == "no" else "—"
+        
+        military = profile.get('has_military_document')
+        military_label = "✅ Да" if military == "yes" else "❌ Нет" if military == "no" else "—"
+        
+        # Формируем блок анкеты
+        profile_lines = [
+            f"🎂 Возраст: {profile.get('age', '—')}",
+            f"🌍 Гражданство: {profile.get('citizenship', '—')}",
+            f"⏳ Занятость: {emp_label}",
+        ]
+        
+        if emp_type == "part":
+            profile_lines.append(f"⏱ Готов 20-40ч: {hours_label}")
+        elif emp_type == "full":
+            profile_lines.append(f"🕒 Смена: {shift_label}")
+        
+        profile_lines.append(f"📋 Оформление ТК: {contract_label}")
+        profile_lines.append(f"🎖 Военный билет: {military_label}")
+        
+        profile_text = "\n".join(profile_lines)
+        
+        # Заголовки в зависимости от типа события
+        if event_type == 'qualified':
+            header = f"🚀 Запись на собеседование{platform_str}"
+            body = (
+                f"{header}\n\n"
+                f"📌 Вакансия: {vacancy_title}\n\n"
+                f"{profile_text}\n\n"
+                f"📅 Собеседование: {interview_date} в {interview_time}\n"
+                f"Рекрутер и Директор оповещены."
+            )
+        
+        elif event_type == 'rescheduled':
+            header = f"🔄 Перенос собеседования{platform_str}"
+            body = (
+                f"{header}\n\n"
+                f"📌 Вакансия: {vacancy_title}\n\n"
+                f"{profile_text}\n\n"
+                f"📅 Было: {old_date} в {old_time}\n"
+                f"📅 Стало: {interview_date} в {interview_time}"
+            )
+        
+        elif event_type == 'cancelled':
+            header = f"❌ Отмена собеседования{platform_str}"
+            reason_text = f"\n📝 Причина: {reason}" if reason else ""
+            body = (
+                f"{header}\n\n"
+                f"📌 Вакансия: {vacancy_title}\n\n"
+                f"🗓 Отменено: {interview_date} в {interview_time}"
+                f"{reason_text}"
+            )
+        
+        elif event_type == 'rejected':
+            header = f"⛔ Отказ кандидату{platform_str}"
+            reason_text = f"\n📝 Причина: {reason}" if reason else ""
+            body = (
+                f"{header}\n\n"
+                f"📌 Вакансия: {vacancy_title}\n\n"
+                f"{profile_text}"
+                f"{reason_text}"
+            )
+        
+        elif event_type == 'silence':
+            header = f"⏰ Напоминание отправлено{platform_str}"
+            body = (
+                f"{header}\n\n"
+                f"📌 Вакансия: {vacancy_title}\n\n"
+                f"Кандидат не отвечает на сообщения"
+            )
+        
+        else:
+            body = f"Событие: {event_type}\nВакансия: {vacancy_title}"
+        
+        return body
+
+    async def notify_talantix_comment(
+        self,
+        dialogue: 'Dialogue',
+        event_type: str,
+        db: AsyncSession,
+        reason: str = None
+    ):
+        """
+        Универсальный метод для создания комментария в Talantix.
+        Находит person_id в metadata_json диалога и создаёт комментарий.
+        
+        Args:
+            dialogue: Объект диалога из БД
+            event_type: Тип события ('qualified', 'rescheduled', 'cancelled', 'rejected', 'silence')
+            db: Сессия БД
+            reason: Причина (для отмены/отказа)
+        """
+        # Получаем person_id из metadata_json
+        metadata = dialogue.metadata_json or {}
+        talantix_data = metadata.get('talantix') or {}
+        person_id = talantix_data.get('person_id')
+        
+        if not person_id:
+            self.logger.debug(f"💬 Пропуск комментария Talantix: person_id не найден в диалоге {dialogue.id}")
+            return None
+        
+        # Собираем данные для комментария
+        candidate = dialogue.candidate
+        vacancy = dialogue.vacancy
+        profile = candidate.profile_data if candidate else {}
+        meta = dialogue.metadata_json or {}
+        
+        comment_text = self.format_comment_text(
+            event_type=event_type,
+            candidate_name=candidate.full_name if candidate else 'Неизвестно',
+            vacancy_title=vacancy.title if vacancy else 'Не указана',
+            profile_data=profile,
+            interview_date=meta.get('interview_date'),
+            interview_time=meta.get('interview_time'),
+            old_date=meta.get('old_interview_date'),
+            old_time=meta.get('old_interview_time'),
+            reason=reason,
+            platform=dialogue.account.platform if dialogue.account else None
+        )
+        
+        # Получаем аккаунт Talantix
+        talantix_account = await self._get_account(db, "talantix_api")
+        if not talantix_account:
+            self.logger.warning("⚠️ Аккаунт talantix_api не найден. Пропуск комментария.")
+            return None
+        
+        # Создаём комментарий
+        return await self.create_person_comment(
+            person_id=person_id,
+            text=comment_text,
+            account=talantix_account,
+            db=db
+        )
+
 # Глобальный экземпляр сервиса
 talantix_crm_service = TalantixService()

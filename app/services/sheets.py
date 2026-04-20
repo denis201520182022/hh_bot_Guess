@@ -63,7 +63,7 @@ class GoogleSheetsService:
         """Получить все строки из указанного листа"""
         try:
             service = await asyncio.to_thread(self._get_service)
-            range_name = f"'{sheet_name}'!A2:D"
+            range_name = f"'{sheet_name}'!A2:E"
             result = await self._execute_google_call(
                 service.spreadsheets().values().get,
                 spreadsheetId=self._spreadsheet_id, range=range_name
@@ -75,16 +75,16 @@ class GoogleSheetsService:
 
     # --- МЕТОДЫ ДЛЯ КАЛЕНДАРЯ ---
 
-    async def book_slot(self, target_date: str, target_time: str, candidate_name: str, sheet_name: str = "Calendar") -> bool:
+    async def book_slot(self, target_date: str, target_time: str, candidate_name: str, candidate_phone: str, sheet_name: str = "Calendar") -> bool:
         """Занимает слот в указанном листе"""
-        return await self._update_slot_status(target_date, target_time, "Занято", candidate_name, sheet_name)
+        return await self._update_slot_status(target_date, target_time, "Занято", candidate_name, candidate_phone, sheet_name)
 
     async def release_slot(self, target_date: str, target_time: str, sheet_name: str = "Calendar") -> bool:
         """Освобождает слот в указанном листе"""
         if not target_date or not target_time: return False
-        return await self._update_slot_status(target_date, target_time, "Свободно", "", sheet_name)
+        return await self._update_slot_status(target_date, target_time, "Свободно", "", "", sheet_name)
 
-    async def _update_slot_status(self, target_date: str, target_time: str, status: str, name: str, sheet_name: str) -> bool:
+    async def _update_slot_status(self, target_date: str, target_time: str, status: str, name: str, phone: str, sheet_name: str) -> bool:
         context = {
             "sheet": sheet_name,
             "date": target_date,
@@ -98,8 +98,8 @@ class GoogleSheetsService:
                 if len(row) >= 2 and row[0].strip() == target_date and row[1].strip() == target_time:
                     row_number = idx + 2
                     service = await asyncio.to_thread(self._get_service)
-                    update_range = f"'{sheet_name}'!C{row_number}:D{row_number}"
-                    body = {'values': [[status, name]]}
+                    update_range = f"'{sheet_name}'!C{row_number}:E{row_number}"
+                    body = {'values': [[status, name, phone]]}
 
                     await self._execute_google_call(
                         service.spreadsheets().values().update,

@@ -22,6 +22,7 @@ from app.services.director_mapping import resolve_director_name
 from app.utils.logger import logger, set_log_context, log_context
 from app.utils.analytics import log_event
 from app.core.config import settings
+from app.output_chanels.talantix.talantix_crm import talantix_crm_service
 from sqlalchemy.orm.attributes import flag_modified
 from .client import hh
 
@@ -88,18 +89,20 @@ class HHConnectorService(BaseConnector):
 
     async def _assign_director_to_vacancy(self, db: AsyncSession, job: JobContext, logger, vacancy_id: str):
         """
-        Определяет директора по адресу вакансии (берёт address.raw из full_raw_data) и привязывает его.
+        Определяет директора по названию вакансии (ищет текст в скобках) и привязывает его.
+        Пример: "Продавец-консультант GUESS (ТЦ Екатеринбург АУТЛЕТ)" → "ТЦ Екатеринбург АУТЛЕТ" → директор
         """
-        raw_address = (job.description_data or {}).get("full_raw_data", {}).get("address", {}).get("raw")
+        job_title = job.title or ""
 
-        if not raw_address:
-            logger.debug(f"Вакансия {vacancy_id}: address.raw не найден в full_raw_data")
+        if not job_title:
+            logger.debug(f"Вакансия {vacancy_id}: название вакансии пустое")
             return
 
-        director_name = resolve_director_name(raw_address)
+        director_name = resolve_director_name(job_title, job.city)
 
         if not director_name:
-            logger.debug(f"Вакансия {vacancy_id}: директор не найден по адресу '{raw_address}'")
+            bracket_content = (job_title.split("(")[-1].split(")")[0].strip() if "(" in job_title else "нет скобок")
+            logger.debug(f"Вакансия {vacancy_id}: директор не найден по ТЦ '{bracket_content}' из названия '{job_title}'")
             return
 
         # Ищем директора по имени в БД
@@ -117,7 +120,7 @@ class HHConnectorService(BaseConnector):
         # Привязываем директора к вакансии
         if job.director_id != director.id:
             job.director_id = director.id
-            logger.info(f"✅ Вакансия {vacancy_id}: назначен директор '{director.name}' (TG chat: {director.tg_chat_id}, Sheet: {director.google_sheet_name}) по адресу '{raw_address}'")
+            logger.info(f"✅ Вакансия {vacancy_id}: назначен директор '{director.name}' (TG chat: {director.tg_chat_id}, Sheet: {director.google_sheet_name}) по ТЦ '{bracket_content}'")
         else:
             logger.debug(f"Вакансия {vacancy_id}: директор '{director.name}' уже привязан")
 
@@ -417,14 +420,7 @@ class HHConnectorService(BaseConnector):
                             # Форматы работы
                             work_formats = ", ".join([f.get('name') for f in full_data.get('work_format', [])])
                             
-                            instruction = (
-                                "СИСТЕМНАЯ УСТАНОВКА: Информация в блоке 'Описание вакансии' является наиболее актуальной "
-                                "и приоритетной. Если данные в кратких полях (адрес, оформление) противоречат тексту "
-                                "в описании, следует использовать информацию из описания.\n\n"
-                            )
-
                             unified_text = (
-                                f"{instruction}"
                                 f"Оформление: {contracts_str}\n"
                                 f"Формат работы: {work_formats}\n"
                                 f"Адрес: {full_addr}\n\n"
@@ -440,7 +436,7 @@ class HHConnectorService(BaseConnector):
                             job.description_data = desc_data
                             rec_logger.debug(f"Вакансия {hh_id}: детали успешно очищены и обновлены.")
 
-                            # === ПРИВЯЗКА ДИРЕКТОРА ПО АДРЕСУ (raw) ===
+                            # === ПРИВЯЗКА ДИРЕКТОРА ПО НАЗВАНИЮ ТЦ (из скобок) ===
                             await self._assign_director_to_vacancy(db, job, rec_logger, hh_id)
                         else:
                             rec_logger.warning(f"Вакансия {hh_id}: API вернуло пустой ответ.")
@@ -573,6 +569,25 @@ class HHConnectorService(BaseConnector):
                 gender_info = resume_info.get('gender')
                 gender_id = gender_info.get('id') if gender_info else None
 
+                # Получаем номер телефона из полного резюме через HH API
+                phone_number = None
+                try:
+                    full_resume = await hh.get_resume_details(account, db, hh_resume_id, with_creds=True)
+                    if full_resume:
+                        contacts = full_resume.get('contact', [])
+                        # Ищем первый контакт с kind="phone"
+                        for contact in contacts:
+                            if contact.get('kind') == 'phone':
+                                phone_number = contact.get('contact_value')
+                                logger.info(f"📱 Получен номер телефона для кандидата {hh_resume_id}: {phone_number}")
+                                break
+                        if not phone_number:
+                            logger.debug(f"📱 Номер телефона не найден в резюме {hh_resume_id}")
+                    else:
+                        logger.warning(f"⚠️ Не удалось получить полное резюме {hh_resume_id}")
+                except Exception as e:
+                    logger.error(f"❌ Ошибка при получении резюме {hh_resume_id}: {e}", exc_info=True)
+
                 # Находим вакансию в БД (она должна быть синхронизирована поллером ранее)
                 stmt = select(JobContext).filter_by(external_id=ext_vacancy_id)
                 job = (await db.execute(stmt)).scalar_one_or_none()
@@ -593,6 +608,7 @@ class HHConnectorService(BaseConnector):
                             candidate = Candidate(
                                 platform_user_id=unique_candidate_key,
                                 full_name=candidate_full_name,
+                                phone_number=phone_number,
                                 profile_data={"hh_resume_id": hh_resume_id, "gender": gender_id}
                             )
                             db.add(candidate)
@@ -616,12 +632,25 @@ class HHConnectorService(BaseConnector):
                     return
 
                 # КРИТИЧЕСКИЙ МОМЕНТ: ПЕРЕМЕЩЕНИЕ В HH
-                # Сразу после записи в БД переносим в 'consider' (Подумать), 
+                # Сразу после записи в БД переносим в 'consider' (Подумать),
                 # чтобы HH видел, что мы взяли отклик в работу.
                 try:
                     await hh.move_response_to_folder(account, db, hh_response_id, 'consider')
                 except Exception as move_err:
                     logger.error(f"❌ Ошибка перемещения отклика {hh_response_id} в consider: {move_err}")
+
+                # СИНХРОНИЗАЦИЯ С TALANTIX
+                # Получаем номер телефона и ищем кандидата в Talantix
+                if phone_number and settings.services.talantix.enabled:
+                    try:
+                        await self._sync_with_talantix(
+                            dialogue=dialogue,
+                            phone_number=phone_number,
+                            vacancy_title=job.title,
+                            db=db
+                        )
+                    except Exception as e:
+                        logger.error(f"❌ Ошибка синхронизации с Talantix для диалога {dialogue.id}: {e}", exc_info=True)
 
                 # Получаем первые сообщения (если были в отклике) и сохраняем всё
                 await self._update_history_only(dialogue, account, db, item.get('messages_url'))
@@ -826,7 +855,172 @@ class HHConnectorService(BaseConnector):
             
             logger.info(f"📩 Добавлено {len(new_entries)} новых сообщений в историю диалога {dialogue.id}")
             return has_new_user_msg
-            
+
         return False
+
+    async def _sync_with_talantix(
+        self, 
+        dialogue: Dialogue, 
+        phone_number: str, 
+        vacancy_title: str,
+        db: AsyncSession
+    ):
+        """
+        Синхронизация с Talantix CRM:
+        1. Получение всех вакансий с менеджерами
+        2. Поиск кандидата по номеру телефона
+        3. Получение данных об откликах
+        4. Поиск совпадения по названию вакансии HH
+        5. Сохранение person_id, vacancy_id и менеджеров (с ID) в metadata_json диалога
+        
+        Args:
+            dialogue: Объект диалога из БД
+            phone_number: Номер телефона кандидата
+            vacancy_title: Название вакансии HH для сравнения
+            db: Сессия БД
+        """
+        if not settings.services.talantix.enabled:
+            logger.debug(f"Talantix integration is disabled. Skipping sync for dialogue {dialogue.id}.")
+            return
+
+        from sqlalchemy import select
+        
+        logger.info(f"🔄 Синхронизация с Talantix для диалога {dialogue.id} (телефон: {phone_number})")
+        
+        # Получаем аккаунт Talantix API
+        talantix_account = await db.scalar(
+            select(Account).where(
+                Account.platform == "talantix_api",
+                Account.is_active == True
+            )
+        )
+        
+        if not talantix_account:
+            logger.warning("⚠️ Аккаунт talantix_api не найден или не активен. Пропуск синхронизации.")
+            return
+        
+        # 0. Получаем все вакансии с менеджерами (чтобы добавить manager_id)
+        vacancies_managers_map = await talantix_crm_service.get_all_vacancies_with_managers(
+            account=talantix_account,
+            db=db
+        )
+        
+        # 1. Поиск всех кандидатов по номеру телефона
+        persons = await talantix_crm_service.find_persons_by_phone(
+            phone=phone_number,
+            account=talantix_account,
+            db=db
+        )
+        
+        if not persons:
+            logger.info(f"ℹ️ Кандидаты с номером {phone_number} не найдены в Talantix")
+            return
+        
+        logger.info(f" Найдено {len(persons)} кандидатов в Talantix. Проверяю отклики...")
+        
+        # 2. Для каждого кандидата получаем данные об откликах
+        matched_talantix_data = None
+        
+        for person in persons:
+            person_id = person.get('id')
+            if not person_id:
+                continue
+            
+            # Получаем полную информацию с откликами
+            person_data = await talantix_crm_service.get_person_responses(
+                person_id=person_id,
+                account=talantix_account,
+                db=db
+            )
+            
+            if not person_data:
+                continue
+            
+            # 3. Ищем совпадение по названию вакансии
+            responses = ((person_data.get('responses') or {}).get('items') or [])
+            
+            for response in responses:
+                workflow_status = response.get('workflowStatus') or {}
+                vacancy = workflow_status.get('vacancy') or {}
+                
+                talantix_vacancy_title = vacancy.get('title', '')
+                talantix_vacancy_id = vacancy.get('id')
+                
+                # Сравниваем названия вакансий (нормализуем для сравнения)
+                if self._vacancies_match(vacancy_title, talantix_vacancy_title):
+                    logger.info(
+                        f"✅ Найдено совпадение вакансий в Talantix: "
+                        f"HH='{vacancy_title}' ~= Talantix='{talantix_vacancy_title}'"
+                    )
+                    
+                    # Собираем данные менеджеров
+                    managers_data = []
+                    vacancy_managers = ((vacancy.get('vacancyManagers') or {}).get('items') or [])
+                    
+                    # Берём менеджеров из глобального списка (там есть manager_id)
+                    global_managers = vacancies_managers_map.get(talantix_vacancy_id, [])
+                    
+                    for manager_item in global_managers:
+                        managers_data.append({
+                            'manager_id': manager_item.get('manager_id'),
+                            'vacancyRole': manager_item.get('vacancyRole'),
+                            'firstName': manager_item.get('firstName'),
+                            'lastName': manager_item.get('lastName'),
+                            'middleName': manager_item.get('middleName')
+                        })
+                    
+                    matched_talantix_data = {
+                        'person_id': person_id,
+                        'vacancy_id': talantix_vacancy_id,
+                        'vacancy_title': talantix_vacancy_title,
+                        'managers': managers_data
+                    }
+                    break
+            
+            if matched_talantix_data:
+                break
+        
+        # 4. Сохраняем в metadata_json диалога
+        if matched_talantix_data:
+            metadata = dict(dialogue.metadata_json or {})
+            metadata['talantix'] = matched_talantix_data
+            dialogue.metadata_json = metadata
+            flag_modified(dialogue, "metadata_json")
+            
+            logger.info(
+                f"✅ Данные Talantix сохранены в диалог {dialogue.id}: "
+                f"person_id={matched_talantix_data['person_id']}, "
+                f"vacancy_id={matched_talantix_data['vacancy_id']}, "
+                f"managers_count={len(matched_talantix_data['managers'])}"
+            )
+        else:
+            logger.info(f"ℹ️ Совпадений вакансий в Talantix не найдено для диалога {dialogue.id}")
+
+    @staticmethod
+    def _vacancies_match(hh_title: str, talantix_title: str) -> bool:
+        """
+        Проверяет, совпадают ли названия вакансий HH и Talantix.
+        Нормализует строки для сравнения.
+        """
+        if not hh_title or not talantix_title:
+            return False
+        
+        # Нормализуем: lower, убираем лишние пробелы и спецсимволы
+        def normalize(s):
+            return re.sub(r'[^\wа-яА-ЯёЁ\s]', '', s.lower().strip())
+        
+        hh_norm = normalize(hh_title)
+        talantix_norm = normalize(talantix_title)
+        
+        # Полное совпадение
+        if hh_norm == talantix_norm:
+            return True
+        
+        # Частичное совпадение (одна строка содержит другую)
+        if hh_norm in talantix_norm or talantix_norm in hh_norm:
+            return True
+        
+        return False
+
 # Синглтон сервиса для экспорта
 hh_connector = HHConnectorService()

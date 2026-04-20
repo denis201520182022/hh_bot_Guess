@@ -297,37 +297,165 @@ class TalantixCalendClient:
 
     async def book_slot(
         self,
-        slot_id: int,
-        candidate_id: int | None = None,
-        vacancy_id: int | None = None,
-        account: Account | None = None,
-        db: AsyncSession | None = None,
+        start_date: int,
+        end_date: int,
+        person_ids: list[int] | None = None,
+        vacancy_ids: list[int] | None = None,
+        manager_ids: list[int] | None = None,
         title: str | None = None,
         comment: str | None = None,
+        place: str = "",
+        timezone: str = "europe/moscow",
+        send_person_message: bool = False,
+        sync_with_external_calendar: bool = False,
+        person_message_file_ids: list[int] | None = None,
+        account: Account | None = None,
+        db: AsyncSession | None = None,
     ) -> dict:
         """
-        Бронирование слота для собеседования.
+        Создание встречи/собеседования в календаре Talantix.
+
+        Args:
+            start_date: timestamp начала встречи в ms (UTC)
+            end_date: timestamp конца встречи в ms (UTC)
+            person_ids: список ID кандидатов (personId)
+            vacancy_ids: список ID вакансий
+            manager_ids: список ID менеджеров-участников
+            title: название встречи (тип)
+            comment: комментарий в формате HTML
+            place: место проведения
+            timezone: часовой пояс (по умолчанию europe/moscow)
+            send_person_message: отправить уведомление кандидату
+            sync_with_external_calendar: синхронизация с внешним календарём
+            person_message_file_ids: файлы для сообщения кандидату
+            account: аккаунт Talantix
+            db: сессия БД
+
+        Returns:
+            dict: ответ API с данными календаря (включая созданную встречу)
         """
         if account is None or db is None:
             raise ValueError("account и db обязательны для book_slot")
+
         path = "/ats/calendar/meeting"
+
         payload: dict[str, Any] = {
-            "slotId": slot_id,
-            "startDate": slot_id,  # slot_id это timestamp начала слота
-            "endDate": slot_id + 3600000,  # конец слота = начало + 1 час (в ms)
+            "startDate": start_date,
+            "endDate": end_date,
+            "timezone": timezone,
+            "personIds": person_ids or [],
+            "vacancyIds": vacancy_ids or [],
+            "managerIds": manager_ids or [],
+            "type": title or "",
+            "comment": {
+                "dangerousHtml": comment or ""
+            },
+            "place": place,
+            "sendPersonMessage": send_person_message,
+            "syncWithExternalCalendar": sync_with_external_calendar,
+            "personMessageFileIds": person_message_file_ids or [],
         }
-        if candidate_id:
-            payload["candidateId"] = candidate_id
-        if vacancy_id:
-            payload["vacancyId"] = vacancy_id
 
-        payload["type"] = title or "Без названия"
-        payload["comment"] = {
-            "dangerousHtml": comment or ""
-        }
-
-        self.logger.info("book_slot: payload=%s", payload)
+        self.logger.info(
+            "book_slot: start_date=%s, end_date=%s, person_ids=%s, vacancy_ids=%s, manager_ids=%s, type=%s",
+            start_date, end_date, person_ids, vacancy_ids, manager_ids, title,
+        )
         return await self._send_request("POST", path, account, db, json=payload)
+
+    async def get_managers(
+        self,
+        roles: list[str] | None = None,
+        search_by_name: str = "",
+        account: Account | None = None,
+        db: AsyncSession | None = None,
+    ) -> list[dict]:
+        """
+        Получение списка менеджеров через GraphQL API.
+
+        Args:
+            roles: список ролей (ADMIN, RECRUITER, LINE_MANAGER, MEMBER)
+            search_by_name: поиск по имени
+            account: аккаунт Talantix
+            db: сессия БД
+
+        Returns:
+            list[dict]: список менеджеров с полями id, firstName, lastName, email, managerRole
+        """
+        if account is None or db is None:
+            raise ValueError("account и db обязательны для get_managers")
+
+        if roles is None:
+            roles = ["ADMIN", "RECRUITER", "LINE_MANAGER", "MEMBER"]
+
+        query = """
+            query FilteredManagers(
+                $managerLicenseTypes: [ManagerLicenseType!],
+                $roles: [ManagerRole!],
+                $searchByName: String,
+                $after: String,
+                $sortType: ManagerSortTypeInput
+            ) {
+                managers(
+                    filter: {
+                        managerLicenseTypes: $managerLicenseTypes,
+                        roles: $roles,
+                        searchByName: $searchByName
+                    },
+                    after: $after,
+                    first: 50,
+                    sortType: $sortType
+                ) {
+                    ... on Managers {
+                        items {
+                            id
+                            hhManagerId
+                            firstName
+                            lastName
+                            middleName
+                            email
+                            managerRole
+                            __typename
+                        }
+                        pageInfo {
+                            endCursor
+                            hasNextPage
+                            __typename
+                        }
+                        __typename
+                    }
+                    __typename
+                }
+            }
+        """
+
+        variables = {
+            "roles": roles,
+            "searchByName": search_by_name,
+            "sortType": "BY_MANAGER_ID",
+            "after": None,
+        }
+
+        graphql_payload = {
+            "operationName": "FilteredManagers",
+            "query": query.strip(),
+            "variables": variables,
+        }
+
+        path = "/ats/graphql?operationName=FilteredManagers"
+
+        self.logger.info(
+            "get_managers: roles=%s, search_by_name=%s", roles, search_by_name,
+        )
+
+        result = await self._send_request(
+            "POST", path, account, db, json=graphql_payload,
+        )
+
+        managers_data = result.get("data", {}).get("managers", {})
+        items = managers_data.get("items", [])
+
+        self.logger.info("get_managers: found %s managers", len(items))
+        return items
 
     async def cancel_interview(
         self,
@@ -336,13 +464,47 @@ class TalantixCalendClient:
         db: AsyncSession | None = None,
     ) -> dict:
         """
-        Отмена записанного собеседования.
+        Отмена записанного собеседования через GraphQL мутацию.
+
+        Args:
+            interview_id: ID встречи в календаре Talantix
+            account: аккаунт Talantix
+            db: сессия БД
+
+        Returns:
+            dict: ответ API с результатом удаления
         """
         if account is None or db is None:
             raise ValueError("account и db обязательны для cancel_interview")
 
-        path = f"/ats/calendar/meeting/{interview_id}"
-        return await self._send_request("DELETE", path, account, db)
+        query = """
+            mutation DeleteCalendarMeeting($id: Int!) {
+                deleteCalendarMeeting(id: $id) {
+                    __typename
+                    ... on CalendarMeetingDeleteError {
+                        errorType
+                        __typename
+                    }
+                    ... on CalendarMeetingDeleteSuccess {
+                        id
+                        __typename
+                    }
+                }
+            }
+        """
+
+        graphql_payload = {
+            "operationName": "DeleteCalendarMeeting",
+            "query": query.strip(),
+            "variables": {"id": interview_id},
+        }
+
+        path = "/ats/graphql?operationName=DeleteCalendarMeeting"
+
+        self.logger.info("cancel_interview: interview_id=%s", interview_id)
+        return await self._send_request(
+            "POST", path, account, db, json=graphql_payload,
+        )
 
 
 class TalantixService:
@@ -528,50 +690,99 @@ class TalantixService:
 
     async def book_interview(
         self,
-        slot_id: int,
-        candidate_id: int | None = None,
-        vacancy_id: int | None = None,
+        start_date: int,
+        end_date: int,
+        person_ids: list[int] | None = None,
+        vacancy_ids: list[int] | None = None,
+        manager_ids: list[int] | None = None,
         title: str | None = None,
         comment: str | None = None,
-    ) -> bool:
+        place: str = "",
+        timezone: str = "europe/moscow",
+        send_person_message: bool = False,
+        sync_with_external_calendar: bool = False,
+        person_message_file_ids: list[int] | None = None,
+    ) -> int | None:
         """
-        Бронирование слота для собеседования.
+        Создание встречи/собеседования в календаре Talantix.
+
+        Args:
+            start_date: timestamp начала встречи в ms (UTC)
+            end_date: timestamp конца встречи в ms (UTC)
+            person_ids: список ID кандидатов (personId)
+            vacancy_ids: список ID вакансий
+            manager_ids: список ID менеджеров-участников (создатель + участники)
+            title: название встречи (тип)
+            comment: комментарий в формате HTML
+            place: место проведения
+            timezone: часовой пояс (по умолчанию europe/moscow)
+            send_person_message: отправить уведомление кандидату
+            sync_with_external_calendar: синхронизация с внешним календарём
+            person_message_file_ids: файлы для сообщения кандидату
+
+        Returns:
+            int | None: ID созданной встречи (meeting_id) или None при ошибке
         """
         self.logger.info(
-            "🔍 book_interview вызван: slot_id=%s, candidate_id=%s, vacancy_id=%s, title=%s",
-            slot_id, candidate_id, vacancy_id, title
+            "🔍 book_interview вызван: start_date=%s, end_date=%s, person_ids=%s, vacancy_ids=%s, manager_ids=%s, title=%s",
+            start_date, end_date, person_ids, vacancy_ids, manager_ids, title,
         )
-        
+
         async with AsyncSessionLocal() as db:
             account = await self._get_account(db, "talantix_calend")
             if not account:
                 self.logger.error("❌ Аккаунт talantix_calend не найден")
-                return False
+                return None
 
             try:
-                await self.calend_client.book_slot(
-                    slot_id=slot_id,
-                    candidate_id=candidate_id,
-                    vacancy_id=vacancy_id,
+                result = await self.calend_client.book_slot(
+                    start_date=start_date,
+                    end_date=end_date,
+                    person_ids=person_ids,
+                    vacancy_ids=vacancy_ids,
+                    manager_ids=manager_ids,
                     account=account,
                     db=db,
                     title=title,
                     comment=comment,
+                    place=place,
+                    timezone=timezone,
+                    send_person_message=send_person_message,
+                    sync_with_external_calendar=sync_with_external_calendar,
+                    person_message_file_ids=person_message_file_ids,
                 )
-                self.logger.info(
-                    "✅ Слот %s забронирован (candidate_id=%s vacancy_id=%s)",
-                    slot_id,
-                    candidate_id,
-                    vacancy_id,
-                )
-                return True
+
+                # Извлекаем meeting_id из ответа
+                # Ответ имеет структуру: {"ats": {"calendar": {"meetingsMap": {"2091160": {...}}}}}
+                ats = result.get("ats", {})
+                calendar = ats.get("calendar", {})
+                meetings_map = calendar.get("meetingsMap", {})
+
+                if meetings_map:
+                    # Берём последнюю созданную встречу (самый большой ключ = последний ID)
+                    meeting_id = max(int(k) for k in meetings_map.keys())
+                    self.logger.info(
+                        "✅ Встреча создана: meeting_id=%s, person_ids=%s, vacancy_ids=%s, manager_ids=%s",
+                        meeting_id, person_ids, vacancy_ids, manager_ids,
+                    )
+                    return meeting_id
+                else:
+                    self.logger.warning("⚠️ meetingsMap пуст в ответе book_slot")
+                    return None
+
             except Exception as e:
-                self.logger.error(f"❌ Ошибка бронирования слота {slot_id}: {e}", exc_info=True)
-                return False
+                self.logger.error(f"❌ Ошибка создания встречи: {e}", exc_info=True)
+                return None
 
     async def release_interview(self, interview_id: int) -> bool:
         """
         Освобождение забронированного слота (отмена собеседования).
+
+        Args:
+            interview_id: ID встречи в календаре Talantix
+
+        Returns:
+            bool: True если встреча успешно удалена
         """
         async with AsyncSessionLocal() as db:
             account = await self._get_account(db, "talantix_calend")
@@ -580,16 +791,74 @@ class TalantixService:
                 return False
 
             try:
-                await self.calend_client.cancel_interview(
+                result = await self.calend_client.cancel_interview(
                     interview_id=interview_id,
                     account=account,
                     db=db,
                 )
-                self.logger.info(f"✅ Собеседование {interview_id} отменено")
-                return True
+
+                # Проверяем результат GraphQL мутации
+                delete_result = result.get("data", {}).get("deleteCalendarMeeting", {})
+                typename = delete_result.get("__typename", "")
+
+                if typename == "CalendarMeetingDeleteSuccess":
+                    self.logger.info(f"✅ Собеседование {interview_id} отменено")
+                    return True
+                elif typename == "CalendarMeetingDeleteError":
+                    error_type = delete_result.get("errorType", "unknown")
+                    self.logger.error(f"❌ Ошибка отмены собеседования {interview_id}: {error_type}")
+                    return False
+                else:
+                    self.logger.warning(f"⚠️ Неожиданный ответ при отмене {interview_id}: {typename}")
+                    return False
+
             except Exception as e:
-                self.logger.error(f"Ошибка отмены собеседования {interview_id}: {e}")
+                self.logger.error(f"❌ Ошибка отмены собеседования {interview_id}: {e}", exc_info=True)
                 return False
+
+    async def get_managers(
+        self,
+        roles: list[str] | None = None,
+        search_by_name: str = "",
+    ) -> list[dict]:
+        """
+        Получение списка менеджеров (участников) из Talantix.
+
+        Args:
+            roles: список ролей для фильтрации (ADMIN, RECRUITER, LINE_MANAGER, MEMBER)
+            search_by_name: поиск по имени
+
+        Returns:
+            list[dict]: список менеджеров с полями:
+                - id: ID менеджера в Talantix
+                - hhManagerId: ID менеджера в HH
+                - firstName, lastName, middleName: имя
+                - email: email
+                - managerRole: роль (ADMIN, RECRUITER, LINE_MANAGER, MEMBER)
+
+        Example:
+            managers = await talantix_service.get_managers()
+            for m in managers:
+                print(f"{m['id']}: {m['firstName']} {m['lastName']} ({m['managerRole']})")
+        """
+        async with AsyncSessionLocal() as db:
+            account = await self._get_account(db, "talantix_calend")
+            if not account:
+                self.logger.error("Аккаунт talantix_calend не найден")
+                return []
+
+            try:
+                managers = await self.calend_client.get_managers(
+                    roles=roles,
+                    search_by_name=search_by_name,
+                    account=account,
+                    db=db,
+                )
+                self.logger.info("service.get_managers: found %s managers", len(managers))
+                return managers
+            except Exception as e:
+                self.logger.error(f"Ошибка получения менеджеров: {e}", exc_info=True)
+                return []
 
 
 # Глобальный экземпляр сервиса

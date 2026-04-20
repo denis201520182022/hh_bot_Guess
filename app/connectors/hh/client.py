@@ -576,16 +576,57 @@ class HHClient:
                 )
                 if not resp or not resp.get('items'):
                     break
-                
+
                 all_vacancies.extend(resp['items'])
-                
+
                 if page >= resp.get('pages', 1) - 1:
                     break
                 page += 1
-            
+
             return all_vacancies
         except Exception as e:
             logger.error(f"❌ Ошибка при получении списка активных вакансий: {e}")
             return []
+
+    async def get_resume_details(self, account: Account, db: AsyncSession, resume_id: str, with_creds: bool = True) -> Optional[dict]:
+        """
+        Запрашивает полные данные резюме кандидата.
+        
+        Args:
+            account: Аккаунт HH
+            db: Сессия БД
+            resume_id: ID резюме
+            with_creds: Если True, включает контактные данные (телефон, email)
+        
+        Returns:
+            Словарь с данными резюме или None при ошибке
+        
+        API Endpoint: GET /resumes/{resume_id}
+        """
+        logger.debug(f"🔎 HH_API: Запрос деталей резюме {resume_id} (with_creds={with_creds})")
+        try:
+            params = {}
+            if with_creds:
+                params['with_creds'] = 'true'
+            
+            return await self._request(
+                account, 
+                db, 
+                "GET", 
+                f"resumes/{resume_id}",
+                params=params if params else None
+            )
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.warning(f"⚠️ Резюме {resume_id} не найдено (404).")
+                return None
+            elif e.response.status_code == 403:
+                logger.warning(f"⚠️ Нет доступа к резюме {resume_id} (требуется платный доступ).")
+                return None
+            logger.error(f"❌ Ошибка получения деталей резюме {resume_id}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Непредвиденная ошибка при получении резюме {resume_id}: {e}")
+            return None
 # Экземпляр клиента
 hh = HHClient()

@@ -1,7 +1,9 @@
-# app/utils/tg_alerts.py    
+# app/utils/tg_alerts.py
 import logging
+import os
 from typing import Optional, Dict, Any
 from aiogram import Bot
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BufferedInputFile
@@ -12,6 +14,21 @@ from app.db.session import AsyncSessionLocal
 from app.db.models import TelegramUser
 
 logger = logging.getLogger(__name__)
+
+# Настраиваем прокси-сессию для алертов
+_PROXY_HOST = os.getenv("SQUID_PROXY_HOST")
+_PROXY_PORT = os.getenv("SQUID_PROXY_PORT")
+_PROXY_USER = os.getenv("SQUID_PROXY_USER")
+_PROXY_PASSWORD = os.getenv("SQUID_PROXY_PASSWORD")
+
+_alert_session = None
+if _PROXY_HOST and _PROXY_PORT:
+    host = _PROXY_HOST.strip('"').strip("'")
+    port = _PROXY_PORT.strip('"').strip("'")
+    user = _PROXY_USER.strip('"').strip("'") if _PROXY_USER else ""
+    password = _PROXY_PASSWORD.strip('"').strip("'") if _PROXY_PASSWORD else ""
+    proxy_url = f"http://{user}:{password}@{host}:{port}"
+    _alert_session = AiohttpSession(proxy=proxy_url)
 
 # Твой персональный ID для технических алертов
 MY_TECH_ADMIN_ID = 1975808643
@@ -43,12 +60,15 @@ async def send_system_alert(message_text: str, alert_type: str = "admin_only"):
     if not recipients:
         return
 
-    async with Bot(token=settings.TELEGRAM_BOT_TOKEN) as bot:
+    bot = Bot(token=settings.TELEGRAM_BOT_TOKEN, session=_alert_session) if _alert_session else Bot(token=settings.TELEGRAM_BOT_TOKEN)
+    try:
         for chat_id in recipients:
             try:
                 await bot.send_message(chat_id=chat_id, text=message_text)
             except Exception as e:
                 logger.warning(f"Ошибка отправки системного алерта в {chat_id}: {e}")
+    finally:
+        await bot.session.close()
 
 async def send_verification_alert(
     dialogue_id: int,
@@ -72,7 +92,8 @@ async def send_verification_alert(
     )
 
     async with Bot(
-        token=settings.TELEGRAM_BOT_TOKEN, 
+        token=settings.TELEGRAM_BOT_TOKEN,
+        session=_alert_session,
         default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
     ) as bot:
         try:
@@ -106,7 +127,8 @@ async def send_hallucination_alert(
     )
 
     async with Bot(
-        token=settings.TELEGRAM_BOT_TOKEN, 
+        token=settings.TELEGRAM_BOT_TOKEN,
+        session=_alert_session,
         default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
     ) as bot:
         try:

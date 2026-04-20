@@ -23,6 +23,8 @@ from sqlalchemy import select, update, delete # Добавить delete
 from app.db.models import Dialogue, Candidate, JobContext, Account, LlmLog, AnalyticsEvent # Добавить AnalyticsEvent
 from app.connectors import get_connector
 from app.connectors.hh import hh_connector, hh
+from app.output_chanels.talantix.talantix_crm import talantix_crm_service
+from app.services.talantix_service import talantix_service
 # Наши модули
 from app.utils.analytics import log_event
 from app.utils.redis_lock import acquire_lock, release_lock
@@ -623,9 +625,18 @@ class Engine:
 
         # Замена плейсхолдеров во всех кусках промпта
         if vacancy_title or vacancy_full_address:
+            # Магазин это то что написано в названии вакансии в скобках ()
+            shop_name = ""
+            if "(" in vacancy_title and ")" in vacancy_title:
+                shop_name = vacancy_title.split("(")[-1].split(")")[0].strip()
+            
+            display_address = vacancy_full_address
+            if shop_name:
+                display_address = f"{vacancy_full_address} ({shop_name})" if vacancy_full_address else shop_name
+
             prompt_pieces = [
                 piece.replace("[название вакансии]", vacancy_title)
-                     .replace("[адрес вакансии]", vacancy_full_address)
+                     .replace("[адрес вакансии]", display_address)
                 for piece in prompt_pieces
             ]
         
@@ -703,16 +714,102 @@ class Engine:
 
             await db.flush()
 
-        
+
 
         except Exception as e:
             error_msg = f"⚠️ Ошибка планирования напоминаний для диалога {dialogue.id}: {e}"
             logger.error(error_msg)
             await mq.publish("tg_alerts", {
-                "type": "system", 
-                "text": error_msg, 
+                "type": "system",
+                "text": error_msg,
                 "alert_type": "admin_only"
             })
+
+    async def _create_talantix_meeting(
+        self,
+        dialogue: Dialogue,
+        interview_date: str,
+        interview_time: str,
+        talantix_data: dict,
+        ctx_logger: logging.LoggerAdapter,
+    ) -> int | None:
+        """
+        Создаёт встречу в календаре Talantix.
+
+        Args:
+            dialogue: объект диалога
+            interview_date: дата в формате YYYY-MM-DD
+            interview_time: время в формате HH:MM
+            talantix_data: dict из metadata_json.talantix с полями:
+                - person_id: ID кандидата в Talantix
+                - vacancy_id: ID вакансии в Talantix
+                - managers: список менеджеров с manager_id
+
+        Returns:
+            int | None: ID созданной встречи (meeting_id) или None при ошибке
+        """
+        if not settings.services.talantix.enabled:
+            ctx_logger.debug("Talantix integration is disabled in config. Skipping _create_talantix_meeting.")
+            return None
+
+        # 1. Конвертируем дату/время в timestamp (MSK = UTC+3)
+        moscow_tz = datetime.timezone(datetime.timedelta(hours=3))
+        dt_naive = datetime.datetime.strptime(f"{interview_date} {interview_time}", "%Y-%m-%d %H:%M")
+        dt_msk = dt_naive.replace(tzinfo=moscow_tz)
+        start_ts = int(dt_msk.timestamp() * 1000)
+        end_ts = start_ts + 30 * 60 * 1000  # длительность 30 минут
+
+        person_id = talantix_data.get("person_id")
+        vacancy_id = talantix_data.get("vacancy_id")
+        vacancy_title = talantix_data.get("vacancy_title", "")
+        managers = talantix_data.get("managers", [])
+
+        # Собираем manager_ids (создатель + участники)
+        manager_ids = [m["manager_id"] for m in managers if m.get("manager_id")]
+
+        # Если нет менеджеров — пробуем получить хотя бы одного ADMIN
+        if not manager_ids:
+            try:
+                all_managers = await talantix_service.get_managers(roles=["ADMIN"])
+                if all_managers:
+                    manager_ids = [all_managers[0]["id"]]
+                    ctx_logger.info(f"⚠️ Менеджеры не найдены в talantix_data, использую ADMIN: {manager_ids}")
+            except Exception as e:
+                ctx_logger.error(f"❌ Ошибка получения ADMIN менеджеров: {e}")
+
+        # Формируем комментарий
+        candidate_name = dialogue.candidate.full_name or "Кандидат"
+        comment_html = f"<p>Собеседование: {candidate_name}</p>"
+        if vacancy_title:
+            comment_html += f"<p>Вакансия: {vacancy_title}</p>"
+
+        ctx_logger.info(
+            f"📅 Talantix: создаю встречу date={interview_date} time={interview_time}, "
+            f"person_id={person_id}, vacancy_id={vacancy_id}, managers={manager_ids}"
+        )
+
+        success = await talantix_service.book_interview(
+            start_date=start_ts,
+            end_date=end_ts,
+            person_ids=[person_id] if person_id else [],
+            vacancy_ids=[vacancy_id] if vacancy_id else [],
+            manager_ids=manager_ids,
+            title="Собеседование",
+            comment=comment_html,
+            place="",
+            timezone="europe/moscow",
+            send_person_message=False,
+            sync_with_external_calendar=False,
+            person_message_file_ids=[],
+        )
+
+        if not success:
+            ctx_logger.error("❌ Talantix: не удалось создать встречу")
+            return None
+
+        meeting_id = success  # book_interview теперь возвращает meeting_id
+        ctx_logger.info(f"✅ Talantix: встреча создана, meeting_id={meeting_id}")
+        return meeting_id
 
 
     async def process_engine_task(self, task_data: Dict[str, Any]):
@@ -994,6 +1091,17 @@ class Engine:
                     if stop_bot:
                         dialogue.status = 'closed'
                         ctx_logger.info("🔇 Диалог переведен в статус CLOSED согласно конфигу напоминания.")
+
+                    # Комментарий в Talantix о напоминании
+                    if settings.services.talantix.enabled:
+                        try:
+                            await talantix_crm_service.notify_talantix_comment(
+                                dialogue=dialogue,
+                                event_type='silence',
+                                db=db
+                            )
+                        except Exception as e:
+                            ctx_logger.error(f"Ошибка создания комментария Talantix (silence): {e}")
 
                     await db.commit()
                     return # Успешный выход
@@ -2241,7 +2349,7 @@ class Engine:
                         # ПРОВЕРКА НА ПЕРЕНОС (Reschedule)
                         if old_date is not None and (old_date != interview_date or old_time != interview_time):
                             ctx_logger.info(f"🔄 ПЕРЕНОС В КАЛЕНДАРЕ: {old_date} {old_time} -> {interview_date} {interview_time}")
-                            
+
                             # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем старый слот
                             await sheets_service.release_slot(old_date, old_time, sheet_name)
 
@@ -2250,10 +2358,41 @@ class Engine:
                                 target_date=interview_date,
                                 target_time=interview_time,
                                 candidate_name=dialogue.candidate.full_name or "Кандидат",
+                                candidate_phone=dialogue.candidate.phone_number or "",
                                 sheet_name=sheet_name
                             )
-                            
-                            # 3. Пушим задачу на уведомление в RabbitMQ
+
+                            # 3. Talantix: удаляем старую встречу и создаём новую
+                            if settings.services.talantix.enabled:
+                                talantix_data = meta.get("talantix")
+                                old_meeting_id = talantix_data.get("meeting_id") if talantix_data else None
+
+                                if old_meeting_id:
+                                    try:
+                                        ctx_logger.info(f"🗑️ Talantix: удаляю старую встречу meeting_id={old_meeting_id}")
+                                        await talantix_service.release_interview(interview_id=old_meeting_id)
+                                    except Exception as e:
+                                        ctx_logger.error(f"❌ Ошибка удаления встречи в Talantix: {e}", exc_info=True)
+
+                                if talantix_data:
+                                    try:
+                                        meeting_id = await self._create_talantix_meeting(
+                                            dialogue=dialogue,
+                                            interview_date=interview_date,
+                                            interview_time=interview_time,
+                                            talantix_data=talantix_data,
+                                            ctx_logger=ctx_logger,
+                                        )
+                                        if meeting_id:
+                                            meta["talantix"]["meeting_id"] = meeting_id
+                                            dialogue.metadata_json = meta
+                                            ctx_logger.info(f"✅ Talantix: новая встреча meeting_id={meeting_id}")
+                                        else:
+                                            ctx_logger.warning("⚠️ Talantix: новая встреча не создана (meeting_id=None)")
+                                    except Exception as e:
+                                        ctx_logger.error(f"❌ Ошибка создания встречи в Talantix (reschedule): {e}", exc_info=True)
+
+                            # 4. Пушим задачу на уведомление в RabbitMQ
                             await mq.publish("services_output", {
                                 "dialogue_id": dialogue.id,
                                 "type": "rescheduled",
@@ -2266,6 +2405,17 @@ class Engine:
                                 "old": f"{old_date} {old_time}", "new": f"{interview_date} {interview_time}"
                             })
                             await self._schedule_interview_reminders(db, dialogue, interview_date, interview_time)
+
+                            # 5. Комментарий в Talantix
+                            if settings.services.talantix.enabled:
+                                try:
+                                    await talantix_crm_service.notify_talantix_comment(
+                                        dialogue=dialogue,
+                                        event_type='rescheduled',
+                                        db=db
+                                    )
+                                except Exception as e:
+                                    ctx_logger.error(f"Ошибка создания комментария Talantix (rescheduled): {e}")
 
                             # Обновляем метаданные
                             meta["interview_date"] = interview_date
@@ -2294,19 +2444,56 @@ class Engine:
                         target_date=meta["interview_date"],
                         target_time=meta["interview_time"],
                         candidate_name=dialogue.candidate.full_name or "Кандидат",
+                        candidate_phone=dialogue.candidate.phone_number or "",
                         sheet_name=sheet_name
                     )
                     # Планируем напоминания в БД
                     await self._schedule_interview_reminders(db, dialogue, meta["interview_date"], meta["interview_time"])
+
+                    # 1.1. Создаём встречу в Talantix
+                    if settings.services.talantix.enabled:
+                        talantix_data = meta.get("talantix")
+                        if talantix_data:
+                            try:
+                                meeting_id = await self._create_talantix_meeting(
+                                    dialogue=dialogue,
+                                    interview_date=meta["interview_date"],
+                                    interview_time=meta["interview_time"],
+                                    talantix_data=talantix_data,
+                                    ctx_logger=ctx_logger,
+                                )
+                                if meeting_id:
+                                    # Сохраняем meeting_id in metadata
+                                    meta["talantix"]["meeting_id"] = meeting_id
+                                    dialogue.metadata_json = meta
+                                    await db.commit()
+                                    ctx_logger.info(f"✅ meeting_id={meeting_id} сохранён в metadata")
+                                else:
+                                    ctx_logger.warning("⚠️ Talantix: встреча не создана (meeting_id=None)")
+                            except Exception as e:
+                                ctx_logger.error(f"❌ Ошибка создания встречи в Talantix: {e}", exc_info=True)
+                        else:
+                            ctx_logger.warning("⚠️ talantix данные не найдены в metadata, встреча в Talantix не создана")
 
                 # 2. Аналитика
                 await log_event(db, dialogue, 'qualified', check_duplicates=True)
 
                 # 3. Пушим задачу на карточку в ТГ и запись в Таблицу Кандидатов
                 await mq.publish("services_output", {
-                    "dialogue_id": dialogue.id, 
+                    "dialogue_id": dialogue.id,
                     "type": "qualified"
                 })
+
+                # 4. Комментарий в Talantix
+                if settings.services.talantix.enabled:
+                    try:
+                        await talantix_crm_service.notify_talantix_comment(
+                            dialogue=dialogue,
+                            event_type='qualified',
+                            db=db
+                        )
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка создания комментария Talantix (qualified): {e}")
 
                 # [HH ONLY] Перемещаем отклик в папку 'interview'
                 if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
@@ -2413,15 +2600,40 @@ class Engine:
                 meta = dialogue.metadata_json or {}
                 if meta.get("interview_date") and meta.get("interview_time"):
                     ctx_logger.info(f"🗑️ ОТМЕНА: Освобождаю слот {meta.get('interview_date')} {meta.get('interview_time')}")
-                    
+
                     # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем слот
                     await sheets_service.release_slot(meta.get("interview_date"), meta.get("interview_time"), sheet_name)
-                    
-                    # 2. Пушим задачу воркеру (например, отправить карточку отмены)
+
+                    # 2. Talantix: удаляем встречу
+                    if settings.services.talantix.enabled:
+                        talantix_data = meta.get("talantix")
+                        meeting_id = talantix_data.get("meeting_id") if talantix_data else None
+
+                        if meeting_id:
+                            try:
+                                ctx_logger.info(f"🗑️ Talantix: удаляю встречу meeting_id={meeting_id}")
+                                await talantix_service.release_interview(interview_id=meeting_id)
+                            except Exception as e:
+                                ctx_logger.error(f"❌ Ошибка удаления встречи в Talantix: {e}", exc_info=True)
+                        else:
+                            ctx_logger.warning("⚠️ Talantix: meeting_id не найден, встреча не удалена")
+
+                    # 3. Пушим задачу воркеру (например, отправить карточку отмены)
                     await mq.publish("services_output", {
                         "dialogue_id": dialogue.id,
                         "type": "cancelled"
                     })
+
+                    # 4. Комментарий в Talantix
+                    if settings.services.talantix.enabled:
+                        try:
+                            await talantix_crm_service.notify_talantix_comment(
+                                dialogue=dialogue,
+                                event_type='cancelled',
+                                db=db
+                            )
+                        except Exception as e:
+                            ctx_logger.error(f"Ошибка создания комментария Talantix (cancelled): {e}")
 
                 # Отменяем напоминания в БД
                 await db.execute(
@@ -2437,18 +2649,31 @@ class Engine:
 
                 # --- 16.3 ФИНАЛЬНАЯ ФИКСАЦИЯ СТАТУСА ---
                 dialogue.status = 'rejected'
-                
+
                 # Определяем тип отказа для статистики
                 stat_event_type = 'rejected_by_bot'
                 if new_state in ['declined_vacancy', 'declined_interview']:
                     stat_event_type = 'rejected_by_candidate'
-                
+
                 await log_event(
-                    db, dialogue, 
-                    stat_event_type, 
+                    db, dialogue,
+                    stat_event_type,
                     event_data={"reason_state": new_state}
                 )
-                
+
+                # Комментарий в Talantix
+                if settings.services.talantix.enabled:
+                    try:
+                        reason_text = f"Отказ по причине: {new_state}" if new_state else "Отказ"
+                        await talantix_crm_service.notify_talantix_comment(
+                            dialogue=dialogue,
+                            event_type='rejected',
+                            db=db,
+                            reason=reason_text
+                        )
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка создания комментария Talantix (rejected): {e}")
+
                 ctx_logger.info(f"Диалог завершен со статусом REJECTED (Тип: {stat_event_type}, Состояние: {new_state})")
                 
                 # [HH ONLY] Перемещаем отклик в папку 'assessment' (как просил пользователь)
