@@ -421,8 +421,8 @@ class HHConnectorService(BaseConnector):
                             work_formats = ", ".join([f.get('name') for f in full_data.get('work_format', [])])
                             
                             unified_text = (
-                                f"Оформление: {contracts_str}\n"
-                                f"Формат работы: {work_formats}\n"
+                                # f"Оформление: {contracts_str}\n"
+                                # f"Формат работы: {work_formats}\n"
                                 f"Адрес: {full_addr}\n\n"
                                 f"Описание вакансии:\n{self._clean_html(full_data.get('description', ''))}"
                             )
