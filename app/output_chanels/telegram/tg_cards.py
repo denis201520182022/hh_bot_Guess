@@ -124,28 +124,29 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
     # 3. ФОРМИРУЕМ УНИВЕРСАЛЬНЫЙ ТЕКСТ
     message_text = (
         f"{header}\n\n"
-        f"📌 <b>Вакансия:</b> {esc(vacancy.title if vacancy else 'Не указана')}\n"
+        f"📌 <b>На вакансию::</b> {esc(vacancy.title if vacancy else 'Не указана')}\n"
         f"👤 <b>ФИО:</b> {esc(candidate.full_name)}\n"
+        f"🎂 <b>Возраст:</b> {esc(profile.get('age'))}\n"
         f"📞 <b>Телефон:</b> <code>{esc(candidate.phone_number)}</code>\n\n"
 
-        f"🎂 <b>Возраст:</b> {esc(profile.get('age'))}\n"
-        f"🌍 <b>Гражданство:</b> {esc(profile.get('citizenship'))}\n"
-        f"⏳ <b>Занятость:</b> {esc(emp_label)}\n"
+        
+        # f"🌍 <b>Гражданство:</b> {esc(profile.get('citizenship'))}\n"
+        # f"⏳ <b>Занятость:</b> {esc(emp_label)}\n"
     )
 
     # Доп. поля в зависимости от типа занятости
-    if emp_type == "part":
-        message_text += f"⏱ <b>Готов 20-40ч:</b> {esc(hours_label)}\n"
-    elif emp_type == "full":
-        message_text += f"🕒 <b>Смена:</b> {esc(shift_label)}\n"
+    # if emp_type == "part":
+    #     message_text += f"⏱ <b>Готов 20-40ч:</b> {esc(hours_label)}\n"
+    # elif emp_type == "full":
+    #     message_text += f"🕒 <b>Смена:</b> {esc(shift_label)}\n"
 
     # Добавляем информацию о собеседовании
     if event_type == 'cancelled':
         message_text += (
             f"\n� <b>Отмененное собеседование:</b> {esc(meta.get('interview_date'))} в {esc(meta.get('interview_time'))}\n"
         )
-        if meta.get('cancel_reason'):
-            message_text += f"📝 <b>Причина отмены:</b> {esc(meta.get('cancel_reason'))}\n"
+        # if meta.get('cancel_reason'):
+        #     message_text += f"📝 <b>Причина отмены:</b> {esc(meta.get('cancel_reason'))}\n"
     elif event_type == 'rescheduled':
         old_date = meta.get('old_interview_date')
         old_time = meta.get('old_interview_time')

@@ -1710,6 +1710,7 @@ class Engine:
                         ctx_logger.debug(f"Игнорируем гражданство {raw_citizenship}: стейт {current_state_at_update} не разрешает.")
 
                 # --- 13.3 ОБРАБОТКА ТИПА ЗАНЯТОСТИ (employment_type) ---
+                # --- 13.3 ОБРАБОТКА ТИПА ЗАНЯТОСТИ (employment_type) ---
                 raw_employment_type = extracted_data.get("employment_type")
                 if raw_employment_type:
                     allowed_employment_states = ['awaiting_employment_type', 'clarifying_anything']
@@ -1719,17 +1720,31 @@ class Engine:
                             ctx_logger.debug(f"Защита: поле employment_type уже заполнено, пропускаем")
                         else:
                             emp_type_low = str(raw_employment_type).lower()
-                            # Нормализуем значения
-                            if emp_type_low in ["full", "полная", "полный день"]:
+                            target_state = None
+                            
+                            # Определяем тип и целевой стейт
+                            if any(x in emp_type_low for x in ["full", "полная", "полный день", "any", "любая"]):
                                 profile["employment_type"] = "full"
-                                changed = True
-                                ctx_logger.info(f"✅ Тип занятости: полная (full)")
-                            elif emp_type_low in ["part", "частичная", "частичная занятость", "подработка"]:
+                                target_state = "awaiting_shift_preference"
+                                ctx_logger.info(f"✅ Тип занятости: full. Насильно ставим {target_state}")
+                            
+                            elif any(x in emp_type_low for x in ["part", "частичная", "подработка"]):
                                 profile["employment_type"] = "part"
-                                changed = True
-                                ctx_logger.info(f"✅ Тип занятости: частичная (part)")
-                            else:
-                                ctx_logger.warning(f"⚠️ Некорректное значение employment_type: {raw_employment_type}")
+                                target_state = "clarifying_part_time"
+                                ctx_logger.info(f"✅ Тип занятости: part. Насильно ставим {target_state}")
+
+                            # Если тип определен — сохраняем и мгновенно перегенерируем
+                            if target_state:
+                                dialogue.candidate.profile_data = profile
+                                dialogue.current_state = target_state
+                                # Важно: сохраняем всё, что успели извлечь до этого (age, citizenship)
+                                await db.commit() 
+                                
+                                await mq.publish("engine_tasks", {
+                                    "dialogue_id": dialogue.id, 
+                                    "trigger": f"{target_state}_forced_refine"
+                                })
+                                return # ПРЕРЫВАЕМ обработку, уходим на круг перегенерации
                     else:
                         ctx_logger.debug(f"Игнорируем employment_type: стейт {current_state_at_update} не разрешает.")
 
@@ -1868,11 +1883,12 @@ class Engine:
                 await db.flush()
 
                 # --- [НОВОЕ] Логика мгновенной перегенерации для уточнения типа занятости / ТК РФ ---
-                is_part_time_refine = (new_state == 'clarifying_part_time' and profile.get("employment_type") == 'part')
-                is_shift_refine = (new_state == 'awaiting_shift_preference' and profile.get("employment_type") == 'full')
+                # is_part_time_refine = (new_state == 'clarifying_part_time' and profile.get("employment_type") == 'part')
+                # is_shift_refine = (new_state == 'awaiting_shift_preference' and profile.get("employment_type") == 'full')
                 is_contract_refine = (new_state == 'awaiting_employment_contract')
 
-                if (is_part_time_refine or is_shift_refine or is_contract_refine) and dialogue.current_state != new_state:
+                # if (is_part_time_refine or is_shift_refine or is_contract_refine) and dialogue.current_state != new_state:
+                if (is_contract_refine) and dialogue.current_state != new_state:
                     ctx_logger.debug(f"🔄 Переход в {new_state}. Сохраняем и отправляем на перегенерацию.")
                     
                     dialogue.current_state = new_state
