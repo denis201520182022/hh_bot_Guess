@@ -663,10 +663,10 @@ class HHConnectorService(BaseConnector):
                 
                 # Если кандидат обнаружен в папке interview — переводим состояние диалога
                 # (Твоя логика с проверками исключений)
-                if folder == 'interview':
-                    if dialogue.current_state not in ['post_qualification_chat', 'forwarded_to_researcher'] and dialogue.status != 'follow_up':
-                        logger.info(f"📍 Чат {hh_response_id} в папке 'interview'. Принудительный перевод в post_qualification_chat.")
-                        dialogue.current_state = 'post_qualification_chat'
+                # if folder == 'interview':
+                #     if dialogue.current_state not in ['post_qualification_chat', 'forwarded_to_researcher'] and dialogue.status != 'follow_up':
+                #         logger.info(f"📍 Чат {hh_response_id} в папке 'interview'. Принудительный перевод в post_qualification_chat.")
+                #         dialogue.current_state = 'post_qualification_chat'
 
                 # Синхронизируем новые сообщения из API
                 messages_url = item.get('messages_url')
