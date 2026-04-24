@@ -568,7 +568,7 @@ class Engine:
             'awaiting_age': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
 
             'awaiting_employment_type': ['#QUALIFICATION_RULES#', '#DECLINED_VAC#'],
-            'clarifying_part_time': ['#PART_TIME_RULES#', '#DECLINED_VAC#'],
+            'awaiting_ready_20_40_hours': ['#PART_TIME_RULES#', '#DECLINED_VAC#'],
             'awaiting_shift_preference': ['#SHIFT_RULES#', '#DECLINED_VAC#'],
             'awaiting_employment_contract': ['#FINAL_ASK#', '#DECLINED_VAC#'],
             'awaiting_military_document': ['#MILITARY_RULES#', '#DECLINED_VAC#'],
@@ -1323,7 +1323,7 @@ class Engine:
                 'awaiting_citizenship',
                 'awaiting_age',
                 'awaiting_employment_type',
-                'clarifying_part_time',
+                'awaiting_ready_20_40_hours',
                 'awaiting_shift_preference',
                 'awaiting_employment_contract',
                 'awaiting_military_document',
@@ -1730,7 +1730,7 @@ class Engine:
                             
                             elif any(x in emp_type_low for x in ["part", "частичная", "подработка"]):
                                 profile["employment_type"] = "part"
-                                target_state = "clarifying_part_time"
+                                target_state = "awaiting_ready_20_40_hours"
                                 ctx_logger.info(f"✅ Тип занятости: part. Насильно ставим {target_state}")
 
                             # Если тип определен — сохраняем и мгновенно перегенерируем
@@ -1751,7 +1751,7 @@ class Engine:
                 # --- 13.4 ОБРАБОТКА ГОТОВНОСТИ РАБОТАТЬ 20-40 ЧАСОВ (ready_20_40_hours) ---
                 raw_ready_hours = extracted_data.get("ready_20_40_hours")
                 if raw_ready_hours:
-                    allowed_hours_states = ['clarifying_part_time', 'clarifying_anything']
+                    allowed_hours_states = ['awaiting_ready_20_40_hours', 'clarifying_anything']
 
                     if current_state_at_update in allowed_hours_states:
                         if current_state_at_update == 'clarifying_anything' and profile.get("ready_20_40_hours"):
@@ -1883,7 +1883,7 @@ class Engine:
                 await db.flush()
 
                 # --- [НОВОЕ] Логика мгновенной перегенерации для уточнения типа занятости / ТК РФ ---
-                # is_part_time_refine = (new_state == 'clarifying_part_time' and profile.get("employment_type") == 'part')
+                # is_part_time_refine = (new_state == 'awaiting_ready_20_40_hours' and profile.get("employment_type") == 'part')
                 # is_shift_refine = (new_state == 'awaiting_shift_preference' and profile.get("employment_type") == 'full')
                 is_contract_refine = (new_state == 'awaiting_employment_contract')
 
