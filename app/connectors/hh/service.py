@@ -257,7 +257,7 @@ class HHConnectorService(BaseConnector):
                     await asyncio.sleep(self.poll_interval)
                     continue
 
-                logger.info(f"🔎 [HH Poller] Начинаю цикл опроса для {len(account_ids)} аккаунтов...")
+                logger.debug(f"🔎 [HH Poller] Начинаю цикл опроса для {len(account_ids)} аккаунтов...")
 
                 # 2. Запускаем опрос каждого аккаунта через семафор
                 async def run_with_sem(acc_id: int):
@@ -267,7 +267,7 @@ class HHConnectorService(BaseConnector):
                             await self._poll_single_account(acc_id, db)
 
                 await asyncio.gather(*[run_with_sem(aid) for aid in account_ids])
-                logger.info("✅ [HH Poller] Цикл опроса завершен.")
+                logger.debug("✅ [HH Poller] Цикл опроса завершен.")
 
             except Exception as e:
                 logger.error(f"💥 Критическая ошибка в главном цикле поллинга HH: {e}", exc_info=True)
@@ -289,26 +289,26 @@ class HHConnectorService(BaseConnector):
                 logger.info(f"⏭️ Аккаунт ID {account_id} пропущен (заблокирован другим воркером).")
                 return
 
-            logger.info(f"⚙️ [HH Poller] Обработка аккаунта: {account.name} (ID: {account_id})")
+            logger.debug(f"⚙️ [HH Poller] Обработка аккаунта: {account.name} (ID: {account_id})")
             set_log_context(account_id=account.id, account_name=account.name, platform="hh")
 
             # 1. Синхронизируем вакансии
-            logger.info(f"🔄 [{account.name}] Синхронизация списка вакансий...")
+            logger.debug(f"🔄 [{account.name}] Синхронизация списка вакансий...")
             vacancy_ids = await self._sync_vacancies_for_account(account, db)
-            logger.info(f"Количество вакансий: {len(vacancy_ids)}")
+            logger.debug(f"Количество вакансий: {len(vacancy_ids)}")
             
             if not vacancy_ids:
                 logger.info(f"ℹ️ [{account.name}] Нет активных вакансий в работе.")
                 return
 
             # 2. Собираем события из всех папок
-            logger.info(f"📥 [{account.name}] Сбор новых событий из папок HH...")
+            logger.debug(f"📥 [{account.name}] Сбор новых событий из папок HH...")
             await self._collect_hh_events(account, db, vacancy_ids)
             
             # Фиксируем изменения в Account
-            logger.info(f"💾 [{account.name}] Фиксация изменений в БД...")
+            logger.debug(f"💾 [{account.name}] Фиксация изменений в БД...")
             await db.commit()
-            logger.info(f"✅ [{account.name}] Обработка завершена.")
+            logger.debug(f"✅ [{account.name}] Обработка завершена.")
 
         except Exception as e:
             logger.error(f"❌ Ошибка сканирования аккаунта ID {account_id}: {e}", exc_info=True)
@@ -341,7 +341,7 @@ class HHConnectorService(BaseConnector):
             if last_synced_str:
                 last_synced_dt = datetime.datetime.fromisoformat(last_synced_str)
                 if now - last_synced_dt < cache_expiry_time:
-                    rec_logger.info(f"Используем кэш списка вакансий (синхронизация была {(now - last_synced_dt).total_seconds() / 60:.1f} мин. назад)")
+                    rec_logger.debug(f"Используем кэш списка вакансий (синхронизация была {(now - last_synced_dt).total_seconds() / 60:.1f} мин. назад)")
                     stmt = select(JobContext).filter_by(account_id=account.id, is_active=True)
                     cached_jobs = (await db.execute(stmt)).scalars().all()
                     return [v.external_id for v in cached_jobs]
@@ -352,10 +352,10 @@ class HHConnectorService(BaseConnector):
                 rec_logger.warning("API HH не вернуло активных вакансий.")
                 return []
 
-            rec_logger.info(f"📥 HH POLLING DATA (VACANCIES): {json.dumps(all_vacancies_from_api, ensure_ascii=False)}")
+            rec_logger.debug(f"📥 HH POLLING DATA (VACANCIES): {json.dumps(all_vacancies_from_api, ensure_ascii=False)}")
 
             active_hh_ids = {str(v["id"]) for v in all_vacancies_from_api}
-            rec_logger.info(f"Начинаю проверку {len(all_vacancies_from_api)} вакансий из API...")
+            rec_logger.debug(f"Начинаю проверку {len(all_vacancies_from_api)} вакансий из API...")
 
             # 3. ОБРАБОТКА КАЖДОЙ ВАКАНСИИ
             for vacancy_data in all_vacancies_from_api:

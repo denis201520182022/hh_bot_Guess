@@ -63,7 +63,7 @@ class HHClient:
         if not account.is_active:
             return None
         
-        logger.info(f"🔑 [HH Client] Проверка токена для {account.name}...")
+        logger.debug(f"🔑 [HH Client] Проверка токена для {account.name}...")
         # Данные авторизации из JSONB поля
         auth_data = dict(account.auth_data or {})
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -83,7 +83,7 @@ class HHClient:
         lock_name = f"hh_token_lock:{account.id}"
 
         async with DistributedSemaphore(name=lock_name, limit=1, timeout=60):
-            logger.info(f"⏳ [HH Client] Захвачена блокировка для обновления токена {account.name}")
+            logger.debug(f"⏳ [HH Client] Захвачена блокировка для обновления токена {account.name}")
             # Перечитываем данные из БД (вдруг кто-то уже обновил, пока мы ждали лока)
             await db.refresh(account)
             auth_data = dict(account.auth_data or {})
@@ -108,7 +108,7 @@ class HHClient:
                     f"Действие: Требуется провести повторную авторизацию."
                 )
                 logger.error(msg)
-                await self._send_system_alert(error_message)
+                await self._send_system_alert(msg)
                 return None
 
             data = {

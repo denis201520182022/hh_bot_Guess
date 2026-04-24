@@ -67,7 +67,7 @@ class DistributedSemaphore:
         await self.release()
 
     async def acquire(self):
-        logger.info(f"  [Semaphore] Попытка захвата '{self.name}' (limit={self.limit})...")
+        logger.debug(f"  [Semaphore] Попытка захвата '{self.name}' (limit={self.limit})...")
         start_wait = time.time()
         while True:
             # Lua-скрипт гарантирует атомарность (никто не вклинится между GET и INCR)
@@ -90,7 +90,7 @@ class DistributedSemaphore:
                 
                 # Если занято — логируем раз в 10 секунд
                 if int(time.time() - start_wait) % 10 == 0:
-                    logger.info(f"⏳ [Action: semaphore_wait] '{self.name}' is FULL ({result}/{self.limit})")
+                    logger.debug(f"⏳ [Action: semaphore_wait] '{self.name}' is FULL ({result}/{self.limit})")
                 
             except Exception as e:
                 logger.error(f"❌ Redis Semaphore Error: {e}")
@@ -164,7 +164,7 @@ class DistributedRateLimiter:
         pass  # Rate limiter не требует очистки после выхода
 
     async def acquire(self):
-        logger.info(f"  [RateLimiter] Проверка лимита '{self.key}' (limit={self.limit})...")
+        logger.debug(f"  [RateLimiter] Проверка лимита '{self.key}' (limit={self.limit})...")
         while True:
             try:
                 # result[0] - статус (1-ок, 0-лимит), result[1] - сколько ждать, result[2] - текущее значение
@@ -175,7 +175,7 @@ class DistributedRateLimiter:
                     return True
                 
                 wait_time = max(ttl, 1)
-                logger.info(f"🐢 [RateLimit Hit] '{self.key}': {current}/{self.limit}. Ждем {wait_time}с")
+                logger.debug(f"🐢 [RateLimit Hit] '{self.key}': {current}/{self.limit}. Ждем {wait_time}с")
                 await asyncio.sleep(wait_time)
             except Exception as e:
                 logger.error(f"❌ Redis RateLimit Error: {e}")
