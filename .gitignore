@@ -16,7 +16,7 @@ credentials.json
 README.md
 migrations/
 .qwen/
-
+temp/
 tmp_test_logging.py
 talantix.py
 talantix_old

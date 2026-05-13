@@ -42,10 +42,10 @@ services:
   telegram:  # Отправка сообщений в телеграм и настройка нужных категорий карточек
     enabled: true
     interview_cards: true
-    reject_cards: false
+    reject_cards: true
     molchun_cards: false
-    reschedule_cards: false
-    cancel_cards: false
+    reschedule_cards: true
+    cancel_cards: true
 
   google_sheets_report:  # Отчет в гугл таблицы
     enabled: false
