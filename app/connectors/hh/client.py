@@ -266,7 +266,7 @@ class HHClient:
         if response.content:
             try:
                 resp_json = response.json()
-                logger.debug(f"📥 [HH Client] RESPONSE [{response.status_code}]: {json.dumps(resp_json, ensure_ascii=False)}")
+                # logger.debug(f"📥 [HH Client] RESPONSE [{response.status_code}]: {json.dumps(resp_json, ensure_ascii=False)}")
                 return resp_json
             except Exception:
                 logger.debug(f"📥 [HH Client] RESPONSE [{response.status_code}]: {response.text[:1000]}")
