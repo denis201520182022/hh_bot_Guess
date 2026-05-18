@@ -209,7 +209,7 @@ class HHClient:
             raise ConnectionError(f"❌ Не удалось получить токен для аккаунта {account.name}")
 
         url = full_url or f"https://api.hh.ru/{endpoint}"
-        logger.debug(f"🌐 [HH Client] REQUEST: {method} {url} | Params: {kwargs.get('params')}")
+        # logger.debug(f"🌐 [HH Client] REQUEST: {method} {url} | Params: {kwargs.get('params')}")
         
         # Настройка заголовков
         headers = kwargs.pop('headers', {})
