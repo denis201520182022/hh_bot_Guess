@@ -135,7 +135,7 @@ class TalantixClient:
                 name="talantix_api_global", limit=TALANTIX_CONCURRENCY_LIMIT
             ):
                 resp = await self.http_client.request(
-                    "POST", url, data=data, headers=headers, **kwargs
+                    "POST", url, json=data, headers=headers, **kwargs
                 )
 
             resp.raise_for_status()
