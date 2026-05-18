@@ -1,3 +1,4 @@
+# app\output_chanels\talantix\talantix_crm.py
 import asyncio
 import datetime
 import logging
@@ -358,37 +359,20 @@ class TalantixService:
             return None
 
         query = """
-        query PersonsByPhone($filter: PersonFilterInput, $first: Int) {
-          persons(filter: $filter, first: $first) {
+        query {
+          persons(filter: {search: "%s", searchFrom: CONTACTS}) {
             items {
               id
-              contacts {
-                items {
-                  type
-                  value
-                }
-              }
             }
           }
         }
-        """
-        variables = {
-            "filter": {
-                "search": normalized_phone,
-                "searchFrom": ["CONTACTS"],
-            },
-            "first": 25,
-        }
-        response = await self.graphql_client._send_graphql_request(query, variables, account, db)
+        """ % normalized_phone
+        
+        response = await self.graphql_client._send_graphql_request(query, None, account, db)
         items = ((response.data or {}).get("persons") or {}).get("items") or []
 
-        for person in items:
-            contacts = ((person.get("contacts") or {}).get("items")) or []
-            for contact in contacts:
-                contact_type = (contact.get("type") or "").lower()
-                value = self._normalize_phone(contact.get("value"))
-                if contact_type in {"cell", "home"} and value.endswith(normalized_phone):
-                    return int(person["id"])
+        if items:
+            return int(items[0]["id"])
 
         return None
 
@@ -397,15 +381,6 @@ class TalantixService:
     ) -> list[dict]:
         """
         Поиск всех кандидатов по номеру телефона.
-        Возвращает список кандидатов с базовой информацией.
-        
-        Args:
-            phone: Номер телефона (в любом формате)
-            account: Аккаунт Talantix
-            db: Сессия БД
-            
-        Returns:
-            Список словарей с полями: id, firstName, lastName, area, source
         """
         normalized_phone = self._normalize_phone(phone)
         if not normalized_phone:
@@ -415,26 +390,19 @@ class TalantixService:
         self.logger.info(f"🔍 Поиск кандидатов в Talantix по номеру: {phone}")
 
         query = """
-        query JustCandidate($phone: String!) {
-          persons(filter: {search: $phone, searchFrom: CONTACTS}) {
+        query {
+          persons(filter: {search: "%s", searchFrom: CONTACTS}) {
             items {
               id
               firstName
               lastName
-              area {
-                name
-              }
-              source {
-                name
-              }
             }
           }
         }
-        """
-        variables = {"phone": phone}
+        """ % normalized_phone
         
         response = await self.graphql_client._send_graphql_request(
-            query, variables, account, db
+            query, None, account, db
         )
         
         if response.errors:
@@ -446,25 +414,55 @@ class TalantixService:
         
         return persons_data
 
+    async def get_person_resume_ids(
+        self, person_id: int, account: Account, db: AsyncSession
+    ) -> list[str]:
+        """
+        Получение списка ID резюме (externalId) кандидата.
+        """
+        query = """
+        query {
+          person(id: %d) {
+            ... on PersonItem {
+              id
+              firstName
+              resumes {
+                items {
+                  ... on StructuredResume {
+                    externalId
+                    link
+                  }
+                }
+              }
+            }
+          }
+        }
+        """ % person_id
+        
+        response = await self.graphql_client._send_graphql_request(
+            query, None, account, db
+        )
+        
+        if response.errors:
+            self.logger.error(f"❌ Ошибка получения резюме для {person_id}: {response.errors}")
+            return []
+        
+        person_data = (response.data or {}).get("person") or {}
+        resumes = ((person_data.get("resumes") or {}).get("items")) or []
+        
+        return [r.get("externalId") for r in resumes if r.get("externalId")]
+
     async def get_person_responses(
         self, person_id: int, account: Account, db: AsyncSession
     ) -> dict | None:
         """
-        Получение информации о кандидате и его откликах.
-        
-        Args:
-            person_id: ID кандидата в Talantix
-            account: Аккаунт Talantix
-            db: Сессия БД
-            
-        Returns:
-            Словарь с данными кандидата и его откликами или None при ошибке
+        Получение информации о кандидате и его откликах (GetFinalData).
         """
         self.logger.info(f"🔍 Получение данных кандидата Talantix (person_id={person_id})")
 
         query = """
-        query GetFinalData($personId: Int!) {
-          person(id: $personId) {
+        query GetFinalData {
+          person(id: %d) {
             ... on PersonItem {
               id
               firstName
@@ -498,11 +496,10 @@ class TalantixService:
             }
           }
         }
-        """
-        variables = {"personId": person_id}
+        """ % person_id
         
         response = await self.graphql_client._send_graphql_request(
-            query, variables, account, db
+            query, None, account, db
         )
         
         if response.errors:
@@ -516,6 +513,46 @@ class TalantixService:
         
         self.logger.info(f"✅ Получены данные кандидата {person_id}")
         return person_data
+
+    async def get_vacancy_external_ids(
+        self, vacancy_id: int, account: Account, db: AsyncSession
+    ) -> list[str]:
+        """
+        Получение списка ID привязанных вакансий HH для вакансии Talantix.
+        """
+        query = """
+        query GetVacancyDetails {
+          vacancy(id: %d) {
+            ... on VacancyItem {
+              id
+              title
+              externalVacancies {
+                hh {
+                  items {
+                    externalId
+                    name
+                    link
+                    status
+                  }
+                }
+              }
+            }
+          }
+        }
+        """ % vacancy_id
+
+        response = await self.graphql_client._send_graphql_request(
+            query, None, account, db
+        )
+
+        if response.errors:
+            self.logger.error(f"❌ Ошибка получения деталей вакансии {vacancy_id}: {response.errors}")
+            return []
+
+        vacancy_data = (response.data or {}).get("vacancy") or {}
+        hh_items = ((vacancy_data.get("externalVacancies") or {}).get("hh") or {}).get("items") or []
+        
+        return [v.get("externalId") for v in hh_items if v.get("externalId")]
 
     async def get_all_vacancies_with_managers(
         self, account: Account, db: AsyncSession

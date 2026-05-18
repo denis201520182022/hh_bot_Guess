@@ -1,0 +1,382 @@
+После получения отклика с хх бот должен найти в талантиксе все необходимое
+Для этог бот берет номер телефона кандидата и делает запрос в талантикс:
+
+query {
+  persons(filter: {search: "79614401264", searchFrom: CONTACTS}) {
+    items {
+      id
+      firstName
+      lastName
+    }
+  }
+}
+
+
+Получает ответ такого вида:
+
+{
+  "errors": [],
+  "data": {
+    "persons": {
+      "items": [
+        {
+          "id": 133174315,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 133174458,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 136832356,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 136839057,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 133174142,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 136840598,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 133171101,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 136833408,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 136836969,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 136833915,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 133138658,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        },
+        {
+          "id": 133170727,
+          "firstName": "Denis",
+          "lastName": "Denisov"
+        }
+      ]
+    }
+  },
+  "extensions": null,
+  "dataPresent": true
+}
+
+
+
+
+
+
+Получили кандидатов всех с таким номером телефона.
+Дальше надо найти какой из этих кандидатов нам нужен, для этого по итерируемся по каждому и делаем запрос:
+
+query {
+  person(id: 133174315) {
+    ... on PersonItem {
+      id
+      firstName
+      resumes {
+        items {
+          ... on StructuredResume {
+            externalId
+            link
+          }
+        }
+      }
+    }
+  }
+}
+
+
+Получаем ответ вида:
+{
+  "errors": [],
+  "data": {
+    "person": {
+      "id": 133174315,
+      "firstName": "Denis",
+      "resumes": {
+        "items": [
+          {
+            "externalId": "1cb15c5a000f770c3100234e7646594b703154",
+            "link": "https://hh.ru/resume/1cb15c5a000f770c3100234e7646594b703154"
+          }
+        ]
+      }
+    }
+  },
+  "extensions": null,
+  "dataPresent": true
+}
+
+
+
+Сравниваем с резюме нашего кандидата на хх и находим нужного.
+Теперь надо найти конкретный отклик и вакансию в талантиксе, для этого делаем такой запрос:
+
+query GetFinalData {
+  person(id: 133174315) {
+    ... on PersonItem {
+      id
+      firstName
+      lastName
+      responses {
+        items {
+          ... on ResponseItem {
+            workflowStatus {
+              ... on WorkflowStatusItem {
+                vacancy {
+                  ... on VacancyItem {
+                    id
+                    title
+                    vacancyManagers {
+                      items {
+                        vacancyRole
+                        manager {
+                          firstName
+                          lastName
+                          email
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+Получаем ответ вида:
+
+
+{
+  "errors": [],
+  "data": {
+    "person": {
+      "id": 133174315,
+      "firstName": "Denis",
+      "lastName": "Denisov",
+      "responses": {
+        "items": [
+          {
+            "workflowStatus": {
+              "vacancy": {
+                "id": 519946,
+                "title": "Продавец-консультант, GUESS (ТЦ Космопорт)",
+                "vacancyManagers": {
+                  "items": [
+                    {
+                      "vacancyRole": "watcher",
+                      "manager": {
+                        "firstName": "Альмира",
+                        "lastName": "Исанбаева",
+                        "email": "samarakosmoport.jeans@guess.eu"
+                      }
+                    },
+                    {
+                      "vacancyRole": "owner",
+                      "manager": {
+                        "firstName": "Анастасия",
+                        "lastName": "Акимова",
+                        "email": "anastasiya.akimova@store.guess.eu"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "extensions": null,
+  "dataPresent": true
+}
+
+
+
+Получили список всех откликов для конкретного резюме (кандидата)
+Теперь нам надо понять какой из них нам нужен
+Для этого по каждой вакансии делаем запрос:
+
+query GetVacancyDetails {
+  vacancy(id: 519946) {
+    ... on VacancyItem {
+      id
+      title
+      externalVacancies {
+        hh {
+          items {
+            externalId
+            name
+            link
+            status
+          }
+        }
+      }
+    }
+  }
+}
+
+
+И получаем ответ вида:
+
+{
+  "errors": [],
+  "data": {
+    "vacancy": {
+      "id": 519946,
+      "title": "Продавец-консультант, GUESS (ТЦ Космопорт)",
+      "externalVacancies": {
+        "hh": {
+          "items": [
+            {
+              "externalId": "131677609",
+              "name": "Продавец-кассир GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/131677609",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "130102457",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/130102457",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "130102445",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/130102445",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "125605462",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/125605462",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "124541213",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/124541213",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "116577807",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/116577807",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "110137832",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/110137832",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "108086386",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/108086386",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "106710340",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/106710340",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "99024132",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/99024132",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "94536436",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/94536436",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "88983626",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/88983626",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "86190391",
+              "name": "Продавец-консультант GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/86190391",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "83218083",
+              "name": "Продавец-консультант, GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/83218083",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "81829379",
+              "name": "Продавец-консультант, GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/81829379",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "75854477",
+              "name": "Продавец-консультант, GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/75854477",
+              "status": "DISABLED"
+            },
+            {
+              "externalId": "71243699",
+              "name": "Продавец-консультант, GUESS (ТЦ Космопорт)",
+              "link": "https://hh.ru/vacancy/71243699",
+              "status": "DISABLED"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "extensions": null,
+  "dataPresent": true
+}
+
+
+
+
+
+То есть мы по каждой вакансии талантикса получили список вакансий hh которые к ней привязаны. Если в этом списке есть вакансия на которую откликнулся кандидат на хх, значит мы нашли нужную вакансию в талантиксе и нужный отклик
+
+Бот заранее делает запрос всей вакансий в талантиксе с их менеджерами, и когда мы нашли нужную вакансию мы получаем привязанных к ней менеджеров.
+
+

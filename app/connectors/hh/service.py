@@ -666,7 +666,8 @@ class HHConnectorService(BaseConnector):
                         await self._sync_with_talantix(
                             dialogue=dialogue,
                             phone_number=phone_number,
-                            vacancy_title=job.title,
+                            hh_resume_id=hh_resume_id,
+                            hh_vacancy_id=ext_vacancy_id,
                             db=db
                         )
                     except Exception as e:
@@ -882,22 +883,17 @@ class HHConnectorService(BaseConnector):
         self, 
         dialogue: Dialogue, 
         phone_number: str, 
-        vacancy_title: str,
+        hh_resume_id: str,
+        hh_vacancy_id: str,
         db: AsyncSession
     ):
         """
-        Синхронизация с Talantix CRM:
-        1. Получение всех вакансий с менеджерами
-        2. Поиск кандидата по номеру телефона
-        3. Получение данных об откликах
-        4. Поиск совпадения по названию вакансии HH
-        5. Сохранение person_id, vacancy_id и менеджеров (с ID) в metadata_json диалога
-        
-        Args:
-            dialogue: Объект диалога из БД
-            phone_number: Номер телефона кандидата
-            vacancy_title: Название вакансии HH для сравнения
-            db: Сессия БД
+        Синхронизация с Talantix CRM по новому алгоритму (api.txt):
+        1. Поиск кандидатов по номеру телефона
+        2. Проверка каждого кандидата по hh_resume_id (externalId в резюме)
+        3. Получение откликов найденного кандидата
+        4. Проверка каждой вакансии в отклике: привязана ли к ней наша hh_vacancy_id
+        5. Сохранение данных в metadata_json
         """
         if not settings.services.talantix.enabled:
             logger.debug(f"Talantix integration is disabled. Skipping sync for dialogue {dialogue.id}.")
@@ -905,7 +901,7 @@ class HHConnectorService(BaseConnector):
 
         from sqlalchemy import select
         
-        logger.info(f"🔄 Синхронизация с Talantix для диалога {dialogue.id} (телефон: {phone_number})")
+        logger.info(f"🔄 [Talantix Sync] Начинаю для диалога {dialogue.id} (телефон: {phone_number}, HH Resume: {hh_resume_id})")
         
         # Получаем аккаунт Talantix API
         talantix_account = await db.scalar(
@@ -918,8 +914,8 @@ class HHConnectorService(BaseConnector):
         if not talantix_account:
             logger.warning("⚠️ Аккаунт talantix_api не найден или не активен. Пропуск синхронизации.")
             return
-        
-        # 0. Получаем все вакансии с менеджерами (чтобы добавить manager_id)
+
+        # 0. Загружаем маппинг менеджеров (чтобы знать их внутренние ID)
         vacancies_managers_map = await talantix_crm_service.get_all_vacancies_with_managers(
             account=talantix_account,
             db=db
@@ -936,81 +932,79 @@ class HHConnectorService(BaseConnector):
             logger.info(f"ℹ️ Кандидаты с номером {phone_number} не найдены в Talantix")
             return
         
-        logger.info(f" Найдено {len(persons)} кандидатов в Talantix. Проверяю отклики...")
+        matched_person_id = None
         
-        # 2. Для каждого кандидата получаем данные об откликах
+        # 2. Итерируемся по каждому и ищем совпадение по HH Resume ID
+        for p in persons:
+            p_id = p.get('id')
+            logger.debug(f"🧐 Проверка кандидата Talantix {p_id} ({p.get('firstName')} {p.get('lastName')})...")
+            
+            talantix_resume_ids = await talantix_crm_service.get_person_resume_ids(p_id, talantix_account, db)
+            if hh_resume_id in talantix_resume_ids:
+                logger.info(f"✅ Найден нужный кандидат в Talantix: person_id={p_id}")
+                matched_person_id = p_id
+                break
+        
+        if not matched_person_id:
+            logger.info(f"❌ Среди найденных по телефону кандидатов нет того, у кого резюме {hh_resume_id}")
+            return
+
+        # 3. Находим конкретный отклик и вакансию
+        person_data = await talantix_crm_service.get_person_responses(
+            person_id=matched_person_id,
+            account=talantix_account,
+            db=db
+        )
+        
+        if not person_data:
+            logger.warning(f"⚠️ Не удалось получить отклики для person_id: {matched_person_id}")
+            return
+
+        responses = ((person_data.get('responses') or {}).get('items') or [])
         matched_talantix_data = None
         
-        for person in persons:
-            person_id = person.get('id')
-            if not person_id:
-                continue
+        # 4. Проверяем каждый отклик
+        for response in responses:
+            workflow_status = response.get('workflowStatus') or {}
+            vacancy = workflow_status.get('vacancy') or {}
+            talantix_vacancy_id = vacancy.get('id')
+            talantix_vacancy_title = vacancy.get('title')
             
-            logger.info(f"🧐 Проверяю отклики для person_id: {person_id} ({person.get('firstName')} {person.get('lastName')})")
+            if not talantix_vacancy_id: continue
+
+            logger.debug(f"🔍 Проверка привязки вакансии HH {hh_vacancy_id} к вакансии Talantix {talantix_vacancy_id}...")
             
-            # Получаем полную информацию с откликами
-            person_data = await talantix_crm_service.get_person_responses(
-                person_id=person_id,
-                account=talantix_account,
+            hh_external_ids = await talantix_crm_service.get_vacancy_external_ids(
+                vacancy_id=talantix_vacancy_id, 
+                account=talantix_account, 
                 db=db
             )
             
-            if not person_data:
-                logger.debug(f"ℹ️ Не удалось получить данные для person_id: {person_id}")
-                continue
-            
-            # 3. Ищем совпадение по названию вакансии
-            responses = ((person_data.get('responses') or {}).get('items') or [])
-            logger.debug(f"📄 Найдено {len(responses)} откликов у кандидата {person_id}")
-            
-            for response in responses:
-                workflow_status = response.get('workflowStatus') or {}
-                vacancy = workflow_status.get('vacancy') or {}
+            if hh_vacancy_id in hh_external_ids:
+                logger.info(f"🎯 Найдено совпадение! Вакансия Talantix {talantix_vacancy_id} ('{talantix_vacancy_title}') привязана к HH {hh_vacancy_id}")
                 
-                talantix_vacancy_title = vacancy.get('title', '')
-                talantix_vacancy_id = vacancy.get('id')
+                # Собираем данные менеджеров (из маппинга, чтобы были ID)
+                managers_data = []
+                global_managers = vacancies_managers_map.get(talantix_vacancy_id, [])
                 
-                # Сравниваем названия вакансий (нормализуем для сравнения)
-                is_match = self._vacancies_match(vacancy_title, talantix_vacancy_title)
-                logger.info(
-                    f"   - Сравнение: HH['{vacancy_title}'] vs Talantix['{talantix_vacancy_title}'] (ID: {talantix_vacancy_id}) -> "
-                    f"{'✅ СОВПАЛО' if is_match else '❌ МИМО'}"
-                )
-
-                if is_match:
-                    logger.info(
-                        f"🎯 Найдено совпадение вакансий в Talantix: "
-                        f"HH='{vacancy_title}' ~= Talantix='{talantix_vacancy_title}'"
-                    )
-                    
-                    # Собираем данные менеджеров
-                    managers_data = []
-                    vacancy_managers = ((vacancy.get('vacancyManagers') or {}).get('items') or [])
-                    
-                    # Берём менеджеров из глобального списка (там есть manager_id)
-                    global_managers = vacancies_managers_map.get(talantix_vacancy_id, [])
-                    
-                    for manager_item in global_managers:
-                        managers_data.append({
-                            'manager_id': manager_item.get('manager_id'),
-                            'vacancyRole': manager_item.get('vacancyRole'),
-                            'firstName': manager_item.get('firstName'),
-                            'lastName': manager_item.get('lastName'),
-                            'middleName': manager_item.get('middleName')
-                        })
-                    
-                    matched_talantix_data = {
-                        'person_id': person_id,
-                        'vacancy_id': talantix_vacancy_id,
-                        'vacancy_title': talantix_vacancy_title,
-                        'managers': managers_data
-                    }
-                    break
-            
-            if matched_talantix_data:
+                for manager_item in global_managers:
+                    managers_data.append({
+                        'manager_id': manager_item.get('manager_id'),
+                        'vacancyRole': manager_item.get('vacancyRole'),
+                        'firstName': manager_item.get('firstName'),
+                        'lastName': manager_item.get('lastName'),
+                        'middleName': manager_item.get('middleName')
+                    })
+                
+                matched_talantix_data = {
+                    'person_id': matched_person_id,
+                    'vacancy_id': talantix_vacancy_id,
+                    'vacancy_title': talantix_vacancy_title,
+                    'managers': managers_data
+                }
                 break
         
-        # 4. Сохраняем в metadata_json диалога
+        # 5. Сохраняем в metadata_json диалога
         if matched_talantix_data:
             metadata = dict(dialogue.metadata_json or {})
             metadata['talantix'] = matched_talantix_data
@@ -1018,34 +1012,12 @@ class HHConnectorService(BaseConnector):
             flag_modified(dialogue, "metadata_json")
             
             logger.info(
-                f"✅ Данные Talantix сохранены в диалог {dialogue.id}: "
+                f"✅ Данные Talantix успешно привязаны к диалогу {dialogue.id}: "
                 f"person_id={matched_talantix_data['person_id']}, "
-                f"vacancy_id={matched_talantix_data['vacancy_id']}, "
-                f"managers_count={len(matched_talantix_data['managers'])}"
+                f"vacancy_id={matched_talantix_data['vacancy_id']}"
             )
         else:
-            logger.info(f"ℹ️ Совпадений вакансий в Talantix не найдено для диалога {dialogue.id}")
-
-    @staticmethod
-    def _vacancies_match(hh_title: str, talantix_title: str) -> bool:
-        """
-        Проверяет, совпадают ли названия вакансий HH и Talantix.
-        Нормализует строки для сравнения.
-        """
-        if not hh_title or not talantix_title:
-            return False
-        
-        # Нормализуем: lower, убираем лишние пробелы и спецсимволы
-        def normalize(s):
-            return re.sub(r'[^\wа-яА-ЯёЁ\s]', '', s.lower().strip()).replace(' ', '')
-
-        hh_norm = normalize(hh_title)
-        talantix_norm = normalize(talantix_title)
-
-        match_result = (hh_norm == talantix_norm or hh_norm in talantix_norm or talantix_norm in hh_norm)
-        logger.debug(f"      [MatchDebug] '{hh_norm}' vs '{talantix_norm}' -> {match_result}")
-
-        return match_result
+            logger.info(f"ℹ️ Совпадений по вакансии HH {hh_vacancy_id} в Talantix не найдено для диалога {dialogue.id}")
 
 # Синглтон сервиса для экспорта
 hh_connector = HHConnectorService()
