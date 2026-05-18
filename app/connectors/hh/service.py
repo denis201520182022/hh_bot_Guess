@@ -541,8 +541,28 @@ class HHConnectorService(BaseConnector):
                 return
 
             # 2. ИЩЕМ СУЩЕСТВУЮЩИЙ ДИАЛОГ
-            stmt = select(Dialogue).filter_by(external_chat_id=hh_response_id).with_for_update()
+            stmt = (
+                select(Dialogue)
+                .options(selectinload(Dialogue.candidate))
+                .filter_by(external_chat_id=hh_response_id)
+                .with_for_update()
+            )
             dialogue = (await db.execute(stmt)).scalar_one_or_none()
+
+            # --- ТЕСТОВЫЙ РЕЖИМ (ФИЛЬТР ПО ИМЕНИ) ---
+            if settings.system.test_mode.enabled:
+                candidate_name = None
+                if dialogue and dialogue.candidate:
+                    candidate_name = dialogue.candidate.full_name
+                elif folder == 'response':
+                    resume_info = item.get('resume', {})
+                    candidate_first_name = resume_info.get('first_name', 'Неизвестно')
+                    candidate_last_name = resume_info.get('last_name', '')
+                    candidate_name = f"{candidate_first_name} {candidate_last_name}".strip()
+                
+                if candidate_name not in settings.system.test_mode.allowed_candidate_names:
+                    logger.info(f"🧪 [TestMode] Игнорируем кандидата '{candidate_name}' (не в списке разрешенных)")
+                    return
 
             if not dialogue:
                 # --- ЛОГИКА ДЛЯ НОВОГО ОТКЛИКА ---

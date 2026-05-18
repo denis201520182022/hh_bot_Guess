@@ -284,7 +284,7 @@ class AvitoConnectorService:
                 return
 
             # 3. Ищем существующий диалог
-            stmt = select(Dialogue).options(selectinload(Dialogue.vacancy)).filter_by(external_chat_id=external_chat_id)
+            stmt = select(Dialogue).options(selectinload(Dialogue.vacancy), selectinload(Dialogue.candidate)).filter_by(external_chat_id=external_chat_id)
             dialogue = (await db.execute(stmt)).scalar_one_or_none()
             # 5. Синхронизируем вакансию
             job_context = None
@@ -307,6 +307,15 @@ class AvitoConnectorService:
 
             if dialogue:
                 # --- ЛОГИКА ДЛЯ СУЩЕСТВУЮЩЕГО ДИАЛОГА ---
+                candidate = dialogue.candidate
+                
+                # --- ТЕСТОВЫЙ РЕЖИМ (ФИЛЬТР ПО ИМЕНИ) ---
+                if settings.system.test_mode.enabled:
+                    candidate_name = candidate.full_name if candidate else None
+                    if candidate_name not in settings.system.test_mode.allowed_candidate_names:
+                        logger.info(f"🧪 [TestMode] Игнорируем кандидата '{candidate_name}' (не в списке разрешенных)")
+                        return
+
                 if is_system_msg:
                     logger.info(f"🚫 Игнорируем системное сообщение в СУЩЕСТВУЮЩЕМ чате {external_chat_id}")
                     return 
@@ -352,6 +361,15 @@ class AvitoConnectorService:
                     except Exception:
                         await db.rollback()
                         candidate = await db.scalar(select(Candidate).filter_by(platform_user_id=unique_candidate_key))
+
+                # --- ТЕСТОВЫЙ РЕЖИМ (ФИЛЬТР ПО ИМЕНИ) ---
+                self._enrich_candidate_from_avito_payload(candidate, payload)
+                
+                if settings.system.test_mode.enabled:
+                    candidate_name = candidate.full_name
+                    if candidate_name and candidate_name not in settings.system.test_mode.allowed_candidate_names:
+                        logger.info(f"🧪 [TestMode] Игнорируем нового кандидата '{candidate_name}'")
+                        return
 
                 
                 # 6. Биллинг и создание диалога

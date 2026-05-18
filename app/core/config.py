@@ -13,9 +13,14 @@ load_dotenv()
 class BotConfig(BaseModel):
     id: str
 
+class TestModeConfig(BaseModel):
+    enabled: bool = False
+    allowed_candidate_names: List[str] = Field(default_factory=list)
+
 class SystemConfig(BaseModel):
     docker_mode: bool
     log_level: str
+    test_mode: Optional[TestModeConfig] = Field(default_factory=lambda: TestModeConfig(enabled=False))
 
 class OutboundSearchConfig(BaseModel):
     enabled: bool

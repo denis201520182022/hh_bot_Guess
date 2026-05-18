@@ -275,6 +275,11 @@ class Scheduler:
         """Периодический поиск новых резюме по активным платформам (Avito + HH)"""
         while self.is_running:
             try:
+                if settings.system.test_mode.enabled:
+                    logger.info("🧪 [TestMode] Активный поиск (Outbound) отключен.")
+                    await asyncio.sleep(900)
+                    continue
+
                 logger.info("🔍 Запуск цикла активного поиска кандидатов...")
 
                 # === ПРОВЕРКА AVITO ===

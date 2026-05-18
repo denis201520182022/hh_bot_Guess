@@ -7,6 +7,9 @@ bot:
 system:
   docker_mode: false
   log_level: "INFO"
+  test_mode:
+    enabled: true
+    allowed_candidate_names: ["Denis Denisov"]
   
 
 # === УПРАВЛЕНИЕ ПЛАТФОРМАМИ (КАНАЛЫ СВЯЗИ) ===
@@ -56,7 +59,7 @@ services:
     enabled: false
 
   talantix:  # Интеграция с Талантикс (создание кандидатов)
-    enabled: false
+    enabled: true
     
 
 # === КАЛЕНДАРЬ СОБЕСОВ===
