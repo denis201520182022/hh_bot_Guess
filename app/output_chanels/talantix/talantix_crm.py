@@ -62,7 +62,7 @@ class TalantixClient:
             self.logger.error(f"Ошибка: Токен у аккаунта {account.id} отсутсвует")
             raise
 
-        now_ts = datetime.datetime.now(datetime.UTC).timestamp()
+        now_ts = int(datetime.datetime.now(datetime.UTC).timestamp())
 
         # Проверяем валидность текущего токена (с запасом 300 секунд)
         if auth_data.expires_in + auth_data.created_at > now_ts + 300:

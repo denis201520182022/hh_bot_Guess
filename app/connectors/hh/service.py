@@ -352,7 +352,7 @@ class HHConnectorService(BaseConnector):
                 rec_logger.warning("API HH не вернуло активных вакансий.")
                 return []
 
-            rec_logger.debug(f"📥 HH POLLING DATA (VACANCIES): {json.dumps(all_vacancies_from_api, ensure_ascii=False)}")
+            # rec_logger.debug(f"📥 HH POLLING DATA (VACANCIES): {json.dumps(all_vacancies_from_api, ensure_ascii=False)}")
 
             active_hh_ids = {str(v["id"]) for v in all_vacancies_from_api}
             rec_logger.debug(f"Начинаю проверку {len(all_vacancies_from_api)} вакансий из API...")
