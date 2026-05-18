@@ -1,0 +1,53 @@
+Для получения информации о менеджерах по конкретной вакансии делаем запрос:
+query GetVacancyManagers {
+  vacancy(id: 779222) {
+    ... on VacancyItem {
+      id
+      title
+      vacancyManagers {
+        items {
+          vacancyRole
+          manager {
+            id
+            firstName
+            lastName
+            middleName
+          }
+        }
+      }
+    }
+  }
+}
+
+
+Получаем ответ вида:
+
+{
+  "errors": [],
+  "data": {
+    "vacancy": {
+      "id": 779222,
+      "title": "Assistant Manager/ Администратор GUESS",
+      "vacancyManagers": {
+        "items": [
+          {
+            "vacancyRole": "owner",
+            "manager": {
+              "id": 117166,
+              "firstName": "Светлана",
+              "lastName": "Орехова",
+              "middleName": null
+            }
+          }
+        ]
+      }
+    }
+  },
+  "extensions": null,
+  "dataPresent": true
+}
+
+
+
+
+Обращаю внимание что может быть несколько сотрудников с разными ролями "vacancyRole": "owner" или "vacancyRole": "recruiter"

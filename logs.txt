@@ -1,88 +1,62 @@
-5-18 15:44:55,015 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:hh_api_global' (limit=10)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,016 | DEBUG | guess_hr_01 |   [Request Step 3] Подготовка заголовков и отправка... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,016 | DEBUG | guess_hr_01 | 📡 [HH Client] Отправка PUT на https://api.hh.ru/negotiations/consider/5303584768... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,182 | DEBUG | guess_hr_01 | 📊 [HH Client] Получен ответ 204 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,183 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5303584768 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,183 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 41 (телефон: +7 961 440-12-64, HH Resume: d64d0c76000fc201eb00234e76326649457a61) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | ❌ КРИТИЧЕСКАЯ ОШИБКА АВТОРИЗАЦИИ Talantix для аккаунта Talantix API Integration: 1 validation error for TalantixApiCreds
-guess_hr_bot  | created_at
-guess_hr_bot  |   Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=1779119095.186635, input_type=float]
-guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/int_from_float
-guess_hr_bot  | Traceback (most recent call last):
-guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 94, in get_token
-guess_hr_bot  |     token_data = TalantixApiCreds.model_validate(data)
-guess_hr_bot  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/pydantic/main.py", line 732, in model_validate
-guess_hr_bot  |     return cls.__pydantic_validator__.validate_python(
-guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  | pydantic_core._pydantic_core.ValidationError: 1 validation error for TalantixApiCreds
-guess_hr_bot  | created_at
-guess_hr_bot  |   Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=1779119095.186635, input_type=float]
-guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/int_from_float
-guess_hr_bot  | 2026-05-18 15:44:55,308 | ERROR | guess_hr_01 | ❌ Ошибка синхронизации с Talantix для диалога 41: 1 validation error for TalantixApiCreds
-guess_hr_bot  | created_at
-guess_hr_bot  |   Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=1779119095.186635, input_type=float]
-guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/int_from_float | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | Traceback (most recent call last):
-guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 666, in process_hh_event
-guess_hr_bot  |     await self._sync_with_talantix(
-guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 919, in _sync_with_talantix
-guess_hr_bot  |     vacancies_managers_map = await talantix_crm_service.get_all_vacancies_with_managers(
-guess_hr_bot  |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 594, in get_all_vacancies_with_managers
-guess_hr_bot  |     response = await self.graphql_client._send_graphql_request(
-guess_hr_bot  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
-guess_hr_bot  |     return await copy(fn, *args, **kwargs)
-guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
-guess_hr_bot  |     do = await self.iter(retry_state=retry_state)
-guess_hr_bot  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
-guess_hr_bot  |     result = await action(retry_state)
-guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/_utils.py", line 111, in inner
-guess_hr_bot  |     return call(*args, **kwargs)
-guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 393, in <lambda>
-guess_hr_bot  |     self._add_action_func(lambda rs: rs.outcome.result())
-guess_hr_bot  |                                      ^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 449, in result
-guess_hr_bot  |     return self.__get_result()
-guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
-guess_hr_bot  |     raise self._exception
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
-guess_hr_bot  |     result = await fn(*args, **kwargs)
-guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 127, in _send_graphql_request
-guess_hr_bot  |     token = await self.get_token(account, db)
-guess_hr_bot  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 94, in get_token
-guess_hr_bot  |     token_data = TalantixApiCreds.model_validate(data)
-guess_hr_bot  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/pydantic/main.py", line 732, in model_validate
-guess_hr_bot  |     return cls.__pydantic_validator__.validate_python(
-guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-guess_hr_bot  | pydantic_core._pydantic_core.ValidationError: 1 validation error for TalantixApiCreds
-guess_hr_bot  | created_at
-guess_hr_bot  |   Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=1779119095.186635, input_type=float]
-guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/int_from_float
-guess_hr_bot  | 2026-05-18 15:44:55,311 | DEBUG | guess_hr_01 | 🔎 HH_API: Запрос истории сообщений по URL: https://api.hh.ru/negotiations/5303584768/messages... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,311 | DEBUG | guess_hr_01 | 🔑 [HH Client] Проверка токена для Guess(Юлия)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,311 | DEBUG | guess_hr_01 |   [Request Step 1] Вход в Rate Limiter: rate_limit:hh_api_rate | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,311 | DEBUG | guess_hr_01 |   [RateLimiter] Проверка лимита 'rate_limit:hh_api_rate' (limit=100)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,313 | DEBUG | guess_hr_01 |   [Request Step 2] Вход в Глобальный Семафор HH (limit=10) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,313 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:hh_api_global' (limit=10)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,313 | DEBUG | guess_hr_01 |   [Request Step 3] Подготовка заголовков и отправка... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,313 | DEBUG | guess_hr_01 | 📡 [HH Client] Отправка GET на https://api.hh.ru/negotiations/5303584768/messages... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,507 | DEBUG | guess_hr_01 | 📊 [HH Client] Получен ответ 200 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,508 | INFO | guess_hr_01 | 📥 HH POLLING DATA (MESSAGES for 41): [{"id": "14181286430", "created_at": "2026-05-18T18:44:52+0300", "text": null, "state": {"id": "response", "name": "Отклик"}, "address": null, "author": {"participant_type": "applicant"}, "editable": false, "viewed_by_me": true, "viewed_by_opponent": true}] | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:44:55,516 | INFO | guess_hr_01 | ✅ Новый диалог HH 5303584768 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303584768'}
-guess_hr_bot  | 2026-05-18 15:45:00,018 | DEBUG | guess_hr_01 | 🔎 [HH Poller] Начинаю цикл опроса для 1 аккаунтов... | ctx: {}
-guess_hr_bot  | 2026-05-18 15:45:00,023 | DEBUG | guess_hr_01 | ⚙️ [HH Poller] Обработка аккаунта: Guess(Юлия) (ID: 6) | ctx: {}
-guess_hr_bot  | 2026-05-18 15:45:00,023 | DEBUG | guess_hr_01 | 🔄 [Guess(Юлия)] Синхронизация списка вакансий... | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
-guess_hr_bot  | 2026-05-18 15:45:00,023 | DEBUG | guess_hr_01 | Используем кэш списка вакансий (синхронизация была 0.4 мин. назад) | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
-guess_hr_bot  | 2026-05-18 15:45:00,028 | DEBUG | guess_hr_01 | Синхронизация вакансий завершена за 0.01 сек. | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
-guess_hr_bot  | 2026-05-18 15:45:00,028 | DEBUG | guess_hr_01 | Количество вакансий: 1 | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
-guess_hr_bot  | 2026-05-18 15:45:00,028 | DEBUG | guess_hr_01 | 📥 [Guess(Юлия)] Сбор новых событий из папок HH... | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+-18 15:52:19,096 | DEBUG | guess_hr_01 |   [Request Step 2] Вход в Глобальный Семафор HH (limit=10) | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,096 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:hh_api_global' (limit=10)... | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,097 | DEBUG | guess_hr_01 |   [Request Step 3] Подготовка заголовков и отправка... | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,097 | DEBUG | guess_hr_01 | 📡 [HH Client] Отправка GET на https://api.hh.ru/negotiations/interview... | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,104 | INFO | guess_hr_01 | 🧪 [TestMode] Игнорируем кандидата 'Софья Борисова' (не в списке разрешенных) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5298557681'}
+guess_hr_bot  | 2026-05-18 15:52:19,419 | DEBUG | guess_hr_01 | 📊 [HH Client] Получен ответ 200 | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,420 | DEBUG | guess_hr_01 |   [DEBUG] Для вакансии 132326437, страница 0: Нет данных или items пусты. Завершаю пагинацию. | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,420 | DEBUG | guess_hr_01 | ✅ Суммарно найдено 0 откликов в папке 'interview'. | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,420 | DEBUG | guess_hr_01 | 💾 [Guess(Юлия)] Фиксация изменений в БД... | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,422 | DEBUG | guess_hr_01 | ✅ [Guess(Юлия)] Обработка завершена. | ctx: {'account_id': 6, 'account_name': 'Guess(Юлия)', 'platform': 'hh'}
+guess_hr_bot  | 2026-05-18 15:52:19,422 | DEBUG | guess_hr_01 | ✅ [HH Poller] Цикл опроса завершен. | ctx: {}
+guess_hr_bot  | 2026-05-18 15:52:19,423 | INFO | guess_hr_01 | 📁 HH_API: Перемещение отклика 5303602025 в папку 'consider'... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,423 | DEBUG | guess_hr_01 | 🔑 [HH Client] Проверка токена для Guess(Юлия)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,423 | DEBUG | guess_hr_01 |   [Request Step 1] Вход в Rate Limiter: rate_limit:hh_api_rate | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,423 | DEBUG | guess_hr_01 |   [RateLimiter] Проверка лимита 'rate_limit:hh_api_rate' (limit=100)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,424 | DEBUG | guess_hr_01 |   [Request Step 2] Вход в Глобальный Семафор HH (limit=10) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,424 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:hh_api_global' (limit=10)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,425 | DEBUG | guess_hr_01 |   [Request Step 3] Подготовка заголовков и отправка... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,425 | DEBUG | guess_hr_01 | 📡 [HH Client] Отправка PUT на https://api.hh.ru/negotiations/consider/5303602025... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,614 | DEBUG | guess_hr_01 | 📊 [HH Client] Получен ответ 204 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,615 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5303602025 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,615 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 43 (телефон: +7 961 440-12-64, HH Resume: 2bf1a671000fc1402700234e765062306e436c) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,619 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:19,754 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,208 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 133174315 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,208 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,254 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 136894801 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,254 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,354 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 136840598 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,354 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,455 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 133171101 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,455 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,549 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 136832356 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,549 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,654 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 136895112 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,655 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,749 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 136833915 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,749 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,850 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 133138658 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,851 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,948 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 136836969 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:20,948 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,051 | DEBUG | guess_hr_01 | 🧐 Проверка кандидата Talantix 136895463 (Denis Denisov)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,051 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,152 | INFO | guess_hr_01 | ✅ Найден нужный кандидат в Talantix: person_id=136895463 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,152 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,295 | DEBUG | guess_hr_01 | 🔍 Проверка привязки вакансии HH 132326437 к вакансии Talantix 370569... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,295 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,362 | INFO | guess_hr_01 | 🎯 Найдено совпадение! Вакансия Talantix 370569 ('Продавец-консультант GUESS (ТЦ Каширская Плаза)') привязана к HH 132326437 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,362 | INFO | guess_hr_01 | ✅ Данные Talantix успешно привязаны к диалогу 43: person_id=136895463, vacancy_id=370569 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,362 | DEBUG | guess_hr_01 | 🔎 HH_API: Запрос истории сообщений по URL: https://api.hh.ru/negotiations/5303602025/messages... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,362 | DEBUG | guess_hr_01 | 🔑 [HH Client] Проверка токена для Guess(Юлия)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,362 | DEBUG | guess_hr_01 |   [Request Step 1] Вход в Rate Limiter: rate_limit:hh_api_rate | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,362 | DEBUG | guess_hr_01 |   [RateLimiter] Проверка лимита 'rate_limit:hh_api_rate' (limit=100)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,363 | DEBUG | guess_hr_01 |   [Request Step 2] Вход в Глобальный Семафор HH (limit=10) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,363 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:hh_api_global' (limit=10)... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,363 | DEBUG | guess_hr_01 |   [Request Step 3] Подготовка заголовков и отправка... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,364 | DEBUG | guess_hr_01 | 📡 [HH Client] Отправка GET на https://api.hh.ru/negotiations/5303602025/messages... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,556 | DEBUG | guess_hr_01 | 📊 [HH Client] Получен ответ 200 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,558 | INFO | guess_hr_01 | 📥 HH POLLING DATA (MESSAGES for 43): [{"id": "14181351885", "created_at": "2026-05-18T18:52:16+0300", "text": null, "state": {"id": "response", "name": "Отклик"}, "address": null, "author": {"participant_type": "applicant"}, "editable": false, "viewed_by_me": true, "viewed_by_opponent": true}, {"id": "14181352327", "created_at": "2026-05-18T18:52:19+0300", "text": null, "state": {"id": "text", "name": "Текст"}, "address": null, "author": {"participant_type": "employer"}, "editable": false, "viewed_by_me": true, "viewed_by_opponent": false}] | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+guess_hr_bot  | 2026-05-18 15:52:21,567 | INFO | guess_hr_01 | ✅ Новый диалог HH 5303602025 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5303602025'}
+^C

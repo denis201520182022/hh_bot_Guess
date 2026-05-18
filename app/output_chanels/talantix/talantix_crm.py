@@ -554,76 +554,56 @@ class TalantixService:
         
         return [v.get("externalId") for v in hh_items if v.get("externalId")]
 
-    async def get_all_vacancies_with_managers(
-        self, account: Account, db: AsyncSession
-    ) -> dict[int, list[dict]]:
+    async def get_vacancy_managers(
+        self, vacancy_id: int, account: Account, db: AsyncSession
+    ) -> list[dict]:
         """
-        Получение списка всех вакансий с их менеджерами.
-        
-        Args:
-            account: Аккаунт Talantix
-            db: Сессия БД
-            
-        Returns:
-            Словарь {vacancy_id: [managers]} где managers — список с полями:
-            manager_id, firstName, lastName, middleName, vacancyRole
+        Получение списка менеджеров для конкретной вакансии (GetVacancyManagers).
         """
-        self.logger.info("🔍 Получение списка всех вакансий с менеджерами из Talantix")
-
         query = """
-        query VacanciesManagerList {
-          vacancies {
-            items {
+        query GetVacancyManagers {
+          vacancy(id: %d) {
+            ... on VacancyItem {
               id
+              title
               vacancyManagers {
                 items {
+                  vacancyRole
                   manager {
                     id
-                    lastName
                     firstName
+                    lastName
                     middleName
                   }
-                  vacancyRole
                 }
               }
             }
           }
         }
-        """
-        
+        """ % vacancy_id
+
         response = await self.graphql_client._send_graphql_request(
             query, None, account, db
         )
-        
+
         if response.errors:
-            self.logger.error(f"❌ Ошибка получения вакансий: {response.errors}")
-            return {}
+            self.logger.error(f"❌ Ошибка получения менеджеров вакансии {vacancy_id}: {response.errors}")
+            return []
+
+        vacancy_data = (response.data or {}).get("vacancy") or {}
+        manager_items = ((vacancy_data.get("vacancyManagers") or {}).get("items") or [])
         
-        vacancies_data = ((response.data or {}).get("vacancies") or {}).get("items") or []
+        result = []
+        for item in manager_items:
+            manager = item.get("manager") or {}
+            result.append({
+                'manager_id': manager.get('id'),
+                'vacancyRole': item.get('vacancyRole'),
+                'firstName': manager.get('firstName'),
+                'lastName': manager.get('lastName'),
+                'middleName': manager.get('middleName')
+            })
         
-        # Преобразуем в удобный словарь {vacancy_id: [managers]}
-        result = {}
-        for vacancy in vacancies_data:
-            vacancy_id = vacancy.get('id')
-            if not vacancy_id:
-                continue
-            
-            managers_list = []
-            vacancy_managers = ((vacancy.get('vacancyManagers') or {}).get('items') or [])
-            
-            for manager_item in vacancy_managers:
-                manager = manager_item.get('manager') or {}
-                managers_list.append({
-                    'manager_id': manager.get('id'),
-                    'firstName': manager.get('firstName'),
-                    'lastName': manager.get('lastName'),
-                    'middleName': manager.get('middleName'),
-                    'vacancyRole': manager_item.get('vacancyRole')
-                })
-            
-            result[vacancy_id] = managers_list
-        
-        self.logger.info(f"✅ Получено {len(result)} вакансий с менеджерами")
         return result
 
     async def create_person_comment(

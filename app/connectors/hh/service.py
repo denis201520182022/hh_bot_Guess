@@ -915,12 +915,6 @@ class HHConnectorService(BaseConnector):
             logger.warning("⚠️ Аккаунт talantix_api не найден или не активен. Пропуск синхронизации.")
             return
 
-        # 0. Загружаем маппинг менеджеров (чтобы знать их внутренние ID)
-        vacancies_managers_map = await talantix_crm_service.get_all_vacancies_with_managers(
-            account=talantix_account,
-            db=db
-        )
-        
         # 1. Поиск всех кандидатов по номеру телефона
         persons = await talantix_crm_service.find_persons_by_phone(
             phone=phone_number,
@@ -983,18 +977,12 @@ class HHConnectorService(BaseConnector):
             if hh_vacancy_id in hh_external_ids:
                 logger.info(f"🎯 Найдено совпадение! Вакансия Talantix {talantix_vacancy_id} ('{talantix_vacancy_title}') привязана к HH {hh_vacancy_id}")
                 
-                # Собираем данные менеджеров (из маппинга, чтобы были ID)
-                managers_data = []
-                global_managers = vacancies_managers_map.get(talantix_vacancy_id, [])
-                
-                for manager_item in global_managers:
-                    managers_data.append({
-                        'manager_id': manager_item.get('manager_id'),
-                        'vacancyRole': manager_item.get('vacancyRole'),
-                        'firstName': manager_item.get('firstName'),
-                        'lastName': manager_item.get('lastName'),
-                        'middleName': manager_item.get('middleName')
-                    })
+                # Собираем данные менеджеров ТОЧЕЧНЫМ ЗАПРОСОМ (из men_api.txt)
+                managers_data = await talantix_crm_service.get_vacancy_managers(
+                    vacancy_id=talantix_vacancy_id,
+                    account=talantix_account,
+                    db=db
+                )
                 
                 matched_talantix_data = {
                     'person_id': matched_person_id,
