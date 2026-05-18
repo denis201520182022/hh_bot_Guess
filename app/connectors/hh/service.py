@@ -946,6 +946,8 @@ class HHConnectorService(BaseConnector):
             if not person_id:
                 continue
             
+            logger.info(f"🧐 Проверяю отклики для person_id: {person_id} ({person.get('firstName')} {person.get('lastName')})")
+            
             # Получаем полную информацию с откликами
             person_data = await talantix_crm_service.get_person_responses(
                 person_id=person_id,
@@ -954,10 +956,12 @@ class HHConnectorService(BaseConnector):
             )
             
             if not person_data:
+                logger.debug(f"ℹ️ Не удалось получить данные для person_id: {person_id}")
                 continue
             
             # 3. Ищем совпадение по названию вакансии
             responses = ((person_data.get('responses') or {}).get('items') or [])
+            logger.debug(f"📄 Найдено {len(responses)} откликов у кандидата {person_id}")
             
             for response in responses:
                 workflow_status = response.get('workflowStatus') or {}
@@ -967,9 +971,15 @@ class HHConnectorService(BaseConnector):
                 talantix_vacancy_id = vacancy.get('id')
                 
                 # Сравниваем названия вакансий (нормализуем для сравнения)
-                if self._vacancies_match(vacancy_title, talantix_vacancy_title):
+                is_match = self._vacancies_match(vacancy_title, talantix_vacancy_title)
+                logger.info(
+                    f"   - Сравнение: HH['{vacancy_title}'] vs Talantix['{talantix_vacancy_title}'] (ID: {talantix_vacancy_id}) -> "
+                    f"{'✅ СОВПАЛО' if is_match else '❌ МИМО'}"
+                )
+
+                if is_match:
                     logger.info(
-                        f"✅ Найдено совпадение вакансий в Talantix: "
+                        f"🎯 Найдено совпадение вакансий в Talantix: "
                         f"HH='{vacancy_title}' ~= Talantix='{talantix_vacancy_title}'"
                     )
                     
@@ -1027,20 +1037,15 @@ class HHConnectorService(BaseConnector):
         
         # Нормализуем: lower, убираем лишние пробелы и спецсимволы
         def normalize(s):
-            return re.sub(r'[^\wа-яА-ЯёЁ\s]', '', s.lower().strip())
-        
+            return re.sub(r'[^\wа-яА-ЯёЁ\s]', '', s.lower().strip()).replace(' ', '')
+
         hh_norm = normalize(hh_title)
         talantix_norm = normalize(talantix_title)
-        
-        # Полное совпадение
-        if hh_norm == talantix_norm:
-            return True
-        
-        # Частичное совпадение (одна строка содержит другую)
-        if hh_norm in talantix_norm or talantix_norm in hh_norm:
-            return True
-        
-        return False
+
+        match_result = (hh_norm == talantix_norm or hh_norm in talantix_norm or talantix_norm in hh_norm)
+        logger.debug(f"      [MatchDebug] '{hh_norm}' vs '{talantix_norm}' -> {match_result}")
+
+        return match_result
 
 # Синглтон сервиса для экспорта
 hh_connector = HHConnectorService()
