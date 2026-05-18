@@ -64,7 +64,7 @@ class TalantixClient:
         now_ts = datetime.datetime.now(datetime.UTC).timestamp()
 
         # Проверяем валидность текущего токена (с запасом 300 секунд)
-        if auth_data.expires_in + auth_data.created_at < now_ts + 300:
+        if auth_data.expires_in + auth_data.created_at > now_ts + 300:
             return auth_data.access_token
 
         lock_key = f"talantix_token_lock:{account.id}"

@@ -40,6 +40,10 @@ async def init_dal_accounts():
                     "access_token": settings.TALANTIX_ACCESS_TOKEN or "",
                     "refresh_token": settings.TALANTIX_REFRESH_TOKEN or "",
                     "created_at": int(datetime.datetime.now().timestamp()),
+                    "expires_in": 3600,
+                    "refresh_token_expires_in": 7776000,
+                    "token_type": "Bearer",
+                    "name": "Bot Token"
                 },
                 is_active=True,
             )

@@ -1,0 +1,119 @@
+26-05-18 09:18:49,031 INFO spawned: 'scheduler' with pid 10
+guess_hr_bot  | 2026-05-18 09:18:49,033 INFO spawned: 'services' with pid 11
+guess_hr_bot  | 2026-05-18 09:18:49,033 INFO spawned: 'services' with pid 11
+guess_hr_bot  | 2026-05-18 09:18:49,868 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:49,869 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:49,873 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:49,873 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,006 | INFO | guess_hr_01 | 👷 [worker_connector] запущен | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,152 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,152 INFO success: connector entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,152 INFO success: connector entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,152 INFO success: engine entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,152 INFO success: engine entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,152 INFO success: fastapi entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,152 INFO success: fastapi entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,153 INFO success: scheduler entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,153 INFO success: scheduler entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,153 INFO success: services entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,153 INFO success: services entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+guess_hr_bot  | 2026-05-18 09:18:50,153 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,186 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,186 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
+guess_hr_bot  | INFO:     Started server process [9]
+guess_hr_bot  | INFO:     Waiting for application startup.
+guess_hr_bot  | 2026-05-18 09:18:50,224 | INFO | guess_hr_01 | 🚀 [worker_main] Запуск HR-платформы... | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,342 | INFO | guess_hr_01 | ✅ [worker_main] Создан аккаунт Talantix API (OAuth) | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,344 | INFO | guess_hr_01 | ✅ [worker_main] Создан аккаунт Talantix Calendar (Cookies) | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,353 | INFO | guess_hr_01 | 🚀 Запуск HH Connector Service (Polling mode)... | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,353 | INFO | guess_hr_01 | ✅ [worker_main] HH коннектор запущен | ctx: {}
+guess_hr_bot  | INFO:     Application startup complete.
+guess_hr_bot  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+guess_hr_bot  | 2026-05-18 09:18:50,518 | INFO | guess_hr_01 | 🚀 [worker_scheduler] запущен | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,644 | INFO | guess_hr_01 | 🧪 [TestMode] Активный поиск (Outbound) отключен. | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,676 | INFO | guess_hr_01 | 🌐 OpenAI клиент настроен через прокси: 38.180.203.212:8787 | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:50,694 | INFO | guess_hr_01 | 👷 [worker_engine] (Brain) запущен | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:52,145 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:52,409 | INFO | guess_hr_01 | 🚀 [worker_services] & Interactive Bot стартуют... | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:52,410 | INFO | guess_hr_01 | 👷 Alerts Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-18 09:18:52,410 | INFO | guess_hr_01 | 👷 Services Output Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-18 09:20:33,292 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response'}
+guess_hr_bot  | 2026-05-18 09:20:33,776 | INFO | guess_hr_01 | 📱 Получен номер телефона для кандидата 5e19dccb000fc1433300234e7635384f6d5675: +7 961 440-12-64 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | 2026-05-18 09:20:33,806 | INFO | guess_hr_01 | 📁 HH_API: Перемещение отклика 5302329576 в папку 'consider'... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | 2026-05-18 09:20:34,018 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5302329576 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | 2026-05-18 09:20:34,019 | INFO | guess_hr_01 | 🔄 Синхронизация с Talantix для диалога 35 (телефон: +7 961 440-12-64) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | Ошибка: Токен у аккаунта 7 отсутсвует
+guess_hr_bot  | 2026-05-18 09:20:34,024 | ERROR | guess_hr_01 | ❌ Ошибка синхронизации с Talantix для диалога 35: 4 validation errors for TalantixApiCreds
+guess_hr_bot  | name
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing
+guess_hr_bot  | expires_in
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing
+guess_hr_bot  | refresh_token_expires_in
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing
+guess_hr_bot  | token_type
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | Traceback (most recent call last):
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 666, in process_hh_event
+guess_hr_bot  |     await self._sync_with_talantix(
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 923, in _sync_with_talantix
+guess_hr_bot  |     vacancies_managers_map = await talantix_crm_service.get_all_vacancies_with_managers(
+guess_hr_bot  |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 557, in get_all_vacancies_with_managers
+guess_hr_bot  |     response = await self.graphql_client._send_graphql_request(
+guess_hr_bot  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
+guess_hr_bot  |     return await copy(fn, *args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+guess_hr_bot  |     do = await self.iter(retry_state=retry_state)
+guess_hr_bot  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+guess_hr_bot  |     result = await action(retry_state)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/_utils.py", line 111, in inner
+guess_hr_bot  |     return call(*args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 393, in <lambda>
+guess_hr_bot  |     self._add_action_func(lambda rs: rs.outcome.result())
+guess_hr_bot  |                                      ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+guess_hr_bot  |     return self.__get_result()
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+guess_hr_bot  |     raise self._exception
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+guess_hr_bot  |     result = await fn(*args, **kwargs)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 126, in _send_graphql_request
+guess_hr_bot  |     token = await self.get_token(account, db)
+guess_hr_bot  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 59, in get_token
+guess_hr_bot  |     auth_data = TalantixApiCreds.model_validate(account.auth_data)
+guess_hr_bot  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/pydantic/main.py", line 732, in model_validate
+guess_hr_bot  |     return cls.__pydantic_validator__.validate_python(
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  | pydantic_core._pydantic_core.ValidationError: 4 validation errors for TalantixApiCreds
+guess_hr_bot  | name
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing
+guess_hr_bot  | expires_in
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing
+guess_hr_bot  | refresh_token_expires_in
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing
+guess_hr_bot  | token_type
+guess_hr_bot  |   Field required [type=missing, input_value={'created_at': 1779095930...YJgJHvA6Dac6NjfJS9ZXv_'}, input_type=dict]
+guess_hr_bot  |     For further information visit https://errors.pydantic.dev/2.13/v/missing
+guess_hr_bot  | 2026-05-18 09:20:34,298 | INFO | guess_hr_01 | 📥 HH POLLING DATA (MESSAGES for 35): [{"id": "14174944940", "created_at": "2026-05-18T12:20:32+0300", "text": null, "state": {"id": "response", "name": "Отклик"}, "address": null, "author": {"participant_type": "applicant"}, "editable": false, "viewed_by_me": true, "viewed_by_opponent": true}] | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | 2026-05-18 09:20:34,305 | INFO | guess_hr_01 | ✅ Новый диалог HH 5302329576 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | 2026-05-18 09:20:39,313 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 35 (Платформа: hh) | ctx: {'dialogue_id': 35, 'account_id': 6, 'candidate_id': 24, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-18 09:20:39,315 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 35 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302329576'}
+guess_hr_bot  | 2026-05-18 09:20:39,418 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 35, 'account_id': 6, 'candidate_id': 24, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-18 09:20:45,052 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6438 (Cached: 0.0%) | ctx: {'dialogue_id': 35, 'account_id': 6, 'candidate_id': 24, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-18 09:20:45,067 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5302329576 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 35, 'account_id': 6, 'candidate_id': 24, 'platform': 'hh', 'step': 'engine_start'}
