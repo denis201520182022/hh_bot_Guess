@@ -612,7 +612,8 @@ class TalantixService:
         text: str,
         account: Account,
         db: AsyncSession,
-        visible_for_all: bool = True
+        visible_for_all: bool = True,
+        vacancy_id: int | None = None
     ) -> int | None:
         """
         Создание комментария к кандидату в Talantix.
@@ -623,6 +624,7 @@ class TalantixService:
             account: Аккаунт Talantix
             db: Сессия БД
             visible_for_all: Видимость комментария (True = виден всем)
+            vacancy_id: ID вакансии в Talantix (опционально)
             
         Returns:
             ID созданного комментария или None при ошибке
@@ -656,6 +658,9 @@ class TalantixService:
                 }
             }
         }
+
+        if vacancy_id:
+            variables["commentCreate"]["vacancyId"] = int(vacancy_id)
         
         response = await self.graphql_client._send_graphql_request(
             mutation, variables, account, db
@@ -699,14 +704,13 @@ class TalantixService:
         platform: str = None
     ) -> str:
         """
-        Формирует текст комментария для Talantix в зависимости от типа события.
-        Данные как в TG-карточке, но без ФИО и телефона.
+        Формирует текст комментария для Talantix в формате HTML.
         
         Args:
             event_type: 'qualified', 'rescheduled', 'cancelled', 'rejected', 'silence'
             candidate_name: Имя кандидата
             vacancy_title: Название вакансии
-            profile_data: Профиль кандидата (age, citizenship, employment_type и т.д.)
+            profile_data: Профиль кандидата
             interview_date/time: Дата и время собеседования
             old_date/time: Старая дата/время (для переноса)
             reason: Причина (для отмены/отказа)
@@ -715,7 +719,7 @@ class TalantixService:
         platform_str = f" ({platform.upper()})" if platform else ""
         profile = profile_data or {}
         
-        # Перевод значений как в TG-карточках
+        # Перевод значений
         emp_type = profile.get('employment_type')
         emp_label = "Полная" if emp_type == "full" else "Частичная" if emp_type == "part" else "—"
         
@@ -723,7 +727,7 @@ class TalantixService:
         hours_label = "✅ Да" if hours == "yes" else "❌ Нет" if hours == "no" else "—"
         
         shift = profile.get('shift_preference')
-        shift_map = {"morning": "🌅 Утро", "evening": "🌆 Вечер", "any": "🔄 Любая"}
+        shift_map = {"morning": "Утро", "evening": "Вечер", "any": "Любая"}
         shift_label = shift_map.get(shift, "—")
         
         contract = profile.get('employment_contract_ready')
@@ -733,73 +737,73 @@ class TalantixService:
         military_label = "✅ Да" if military == "yes" else "❌ Нет" if military == "no" else "—"
         
         # Формируем блок анкеты
-        profile_lines = [
-            f"🎂 Возраст: {profile.get('age', '—')}",
-            f"🌍 Гражданство: {profile.get('citizenship', '—')}",
-            f"⏳ Занятость: {emp_label}",
+        profile_items = [
+            f"<li><b>Возраст:</b> {profile.get('age', '—')}</li>",
+            f"<li><b>Гражданство:</b> {profile.get('citizenship', '—')}</li>",
+            f"<li><b>Занятость:</b> {emp_label}</li>",
         ]
         
         if emp_type == "part":
-            profile_lines.append(f"⏱ Готов 20-40ч: {hours_label}")
+            profile_items.append(f"<li><b>Готов 20-40ч:</b> {hours_label}</li>")
         elif emp_type == "full":
-            profile_lines.append(f"🕒 Смена: {shift_label}")
+            profile_items.append(f"<li><b>Смена:</b> {shift_label}</li>")
         
-        profile_lines.append(f"📋 Оформление ТК: {contract_label}")
-        profile_lines.append(f"🎖 Военный билет: {military_label}")
+        profile_items.append(f"<li><b>Оформление ТК:</b> {contract_label}</li>")
+        profile_items.append(f"<li><b>Военный билет:</b> {military_label}</li>")
         
-        profile_text = "\n".join(profile_lines)
+        profile_html = "<b>Анкета кандидата:</b><ul>" + "".join(profile_items) + "</ul>"
         
         # Заголовки в зависимости от типа события
         if event_type == 'qualified':
-            header = f"🚀 Запись на собеседование{platform_str}"
+            header = f"🚀 <b>Запись на собеседование{platform_str}</b>"
             body = (
-                f"{header}\n\n"
-                f"📌 Вакансия: {vacancy_title}\n\n"
-                f"{profile_text}\n\n"
-                f"📅 Собеседование: {interview_date} в {interview_time}\n"
+                f"{header}<br/><br/>"
+                f"📌 <b>Вакансия:</b> {vacancy_title}<br/><br/>"
+                f"{profile_html}"
+                f"📅 <b>Собеседование:</b> {interview_date} в {interview_time}<br/>"
                 f"Рекрутер и Директор оповещены."
             )
         
         elif event_type == 'rescheduled':
-            header = f"🔄 Перенос собеседования{platform_str}"
+            header = f"🔄 <b>Перенос собеседования{platform_str}</b>"
             body = (
-                f"{header}\n\n"
-                f"📌 Вакансия: {vacancy_title}\n\n"
-                f"{profile_text}\n\n"
-                f"📅 Было: {old_date} в {old_time}\n"
-                f"📅 Стало: {interview_date} в {interview_time}"
+                f"{header}<br/><br/>"
+                f"📌 <b>Вакансия:</b> {vacancy_title}<br/><br/>"
+                f"{profile_html}"
+                f"📅 <b>Было:</b> {old_date} в {old_time}<br/>"
+                f"📅 <b>Стало:</b> {interview_date} в {interview_time}"
             )
         
         elif event_type == 'cancelled':
-            header = f"❌ Отмена собеседования{platform_str}"
-            reason_text = f"\n📝 Причина: {reason}" if reason else ""
+            header = f"❌ <b>Отмена собеседования{platform_str}</b>"
+            reason_text = f"<br/>📝 <b>Причина:</b> {reason}" if reason else ""
             body = (
-                f"{header}\n\n"
-                f"📌 Вакансия: {vacancy_title}\n\n"
-                f"🗓 Отменено: {interview_date} в {interview_time}"
+                f"{header}<br/><br/>"
+                f"📌 <b>Вакансия:</b> {vacancy_title}<br/><br/>"
+                f"🗓 <b>Отменено:</b> {interview_date} в {interview_time}"
                 f"{reason_text}"
             )
         
         elif event_type == 'rejected':
-            header = f"⛔ Отказ кандидату{platform_str}"
-            reason_text = f"\n📝 Причина: {reason}" if reason else ""
+            header = f"⛔ <b>Отказ кандидату{platform_str}</b>"
+            reason_text = f"<br/>📝 <b>Причина:</b> {reason}" if reason else ""
             body = (
-                f"{header}\n\n"
-                f"📌 Вакансия: {vacancy_title}\n\n"
-                f"{profile_text}"
+                f"{header}<br/><br/>"
+                f"📌 <b>Вакансия:</b> {vacancy_title}<br/><br/>"
+                f"{profile_html}"
                 f"{reason_text}"
             )
         
         elif event_type == 'silence':
-            header = f"⏰ Напоминание отправлено{platform_str}"
+            header = f"⏰ <b>Напоминание отправлено{platform_str}</b>"
             body = (
-                f"{header}\n\n"
-                f"📌 Вакансия: {vacancy_title}\n\n"
+                f"{header}<br/><br/>"
+                f"📌 <b>Вакансия:</b> {vacancy_title}<br/><br/>"
                 f"Кандидат не отвечает на сообщения"
             )
         
         else:
-            body = f"Событие: {event_type}\nВакансия: {vacancy_title}"
+            body = f"Событие: {event_type}<br/>Вакансия: {vacancy_title}"
         
         return body
 
@@ -820,10 +824,11 @@ class TalantixService:
             db: Сессия БД
             reason: Причина (для отмены/отказа)
         """
-        # Получаем person_id из metadata_json
+        # Получаем данные из metadata_json
         metadata = dialogue.metadata_json or {}
         talantix_data = metadata.get('talantix') or {}
         person_id = talantix_data.get('person_id')
+        vacancy_id = talantix_data.get('vacancy_id')
         
         if not person_id:
             self.logger.debug(f"💬 Пропуск комментария Talantix: person_id не найден в диалоге {dialogue.id}")
@@ -859,7 +864,8 @@ class TalantixService:
             person_id=person_id,
             text=comment_text,
             account=talantix_account,
-            db=db
+            db=db,
+            vacancy_id=vacancy_id
         )
 
 # Глобальный экземпляр сервиса
