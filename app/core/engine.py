@@ -755,9 +755,12 @@ class Engine:
 
         # 1. Конвертируем дату/время в timestamp (MSK = UTC+3)
         moscow_tz = datetime.timezone(datetime.timedelta(hours=3))
+        # Вместо moscow_tz используем UTC, чтобы не было сдвига при получении timestamp
         dt_naive = datetime.datetime.strptime(f"{interview_date} {interview_time}", "%Y-%m-%d %H:%M")
-        dt_msk = dt_naive.replace(tzinfo=moscow_tz)
-        start_ts = int(dt_msk.timestamp() * 1000)
+        # Мы принудительно ставим зону UTC, чтобы 14:00 превратилось в 14:00 UTC
+        dt_utc = dt_naive.replace(tzinfo=datetime.timezone.utc)
+
+        start_ts = int(dt_utc.timestamp() * 1000)
         end_ts = start_ts + 30 * 60 * 1000  # длительность 30 минут
 
         person_id = talantix_data.get("person_id")
