@@ -15,6 +15,7 @@ from typing import Dict, Any, List, Optional
 from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import flag_modified
 from app.services.sheets import sheets_service
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -797,7 +798,7 @@ class Engine:
             title="Собеседование",
             comment=comment_html,
             place="",
-            timezone="europe/moscow",
+            timezone="Europe/Moscow",
             send_person_message=False,
             sync_with_external_calendar=False,
             person_message_file_ids=[],
@@ -2400,8 +2401,11 @@ class Engine:
                                             ctx_logger=ctx_logger,
                                         )
                                         if meeting_id:
+                                            if "talantix" not in meta:
+                                                meta["talantix"] = {}
                                             meta["talantix"]["meeting_id"] = meeting_id
                                             dialogue.metadata_json = meta
+                                            flag_modified(dialogue, "metadata_json")
                                             ctx_logger.info(f"✅ Talantix: новая встреча meeting_id={meeting_id}")
                                         else:
                                             ctx_logger.warning("⚠️ Talantix: новая встреча не создана (meeting_id=None)")
@@ -2437,6 +2441,7 @@ class Engine:
                             meta["interview_date"] = interview_date
                             meta["interview_time"] = interview_time
                             dialogue.metadata_json = meta
+                            flag_modified(dialogue, "metadata_json")
                             
                         else:
                             ctx_logger.debug("Дата записи не изменилась или это не перенос.")
@@ -2453,6 +2458,7 @@ class Engine:
                 meta["interview_date"] = extracted_data.get("interview_date")
                 meta["interview_time"] = extracted_data.get("interview_time")
                 dialogue.metadata_json = meta
+                flag_modified(dialogue, "metadata_json")
 
                 # 1. ПРЯМОЕ ДЕЙСТВИЕ: Занимаем слот в Google Таблице
                 if meta["interview_date"] and meta["interview_time"]:
@@ -2480,8 +2486,11 @@ class Engine:
                                 )
                                 if meeting_id:
                                     # Сохраняем meeting_id in metadata
+                                    if "talantix" not in meta:
+                                        meta["talantix"] = {}
                                     meta["talantix"]["meeting_id"] = meeting_id
                                     dialogue.metadata_json = meta
+                                    flag_modified(dialogue, "metadata_json")
                                     await db.commit()
                                     ctx_logger.info(f"✅ meeting_id={meeting_id} сохранён в metadata")
                                 else:

@@ -347,17 +347,23 @@ class HHClient:
                                         else:
                                             item_created_at = item_created_at.astimezone(datetime.timezone.utc)
 
-                                        logger.debug(
-                                            f"  [DEBUG] Вакансия {vid}, стр {page}, отклик {item.get('id')} ({item_index}):\n"
-                                            f"    'created_at' (API string): {item_created_at_str}\n"
-                                            f"    Parsed 'created_at' (UTC): {item_created_at.isoformat()}\n"
-                                            f"    Сравнение: {item_created_at.isoformat()} < {since_datetime.isoformat()} = {item_created_at < since_datetime}"
-                                        )
+                                        # # logger.debug(
+                                        #     f"  [DEBUG] Вакансия {vid}, стр {page}, отклик {item.get('id')} ({item_index}):\n"
+                                        #     f"    'created_at' (API string): {item_created_at_str}\n"
+                                        #     f"    Parsed 'created_at' (UTC): {item_created_at.isoformat()}\n"
+                                        #     f"    Сравнение: {item_created_at.isoformat()} < {since_datetime.isoformat()} = {item_created_at < since_datetime}"
+                                        # )
 
                                         if item_created_at < since_datetime:
-                                            logger.debug(f"  [DEBUG] Вакансия {vid}, стр {page}, отклик {item.get('id')}: ОТБРОШЕН, СТАРЕЕ since_datetime. Активирую раннюю остановку.")
-                                            stop_fetching_for_this_vacancy = True
-                                            break
+                                            # Дифференцированная остановка
+                                            if folder_id == 'response':
+                                                logger.debug(f"  [DEBUG] Вакансия {vid}, папка response: СТАРЫЙ ОТКЛИК. Ранняя остановка.")
+                                                stop_fetching_for_this_vacancy = True
+                                                break 
+                                            else:
+                                                # Для других папок просто пропускаем, но не останавливаем пагинацию
+                                                logger.debug(f"  [DEBUG] Вакансия {vid}, папка {folder_id}: Пропускаю старый {item.get('id')}, смотрю дальше.")
+                                                continue 
                                         else:
                                             new_items_to_add.append(item)
                                             logger.debug(f"  [DEBUG] Вакансия {vid}, стр {page}, отклик {item.get('id')}: ДОБАВЛЕН в new_items_to_add.")
@@ -371,7 +377,7 @@ class HHClient:
                                 new_items_to_add.append(item)
 
                         all_items_for_vacancy.extend(new_items_to_add)
-
+                        logger.debug(f"  [DEBUG] Для вакансии {vid}, страница {page}: добавлено {len(new_items_to_add)} элементов.")
                         if stop_fetching_for_this_vacancy:
                              break
 
