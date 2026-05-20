@@ -497,8 +497,8 @@ class HHConnectorService(BaseConnector):
                     check_for_updates=is_update_folder
                 )
                 
-                if raw_responses:
-                    logger.debug(f"📥 HH POLLING DATA (RESPONSES from {folder}): {json.dumps([r[0] for r in raw_responses], ensure_ascii=False)}")
+                # if raw_responses:
+                #     logger.debug(f"📥 HH POLLING DATA (RESPONSES from {folder}): {json.dumps([r[0] for r in raw_responses], ensure_ascii=False)}")
                 
                 for item, vid in raw_responses:
                     # Быстро пушим в очередь. Вся логика БД будет в Унификаторе.
@@ -802,8 +802,8 @@ class HHConnectorService(BaseConnector):
 
         all_api_msgs = await hh.get_messages(account, db, messages_url)
         
-        if all_api_msgs:
-            logger.info(f"📥 HH POLLING DATA (MESSAGES for {dialogue.id}): {json.dumps(all_api_msgs, ensure_ascii=False)}")
+        # if all_api_msgs:
+        #     logger.info(f"📥 HH POLLING DATA (MESSAGES for {dialogue.id}): {json.dumps(all_api_msgs, ensure_ascii=False)}")
         
         # Собираем ID и отпечатки (роль + текст) для дедупликации
         history_list = list(dialogue.history or [])

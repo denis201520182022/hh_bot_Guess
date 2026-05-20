@@ -6,10 +6,10 @@ bot:
 # === СИСТЕМНЫЕ НАСТРОЙКИ ===
 system:
   docker_mode: false
-  log_level: "DEBUG"
+  log_level: "INFO"
   test_mode:
     enabled: true
-    allowed_candidate_names: ["Denis Denisov"]
+    allowed_candidate_names: ["Denis Denisov", "Алиса Ветрицкая"]
   
 
 # === УПРАВЛЕНИЕ ПЛАТФОРМАМИ (КАНАЛЫ СВЯЗИ) ===
