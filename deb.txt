@@ -1,63 +1,171 @@
-Image hh_bot_guess-app    Built                                                                                                                          3.6ss
- ✔ Container guess_redis     Healthy                                                                                                                        11.2s
- ✔ Container guess_pgbouncer Running                                                                                                                        0.0ss
- ✔ Container guess_rabbitmq  Healthy                                                                                                                        11.2s
- ✔ Container guess_hr_bot    Recreated                                                                                                                      10.6s
-root@4646503-cv35803:/var/local/Bot_HH_Guess/hh_bot_Guess# docker exec -it guess_hr_bot python scripts/test_talantix_meeting.py create --person 136897149 --vacancy 370569 --date 2026-05-19 --time 12:00 --manager 188271
-2026-05-19 09:29:28,046 - test_talantix_meeting - INFO - 📅 Попытка создания встречи: person=136897149, vacancy=370569, date=2026-05-19 12:00
-2026-05-19 09:29:28,052 - talantix.service - INFO - 🔍 book_interview вызван: start_date=1779181200000, end_date=1779183000000, person_ids=[136897149], vacancy_ids=[370569], manager_ids=[188271], title=Тестовое собеседование
-2026-05-19 09:29:28,134 - talantix.calend_client - INFO - book_slot: start_date=1779181200000, end_date=1779183000000, person_ids=[136897149], vacancy_ids=[370569], manager_ids=[188271], type=Тестовое собеседование
-2026-05-19 09:29:28,134 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
-2026-05-19 09:29:28,135 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
-2026-05-19 09:29:28,135 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {}
-2026-05-19 09:29:28,267 - httpx - INFO - HTTP Request: POST https://talantix.ru/ats/calendar/meeting "HTTP/1.1 403 Forbidden"
-2026-05-19 09:29:28,275 - talantix.calend_client - ERROR - ❌ API Error 403 на https://talantix.ru/ats/calendar/meeting: {"me":{"firstName":"Юлия","lastName":"Тимашова","companyId":2313846,"hhId":188575523,"managerId":188271,"hhManagerId":16286380,"companyName":"GUESS (Гесс)","email":"julia@za-bota.com","timezoneOffset":180,"role":"admin","canCreateManagerOnHH":false,"tariff":"PAID","licenseType":"NONE_LICENSE"},"permissions":{"rolePermissions":["ATS_MERGE_PERSON","ATS_EDIT_LICENSES","STARTLINK_INTEGRATION_USAGE","ATS_EDIT_VACANCY_AUTOFILTER","VACANCY_FUNNEL","ATS_ANALYTICS_PROCESSING_TIME","DETACH_PERSON_FROM_VACANCY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_VACANCY_DESCRIPTION","CUSTOM_PERSONAL_DATA_AGREEMENT","SEND_SMS","ATS_CHANGE_VACANCY_STATUS","WITHDRAW_HIRING_REQUEST","ATS_ADD_VACANCY","ATS_MANAGERS","ATS_ATTACH_PERSON_TO_VACANCY","OPEN_CONTACTS_ON_HH","API_ACCESS","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","ACCESS_TO_ZARPLATA_INTEGRATION","VIEW_ALL_HIRING_REQUESTS","APPROVE_HIRING_REQUEST","VIEW_TEST_TASKS","ATS_EDIT_PERSON_SOURCE","ATS_DELETE_PERSON","STARTLINK_INTEGRATION_MANAGEMENT","CREATE_HIRING_REQUEST","ATS_EDIT_TAG","RESTORE_VACANCY_ON_HH","ATS_BIND_HH_VACANCY","ATS_ADD_MEETING","ACCESS_TO_VIDEO_SERVICE_INTEGRATION","ATS_IMPORT_VACANCY","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ADD_PERSON","ATS_EDIT_PERSON","ATS_VIEW_VACANCY_DESCRIPTION","ATS_EDIT_VACANCY_LANDING","ATS_EDIT_VACANCY_IMPORT_SETTINGS","OVERALL_VACANCY_FUNNEL","ACCESS_TO_QUICK_START","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","ACCESS_TO_ONBOARDING_SURVEY","APPLY_HIRING_REQUEST_TEMPLATE","ATS_PERSONAL_DATA_REQUEST","WEB_CALL_ALL_RECORDS_ACCESS","VIEW_PERSON_SALARY","EDIT_TEST_TASKS","ATS_SEND_MAIL_TO_PERSON","ATS_EDIT_DISCARD_REASONS","ATS_EDIT_MESSAGE_TEMPLATE","SEND_APPROVAL_REQUEST","ATS_EDIT_VACANCY_WORKFLOW","APPLY_HIRING_REQUEST_APPROVE_CHAIN","VIEW_PERSON_HH_EXTERNAL_RESUME","INVITE_PERSON_ON_HH","AVITO_CHAT_MESSAGES_VIEW","ATS_VIEW_VACANCY_TEMPLATE","ATS_MOVE_PERSON_TO_WORKFLOW","ATS_ANALYTICS_PERSONS_SOURCES","ATS_COMPANY_INFO_EDIT","ATS_ADD_COMMENT","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","EDIT_HIRING_REQUEST","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","AVITO_CHAT_MESSAGES_SEND","MAKE_WEB_CALL","MERGE_VACANCIES","ATS_ANALYTICS_AVG_PROCESSING_TIME","ATS_EDIT_COMMENT","ATS_EDIT_VACANCY_MANAGERS"],"tariffPermissions":["ATS_MERGE_PERSON","ATS_EDIT_LICENSES","STARTLINK_INTEGRATION_USAGE","ATS_EDIT_VACANCY_AUTOFILTER","VACANCY_FUNNEL","ATS_ANALYTICS_PROCESSING_TIME","DETACH_PERSON_FROM_VACANCY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_VACANCY_DESCRIPTION","CUSTOM_PERSONAL_DATA_AGREEMENT","SEND_SMS","ATS_CHANGE_VACANCY_STATUS","WITHDRAW_HIRING_REQUEST","ATS_ADD_MEMBER","ATS_ADD_VACANCY","ATS_MANAGERS","ATS_ATTACH_PERSON_TO_VACANCY","OPEN_CONTACTS_ON_HH","API_ACCESS","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","WEB_CALL_SELF_RECORDS_ACCESS","ACCESS_TO_ZARPLATA_INTEGRATION","VIEW_ALL_HIRING_REQUESTS","APPROVE_HIRING_REQUEST","VIEW_TEST_TASKS","ATS_EDIT_PERSON_SOURCE","ATS_DELETE_PERSON","STARTLINK_INTEGRATION_MANAGEMENT","CREATE_HIRING_REQUEST","ATS_EDIT_TAG","RESTORE_VACANCY_ON_HH","ATS_BIND_HH_VACANCY","ATS_ADD_MEETING","ACCESS_TO_VIDEO_SERVICE_INTEGRATION","ATS_IMPORT_VACANCY","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ADD_PERSON","ATS_EDIT_PERSON","ATS_VIEW_VACANCY_DESCRIPTION","ATS_EDIT_VACANCY_LANDING","ATS_EDIT_VACANCY_IMPORT_SETTINGS","OVERALL_VACANCY_FUNNEL","ACCESS_TO_QUICK_START","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","ACCESS_TO_ONBOARDING_SURVEY","APPLY_HIRING_REQUEST_TEMPLATE","ATS_PERSONAL_DATA_REQUEST","WEB_CALL_ALL_RECORDS_ACCESS","VIEW_PERSON_SALARY","EDIT_TEST_TASKS","ATS_SEND_MAIL_TO_PERSON","ATS_EDIT_DISCARD_REASONS","ATS_EDIT_MESSAGE_TEMPLATE","SEND_APPROVAL_REQUEST","ATS_EDIT_VACANCY_WORKFLOW","APPLY_HIRING_REQUEST_APPROVE_CHAIN","VIEW_PERSON_HH_EXTERNAL_RESUME","INVITE_PERSON_ON_HH","AVITO_CHAT_MESSAGES_VIEW","ATS_EDIT_VACANCY_SUBSCRIPTIONS","ATS_VIEW_VACANCY_TEMPLATE","ATS_MOVE_PERSON_TO_WORKFLOW","ATS_ANALYTICS_PERSONS_SOURCES","ATS_COMPANY_INFO_EDIT","ATS_ADD_COMMENT","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","EDIT_HIRING_REQUEST","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","AVITO_CHAT_MESSAGES_SEND","MAKE_WEB_CALL","MERGE_VACANCIES","ATS_ANALYTICS_AVG_PROCESSING_TIME","ATS_EDIT_COMMENT","ATS_EDIT_VACANCY_MANAGERS"],"licensePermissions":["ATS_VIEW_VACANCY_DESCRIPTION","ATS_MERGE_PERSON","ATS_EDIT_LICENSES","OVERALL_VACANCY_FUNNEL","VACANCY_FUNNEL","ACCESS_TO_QUICK_START","ATS_ANALYTICS_PROCESSING_TIME","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","VIEW_PERSON_SALARY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","EDIT_TEST_TASKS","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_DISCARD_REASONS","ATS_EDIT_MESSAGE_TEMPLATE","ATS_ADD_MEMBER","ATS_MANAGERS","VIEW_PERSON_HH_EXTERNAL_RESUME","AVITO_CHAT_MESSAGES_VIEW","API_ACCESS","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","ATS_VIEW_VACANCY_TEMPLATE","ATS_ANALYTICS_PERSONS_SOURCES","ATS_COMPANY_INFO_EDIT","VIEW_ALL_HIRING_REQUESTS","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","VIEW_TEST_TASKS","ATS_DELETE_PERSON","STARTLINK_INTEGRATION_MANAGEMENT","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ANALYTICS_AVG_PROCESSING_TIME"],"availableModules":["ATS"]},"error":{"code":403,"message":"","type":"system"}}
-2026-05-19 09:29:30,278 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {}
-2026-05-19 09:29:30,298 - httpx - INFO - HTTP Request: POST https://talantix.ru/ats/calendar/meeting "HTTP/1.1 403 Forbidden"
-2026-05-19 09:29:30,306 - talantix.calend_client - ERROR - ❌ API Error 403 на https://talantix.ru/ats/calendar/meeting: {"me":{"firstName":"Юлия","lastName":"Тимашова","companyId":2313846,"hhId":188575523,"managerId":188271,"hhManagerId":16286380,"companyName":"GUESS (Гесс)","email":"julia@za-bota.com","timezoneOffset":180,"role":"admin","canCreateManagerOnHH":false,"tariff":"PAID","licenseType":"NONE_LICENSE"},"permissions":{"rolePermissions":["ATS_MERGE_PERSON","ATS_EDIT_LICENSES","STARTLINK_INTEGRATION_USAGE","VACANCY_FUNNEL","ATS_EDIT_VACANCY_AUTOFILTER","ATS_ANALYTICS_PROCESSING_TIME","DETACH_PERSON_FROM_VACANCY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_VACANCY_DESCRIPTION","CUSTOM_PERSONAL_DATA_AGREEMENT","ATS_CHANGE_VACANCY_STATUS","SEND_SMS","WITHDRAW_HIRING_REQUEST","ATS_ADD_VACANCY","ATS_MANAGERS","ATS_ATTACH_PERSON_TO_VACANCY","OPEN_CONTACTS_ON_HH","API_ACCESS","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","VIEW_ALL_HIRING_REQUESTS","ACCESS_TO_ZARPLATA_INTEGRATION","APPROVE_HIRING_REQUEST","VIEW_TEST_TASKS","ATS_EDIT_PERSON_SOURCE","STARTLINK_INTEGRATION_MANAGEMENT","ATS_DELETE_PERSON","CREATE_HIRING_REQUEST","ATS_EDIT_TAG","RESTORE_VACANCY_ON_HH","ATS_ADD_MEETING","ATS_BIND_HH_VACANCY","ACCESS_TO_VIDEO_SERVICE_INTEGRATION","ATS_IMPORT_VACANCY","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ADD_PERSON","ATS_EDIT_PERSON","ATS_VIEW_VACANCY_DESCRIPTION","ATS_EDIT_VACANCY_LANDING","ATS_EDIT_VACANCY_IMPORT_SETTINGS","OVERALL_VACANCY_FUNNEL","ACCESS_TO_QUICK_START","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","ATS_PERSONAL_DATA_REQUEST","ACCESS_TO_ONBOARDING_SURVEY","APPLY_HIRING_REQUEST_TEMPLATE","VIEW_PERSON_SALARY","WEB_CALL_ALL_RECORDS_ACCESS","EDIT_TEST_TASKS","ATS_SEND_MAIL_TO_PERSON","ATS_EDIT_DISCARD_REASONS","SEND_APPROVAL_REQUEST","ATS_EDIT_VACANCY_WORKFLOW","ATS_EDIT_MESSAGE_TEMPLATE","APPLY_HIRING_REQUEST_APPROVE_CHAIN","VIEW_PERSON_HH_EXTERNAL_RESUME","INVITE_PERSON_ON_HH","AVITO_CHAT_MESSAGES_VIEW","ATS_VIEW_VACANCY_TEMPLATE","ATS_ANALYTICS_PERSONS_SOURCES","ATS_MOVE_PERSON_TO_WORKFLOW","ATS_COMPANY_INFO_EDIT","ATS_ADD_COMMENT","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","EDIT_HIRING_REQUEST","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","AVITO_CHAT_MESSAGES_SEND","MAKE_WEB_CALL","MERGE_VACANCIES","ATS_ANALYTICS_AVG_PROCESSING_TIME","ATS_EDIT_COMMENT","ATS_EDIT_VACANCY_MANAGERS"],"tariffPermissions":["ATS_MERGE_PERSON","ATS_EDIT_LICENSES","STARTLINK_INTEGRATION_USAGE","VACANCY_FUNNEL","ATS_EDIT_VACANCY_AUTOFILTER","ATS_ANALYTICS_PROCESSING_TIME","DETACH_PERSON_FROM_VACANCY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_VACANCY_DESCRIPTION","CUSTOM_PERSONAL_DATA_AGREEMENT","ATS_CHANGE_VACANCY_STATUS","SEND_SMS","WITHDRAW_HIRING_REQUEST","ATS_ADD_MEMBER","ATS_ADD_VACANCY","ATS_MANAGERS","ATS_ATTACH_PERSON_TO_VACANCY","OPEN_CONTACTS_ON_HH","API_ACCESS","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","WEB_CALL_SELF_RECORDS_ACCESS","VIEW_ALL_HIRING_REQUESTS","ACCESS_TO_ZARPLATA_INTEGRATION","APPROVE_HIRING_REQUEST","VIEW_TEST_TASKS","ATS_EDIT_PERSON_SOURCE","STARTLINK_INTEGRATION_MANAGEMENT","ATS_DELETE_PERSON","CREATE_HIRING_REQUEST","ATS_EDIT_TAG","RESTORE_VACANCY_ON_HH","ATS_ADD_MEETING","ATS_BIND_HH_VACANCY","ACCESS_TO_VIDEO_SERVICE_INTEGRATION","ATS_IMPORT_VACANCY","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ADD_PERSON","ATS_EDIT_PERSON","ATS_VIEW_VACANCY_DESCRIPTION","ATS_EDIT_VACANCY_LANDING","ATS_EDIT_VACANCY_IMPORT_SETTINGS","OVERALL_VACANCY_FUNNEL","ACCESS_TO_QUICK_START","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","ATS_PERSONAL_DATA_REQUEST","ACCESS_TO_ONBOARDING_SURVEY","APPLY_HIRING_REQUEST_TEMPLATE","VIEW_PERSON_SALARY","WEB_CALL_ALL_RECORDS_ACCESS","EDIT_TEST_TASKS","ATS_SEND_MAIL_TO_PERSON","ATS_EDIT_DISCARD_REASONS","SEND_APPROVAL_REQUEST","ATS_EDIT_VACANCY_WORKFLOW","ATS_EDIT_MESSAGE_TEMPLATE","APPLY_HIRING_REQUEST_APPROVE_CHAIN","VIEW_PERSON_HH_EXTERNAL_RESUME","INVITE_PERSON_ON_HH","AVITO_CHAT_MESSAGES_VIEW","ATS_EDIT_VACANCY_SUBSCRIPTIONS","ATS_VIEW_VACANCY_TEMPLATE","ATS_ANALYTICS_PERSONS_SOURCES","ATS_MOVE_PERSON_TO_WORKFLOW","ATS_COMPANY_INFO_EDIT","ATS_ADD_COMMENT","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","EDIT_HIRING_REQUEST","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","AVITO_CHAT_MESSAGES_SEND","MAKE_WEB_CALL","MERGE_VACANCIES","ATS_ANALYTICS_AVG_PROCESSING_TIME","ATS_EDIT_COMMENT","ATS_EDIT_VACANCY_MANAGERS"],"licensePermissions":["ATS_VIEW_VACANCY_DESCRIPTION","ATS_MERGE_PERSON","ATS_EDIT_LICENSES","OVERALL_VACANCY_FUNNEL","VACANCY_FUNNEL","ACCESS_TO_QUICK_START","ATS_ANALYTICS_PROCESSING_TIME","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","VIEW_PERSON_SALARY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","EDIT_TEST_TASKS","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_DISCARD_REASONS","ATS_EDIT_MESSAGE_TEMPLATE","ATS_ADD_MEMBER","ATS_MANAGERS","VIEW_PERSON_HH_EXTERNAL_RESUME","AVITO_CHAT_MESSAGES_VIEW","API_ACCESS","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","ATS_VIEW_VACANCY_TEMPLATE","ATS_ANALYTICS_PERSONS_SOURCES","ATS_COMPANY_INFO_EDIT","VIEW_ALL_HIRING_REQUESTS","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","VIEW_TEST_TASKS","ATS_DELETE_PERSON","STARTLINK_INTEGRATION_MANAGEMENT","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ANALYTICS_AVG_PROCESSING_TIME"],"availableModules":["ATS"]},"error":{"code":403,"message":"","type":"system"}}
-2026-05-19 09:29:34,307 | DEBUG | guess_hr_01 |   [Semaphore] Попытка захвата 'semaphore:talantix_api_global' (limit=5)... | ctx: {}
-2026-05-19 09:29:34,331 - httpx - INFO - HTTP Request: POST https://talantix.ru/ats/calendar/meeting "HTTP/1.1 403 Forbidden"
-2026-05-19 09:29:34,339 - talantix.calend_client - ERROR - ❌ API Error 403 на https://talantix.ru/ats/calendar/meeting: {"me":{"firstName":"Юлия","lastName":"Тимашова","companyId":2313846,"hhId":188575523,"managerId":188271,"hhManagerId":16286380,"companyName":"GUESS (Гесс)","email":"julia@za-bota.com","timezoneOffset":180,"role":"admin","canCreateManagerOnHH":false,"tariff":"PAID","licenseType":"NONE_LICENSE"},"permissions":{"rolePermissions":["ATS_MERGE_PERSON","ATS_EDIT_LICENSES","STARTLINK_INTEGRATION_USAGE","ATS_EDIT_VACANCY_AUTOFILTER","VACANCY_FUNNEL","ATS_ANALYTICS_PROCESSING_TIME","DETACH_PERSON_FROM_VACANCY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_VACANCY_DESCRIPTION","CUSTOM_PERSONAL_DATA_AGREEMENT","SEND_SMS","ATS_CHANGE_VACANCY_STATUS","WITHDRAW_HIRING_REQUEST","ATS_ADD_VACANCY","ATS_MANAGERS","ATS_ATTACH_PERSON_TO_VACANCY","API_ACCESS","OPEN_CONTACTS_ON_HH","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","VIEW_ALL_HIRING_REQUESTS","ACCESS_TO_ZARPLATA_INTEGRATION","APPROVE_HIRING_REQUEST","VIEW_TEST_TASKS","ATS_EDIT_PERSON_SOURCE","ATS_DELETE_PERSON","STARTLINK_INTEGRATION_MANAGEMENT","CREATE_HIRING_REQUEST","ATS_EDIT_TAG","RESTORE_VACANCY_ON_HH","ATS_ADD_MEETING","ATS_BIND_HH_VACANCY","ATS_IMPORT_VACANCY","ACCESS_TO_VIDEO_SERVICE_INTEGRATION","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ADD_PERSON","ATS_EDIT_PERSON","ATS_VIEW_VACANCY_DESCRIPTION","ATS_EDIT_VACANCY_LANDING","ATS_EDIT_VACANCY_IMPORT_SETTINGS","OVERALL_VACANCY_FUNNEL","ACCESS_TO_QUICK_START","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","APPLY_HIRING_REQUEST_TEMPLATE","ACCESS_TO_ONBOARDING_SURVEY","ATS_PERSONAL_DATA_REQUEST","VIEW_PERSON_SALARY","WEB_CALL_ALL_RECORDS_ACCESS","EDIT_TEST_TASKS","ATS_SEND_MAIL_TO_PERSON","ATS_EDIT_DISCARD_REASONS","SEND_APPROVAL_REQUEST","ATS_EDIT_VACANCY_WORKFLOW","ATS_EDIT_MESSAGE_TEMPLATE","APPLY_HIRING_REQUEST_APPROVE_CHAIN","VIEW_PERSON_HH_EXTERNAL_RESUME","INVITE_PERSON_ON_HH","AVITO_CHAT_MESSAGES_VIEW","ATS_VIEW_VACANCY_TEMPLATE","ATS_MOVE_PERSON_TO_WORKFLOW","ATS_ANALYTICS_PERSONS_SOURCES","ATS_ADD_COMMENT","ATS_COMPANY_INFO_EDIT","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","EDIT_HIRING_REQUEST","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","AVITO_CHAT_MESSAGES_SEND","MAKE_WEB_CALL","MERGE_VACANCIES","ATS_ANALYTICS_AVG_PROCESSING_TIME","ATS_EDIT_COMMENT","ATS_EDIT_VACANCY_MANAGERS"],"tariffPermissions":["ATS_MERGE_PERSON","ATS_EDIT_LICENSES","STARTLINK_INTEGRATION_USAGE","ATS_EDIT_VACANCY_AUTOFILTER","VACANCY_FUNNEL","ATS_ANALYTICS_PROCESSING_TIME","DETACH_PERSON_FROM_VACANCY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_VACANCY_DESCRIPTION","CUSTOM_PERSONAL_DATA_AGREEMENT","SEND_SMS","ATS_CHANGE_VACANCY_STATUS","WITHDRAW_HIRING_REQUEST","ATS_ADD_MEMBER","ATS_ADD_VACANCY","ATS_MANAGERS","ATS_ATTACH_PERSON_TO_VACANCY","API_ACCESS","OPEN_CONTACTS_ON_HH","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","WEB_CALL_SELF_RECORDS_ACCESS","VIEW_ALL_HIRING_REQUESTS","ACCESS_TO_ZARPLATA_INTEGRATION","APPROVE_HIRING_REQUEST","VIEW_TEST_TASKS","ATS_EDIT_PERSON_SOURCE","ATS_DELETE_PERSON","STARTLINK_INTEGRATION_MANAGEMENT","CREATE_HIRING_REQUEST","ATS_EDIT_TAG","RESTORE_VACANCY_ON_HH","ATS_ADD_MEETING","ATS_BIND_HH_VACANCY","ATS_IMPORT_VACANCY","ACCESS_TO_VIDEO_SERVICE_INTEGRATION","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ADD_PERSON","ATS_EDIT_PERSON","ATS_VIEW_VACANCY_DESCRIPTION","ATS_EDIT_VACANCY_LANDING","ATS_EDIT_VACANCY_IMPORT_SETTINGS","OVERALL_VACANCY_FUNNEL","ACCESS_TO_QUICK_START","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","APPLY_HIRING_REQUEST_TEMPLATE","ACCESS_TO_ONBOARDING_SURVEY","ATS_PERSONAL_DATA_REQUEST","VIEW_PERSON_SALARY","WEB_CALL_ALL_RECORDS_ACCESS","EDIT_TEST_TASKS","ATS_SEND_MAIL_TO_PERSON","ATS_EDIT_DISCARD_REASONS","SEND_APPROVAL_REQUEST","ATS_EDIT_VACANCY_WORKFLOW","ATS_EDIT_MESSAGE_TEMPLATE","APPLY_HIRING_REQUEST_APPROVE_CHAIN","VIEW_PERSON_HH_EXTERNAL_RESUME","INVITE_PERSON_ON_HH","AVITO_CHAT_MESSAGES_VIEW","ATS_EDIT_VACANCY_SUBSCRIPTIONS","ATS_VIEW_VACANCY_TEMPLATE","ATS_MOVE_PERSON_TO_WORKFLOW","ATS_ANALYTICS_PERSONS_SOURCES","ATS_ADD_COMMENT","ATS_COMPANY_INFO_EDIT","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","EDIT_HIRING_REQUEST","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","AVITO_CHAT_MESSAGES_SEND","MAKE_WEB_CALL","MERGE_VACANCIES","ATS_ANALYTICS_AVG_PROCESSING_TIME","ATS_EDIT_COMMENT","ATS_EDIT_VACANCY_MANAGERS"],"licensePermissions":["ATS_VIEW_VACANCY_DESCRIPTION","ATS_MERGE_PERSON","ATS_EDIT_LICENSES","OVERALL_VACANCY_FUNNEL","VACANCY_FUNNEL","ACCESS_TO_QUICK_START","ATS_ANALYTICS_PROCESSING_TIME","EDIT_WEB_CALL_SETTINGS","EDIT_ROLES_PERMISSIONS","VIEW_PERSON_SALARY","VACANCY_RESULTS","ATS_ANALYTICS_LOAD","ATS_PARTICIPATE_MEETING","EDIT_TEST_TASKS","VIEW_EDITED_PERSONS_COUNTERS","ATS_EDIT_DISCARD_REASONS","ATS_EDIT_MESSAGE_TEMPLATE","ATS_ADD_MEMBER","ATS_MANAGERS","VIEW_PERSON_HH_EXTERNAL_RESUME","AVITO_CHAT_MESSAGES_VIEW","API_ACCESS","VIEW_ALL_PERSON_VACANCIES","ATS_VIEW_MESSAGE_TEMPLATE","ATS_ALL_VACANCIES","ATS_VIEW_VACANCY_TEMPLATE","ATS_ANALYTICS_PERSONS_SOURCES","ATS_COMPANY_INFO_EDIT","VIEW_ALL_HIRING_REQUESTS","ACCESS_TO_RATING_FORM_TEMPLATES","VACANCY_PROCESS","VIEW_TEST_TASKS","ATS_DELETE_PERSON","STARTLINK_INTEGRATION_MANAGEMENT","ATS_EDIT_VACANCY_TEMPLATE","ATS_ALL_CANDIDATES","ANALYTICS_REPORTS","EDIT_HIRING_REQUEST_TEMPLATE","ATS_ANALYTICS_AVG_PROCESSING_TIME"],"availableModules":["ATS"]},"error":{"code":403,"message":"","type":"system"}}
-2026-05-19 09:29:34,340 - talantix.service - ERROR - ❌ Ошибка создания встречи: Client error '403 Forbidden' for url 'https://talantix.ru/ats/calendar/meeting'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
-Traceback (most recent call last):
-  File "/app/app/services/talantix_service.py", line 739, in book_interview
-    result = await self.calend_client.book_slot(
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/app/services/talantix_service.py", line 364, in book_slot
-    return await self._send_request("POST", path, account, db, json=payload)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
-    return await copy(fn, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
-    do = await self.iter(retry_state=retry_state)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
-    result = await action(retry_state)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/site-packages/tenacity/_utils.py", line 111, in inner
-    return call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 413, in exc_check
-    raise retry_exc.reraise()
-          ^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 184, in reraise
-    raise self.last_attempt.result()
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 449, in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
-    raise self._exception
-  File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
-    result = await fn(*args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/app/services/talantix_service.py", line 88, in _send_request
-    resp.raise_for_status()
-  File "/usr/local/lib/python3.11/site-packages/httpx/_models.py", line 829, in raise_for_status
-    raise HTTPStatusError(message, request=request, response=self)
-httpx.HTTPStatusError: Client error '403 Forbidden' for url 'https://talantix.ru/ats/calendar/meeting'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
-2026-05-19 09:29:34,342 - test_talantix_meeting - ERROR - ❌ Ошибка: Встреча не была создана (проверьте логи сервиса)
-root@4646503-cv35803:/var/local/Bot_HH_Guess/hh_bot_Guess# 
+| 2026-05-20 09:31:53,178 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5306664213 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306664213'}
+guess_hr_bot  | 2026-05-20 09:31:53,178 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 48 (телефон: +7 950 383-11-85, HH Resume: da54494e001082d65500234e766f714a793337) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306664213'}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | 2026-05-20 09:31:56,073 | INFO | guess_hr_01 | ⏭️ Аккаунт ID 6 пропущен (заблокирован другим воркером). | ctx: {}
+guess_hr_bot  | 2026-05-20 09:31:57,961 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 47 (Платформа: hh) | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-20 09:31:57,962 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 47 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306256865'}
+guess_hr_bot  | 2026-05-20 09:31:58,068 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | 2026-05-20 09:31:59,294 | ERROR | guess_hr_01 | ❌ Ошибка синхронизации с Talantix для диалога 48: Client error '401 Unauthorized' for url 'https://api.talantix.ru/graphql'
+guess_hr_bot  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306664213'}
+guess_hr_bot  | Traceback (most recent call last):
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 666, in process_hh_event
+guess_hr_bot  |     await self._sync_with_talantix(
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 919, in _sync_with_talantix
+guess_hr_bot  |     persons = await talantix_crm_service.find_persons_by_phone(
+guess_hr_bot  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 404, in find_persons_by_phone
+guess_hr_bot  |     response = await self.graphql_client._send_graphql_request(
+guess_hr_bot  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
+guess_hr_bot  |     return await copy(fn, *args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+guess_hr_bot  |     do = await self.iter(retry_state=retry_state)
+guess_hr_bot  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+guess_hr_bot  |     result = await action(retry_state)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/_utils.py", line 111, in inner
+guess_hr_bot  |     return call(*args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 413, in exc_check
+guess_hr_bot  |     raise retry_exc.reraise()
+guess_hr_bot  |           ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 184, in reraise
+guess_hr_bot  |     raise self.last_attempt.result()
+guess_hr_bot  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+guess_hr_bot  |     return self.__get_result()
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+guess_hr_bot  |     raise self._exception
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+guess_hr_bot  |     result = await fn(*args, **kwargs)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 142, in _send_graphql_request
+guess_hr_bot  |     resp.raise_for_status()
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/httpx/_models.py", line 829, in raise_for_status
+guess_hr_bot  |     raise HTTPStatusError(message, request=request, response=self)
+guess_hr_bot  | httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'https://api.talantix.ru/graphql'
+guess_hr_bot  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+guess_hr_bot  | 2026-05-20 09:31:59,733 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 48 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306664213'}
+guess_hr_bot  | 2026-05-20 09:31:59,743 | INFO | guess_hr_01 | ✅ Новый диалог HH 5306664213 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306664213'}
+guess_hr_bot  | 2026-05-20 09:31:59,749 | INFO | guess_hr_01 | 📁 HH_API: Перемещение отклика 5305427396 в папку 'consider'... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5305427396'}
+guess_hr_bot  | 2026-05-20 09:31:59,951 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5305427396 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5305427396'}
+guess_hr_bot  | 2026-05-20 09:31:59,951 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 49 (телефон: +7 919 009-89-38, HH Resume: fc0e4402000d058b1500234e7668654646457a) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5305427396'}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | 2026-05-20 09:32:01,085 | INFO | guess_hr_01 | ⏭️ Аккаунт ID 6 пропущен (заблокирован другим воркером). | ctx: {}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | 2026-05-20 09:32:04,535 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6438 (Cached: 0.0%) | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-20 09:32:04,548 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306256865 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-20 09:32:04,750 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 48 (Платформа: hh) | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-20 09:32:04,751 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 48 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306664213'}
+guess_hr_bot  | 2026-05-20 09:32:04,809 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | 2026-05-20 09:32:05,999 | ERROR | guess_hr_01 | ❌ Ошибка синхронизации с Talantix для диалога 49: Client error '401 Unauthorized' for url 'https://api.talantix.ru/graphql'
+guess_hr_bot  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5305427396'}
+guess_hr_bot  | Traceback (most recent call last):
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 666, in process_hh_event
+guess_hr_bot  |     await self._sync_with_talantix(
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 919, in _sync_with_talantix
+guess_hr_bot  |     persons = await talantix_crm_service.find_persons_by_phone(
+guess_hr_bot  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 404, in find_persons_by_phone
+guess_hr_bot  |     response = await self.graphql_client._send_graphql_request(
+guess_hr_bot  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
+guess_hr_bot  |     return await copy(fn, *args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+guess_hr_bot  |     do = await self.iter(retry_state=retry_state)
+guess_hr_bot  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+guess_hr_bot  |     result = await action(retry_state)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/_utils.py", line 111, in inner
+guess_hr_bot  |     return call(*args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 413, in exc_check
+guess_hr_bot  |     raise retry_exc.reraise()
+guess_hr_bot  |           ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 184, in reraise
+guess_hr_bot  |     raise self.last_attempt.result()
+guess_hr_bot  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+guess_hr_bot  |     return self.__get_result()
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+guess_hr_bot  |     raise self._exception
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+guess_hr_bot  |     result = await fn(*args, **kwargs)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 142, in _send_graphql_request
+guess_hr_bot  |     resp.raise_for_status()
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/httpx/_models.py", line 829, in raise_for_status
+guess_hr_bot  |     raise HTTPStatusError(message, request=request, response=self)
+guess_hr_bot  | httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'https://api.talantix.ru/graphql'
+guess_hr_bot  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+guess_hr_bot  | 2026-05-20 09:32:06,095 | INFO | guess_hr_01 | ⏭️ Аккаунт ID 6 пропущен (заблокирован другим воркером). | ctx: {}
+guess_hr_bot  | 2026-05-20 09:32:06,242 | INFO | guess_hr_01 | ✅ Новый диалог HH 5305427396 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5305427396'}
+guess_hr_bot  | 2026-05-20 09:32:06,248 | INFO | guess_hr_01 | 📁 HH_API: Перемещение отклика 5307031345 в папку 'consider'... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5307031345'}
+guess_hr_bot  | 2026-05-20 09:32:06,448 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5307031345 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5307031345'}
+guess_hr_bot  | 2026-05-20 09:32:06,448 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 50 (телефон: +7 916 182-66-63, HH Resume: 00706c5e000f85225700234e76644963306769) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5307031345'}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | 2026-05-20 09:32:11,103 | INFO | guess_hr_01 | ⏭️ Аккаунт ID 6 пропущен (заблокирован другим воркером). | ctx: {}
+guess_hr_bot  | 2026-05-20 09:32:11,249 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 49 (Платформа: hh) | ctx: {'dialogue_id': 49, 'account_id': 6, 'candidate_id': 36, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-20 09:32:11,251 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 49 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5305427396'}
+guess_hr_bot  | 2026-05-20 09:32:11,272 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 49, 'account_id': 6, 'candidate_id': 36, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-20 09:32:11,855 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6516 (Cached: 96.8%) | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-20 09:32:11,865 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306664213 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}
+guess_hr_bot  | 2026-05-20 09:32:12,510 | ERROR | guess_hr_01 | ❌ Ошибка синхронизации с Talantix для диалога 50: Client error '401 Unauthorized' for url 'https://api.talantix.ru/graphql'
+guess_hr_bot  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5307031345'}
+guess_hr_bot  | Traceback (most recent call last):
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 666, in process_hh_event
+guess_hr_bot  |     await self._sync_with_talantix(
+guess_hr_bot  |   File "/app/app/connectors/hh/service.py", line 919, in _sync_with_talantix
+guess_hr_bot  |     persons = await talantix_crm_service.find_persons_by_phone(
+guess_hr_bot  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 404, in find_persons_by_phone
+guess_hr_bot  |     response = await self.graphql_client._send_graphql_request(
+guess_hr_bot  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
+guess_hr_bot  |     return await copy(fn, *args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+guess_hr_bot  |     do = await self.iter(retry_state=retry_state)
+guess_hr_bot  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+guess_hr_bot  |     result = await action(retry_state)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/_utils.py", line 111, in inner
+guess_hr_bot  |     return call(*args, **kwargs)
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 413, in exc_check
+guess_hr_bot  |     raise retry_exc.reraise()
+guess_hr_bot  |           ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/__init__.py", line 184, in reraise
+guess_hr_bot  |     raise self.last_attempt.result()
+guess_hr_bot  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+guess_hr_bot  |     return self.__get_result()
+guess_hr_bot  |            ^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+guess_hr_bot  |     raise self._exception
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+guess_hr_bot  |     result = await fn(*args, **kwargs)
+guess_hr_bot  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+guess_hr_bot  |   File "/app/app/output_chanels/talantix/talantix_crm.py", line 142, in _send_graphql_request
+guess_hr_bot  |     resp.raise_for_status()
+guess_hr_bot  |   File "/usr/local/lib/python3.11/site-packages/httpx/_models.py", line 829, in raise_for_status
+guess_hr_bot  |     raise HTTPStatusError(message, request=request, response=self)
+guess_hr_bot  | httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'https://api.talantix.ru/graphql'
+guess_hr_bot  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+guess_hr_bot  | 2026-05-20 09:32:12,736 | INFO | guess_hr_01 | ✅ Новый диалог HH 5307031345 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5307031345'}
+guess_hr_bot  | 2026-05-20 09:32:12,745 | INFO | guess_hr_01 | 📁 HH_API: Перемещение отклика 5306455156 в папку 'consider'... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306455156'}
+guess_hr_bot  | 2026-05-20 09:32:12,977 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5306455156 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306455156'}
+guess_hr_bot  | 2026-05-20 09:32:12,977 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 51 (телефон: +7 977 756-39-22, HH Resume: d98c145e001048028d00234e76544f33556534) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5306455156'}
+guess_hr_bot  | ❌ API Error 401 на https://api.talantix.ru/graphql: {"type":"invalid_token","detail":"token_expired"}

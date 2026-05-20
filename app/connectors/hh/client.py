@@ -238,7 +238,13 @@ class HHClient:
                     oauth_error = error_data.get("oauth_error")
 
                     if oauth_error in ["token-revoked", "token-expired"]:
-                        logger.warning(f"🔄 Токен HH для {account.name} протух (403 {oauth_error}). Сбрасываю и пробую обновить...")
+                        msg_proactive = (
+                            f"🔄 **HH Token Proactive Reset**\n"
+                            f"Аккаунт: {account.name}\n"
+                            f"Причина: 403 {oauth_error}. Сбрасываю токен и пробую обновить..."
+                        )
+                        logger.warning(msg_proactive)
+                        await self._send_system_alert(msg_proactive)
                         
                         # Сбрасываем токен в auth_data
                         auth_data = dict(account.auth_data or {})

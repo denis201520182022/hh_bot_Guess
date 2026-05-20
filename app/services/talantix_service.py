@@ -33,6 +33,12 @@ class TalantixCalendClient:
             self._http_client = httpx.AsyncClient(timeout=30.0)
         return self._http_client
 
+    async def _send_alert(self, text: str):
+        try:
+            await mq.publish("tg_alerts", {"type": "system", "text": text})
+        except Exception:
+            self.logger.error("Не удалось отправить алерт")
+
     @staticmethod
     def _parse_cookies(cookies_str: str) -> dict[str, str]:
         """Парсит строку cookies в dict."""
@@ -61,7 +67,9 @@ class TalantixCalendClient:
 
         cookies_str: str = account.auth_data.get("cookies", "")
         if not cookies_str:
-            self.logger.error(f"Ошибка: Cookies у аккаунта {account.id} отсутсвует")
+            error_msg = f"❌ Ошибка: Cookies у аккаунта {account.id} отсутствуют. Внутренний API Talantix недоступен."
+            self.logger.error(error_msg)
+            await self._send_alert(error_msg)
             raise ValueError("Cookies не найдены")
 
         cookies = self._parse_cookies(cookies_str)
@@ -79,6 +87,18 @@ class TalantixCalendClient:
             ):
                 resp = await self.http_client.request(method, url, headers=headers, **kwargs)
 
+            # Проверка авторизации (сессия могла протухнуть)
+            if resp.status_code in [401, 403]:
+                error_msg = (
+                    f"🚨 **TALANTIX COOKIES EXPIRED**\n"
+                    f"Аккаунт: {account.name} (ID: {account.id})\n"
+                    f"Ошибка: {resp.status_code} Unauthorized/Forbidden\n"
+                    f"Действие: Требуется ручное обновление TALANTIX_COOKIES в .env!"
+                )
+                self.logger.error(error_msg)
+                await self._send_alert(error_msg)
+                resp.raise_for_status()
+
             # Обновляем cookies из ответа
             new_cookies = cookies | dict(resp.cookies)
             account.auth_data = {"cookies": self._serialize_cookies(new_cookies)}
@@ -89,8 +109,15 @@ class TalantixCalendClient:
             return resp.json()
 
         except httpx.HTTPStatusError as e:
-            error_msg = f"❌ API Error {e.response.status_code} на {url}: {e.response.text}"
+            error_msg = f"❌ Talantix Internal API Error {e.response.status_code} на {url}: {e.response.text[:200]}"
             self.logger.error(error_msg)
+            if e.response.status_code >= 500:
+                await self._send_alert(error_msg)
+            raise
+        except Exception as e:
+            error_msg = f"❌ КРИТИЧЕСКАЯ ОШИБКА Talantix Internal API: {e}"
+            self.logger.error(error_msg, exc_info=True)
+            await self._send_alert(error_msg)
             raise
 
     async def get_calendar(self, date: int, account: Account, db: AsyncSession):
