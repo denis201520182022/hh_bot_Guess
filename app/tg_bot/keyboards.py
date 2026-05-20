@@ -13,7 +13,7 @@ from typing import List, Any
 
 user_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="⚙️ Баланс")],
+        [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="⚙️ Баланс и Тариф")],
         [KeyboardButton(text="❓ Помощь")]
     ],
     resize_keyboard=True

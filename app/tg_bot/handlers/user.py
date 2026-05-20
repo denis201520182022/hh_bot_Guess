@@ -15,7 +15,7 @@ router = Router()
 router.message.filter(~AdminFilter()) 
 
 
-@router.message(F.text == "⚙️ Баланс и Тариф")
+@router.message(F.text.in_({"⚙️ Баланс и Тариф", "⚙️ Баланс"}))
 async def user_balance_status(message: Message, session: AsyncSession):
     """
     Показывает баланс и краткую статистику (без напоминаний/фолоу-апов).
