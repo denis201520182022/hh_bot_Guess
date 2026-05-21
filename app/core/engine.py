@@ -923,9 +923,9 @@ class Engine:
                         hh_msg_count_start = status_data["counters"].get("messages", 0)
                         db_msg_count = self._count_real_messages(dialogue.history or [])
                         
-                        if hh_msg_count_start > db_msg_count:
+                        if hh_msg_count_start > db_msg_count + 1:
                             ctx_logger.warning(
-                                f"🛑 ПРЕРЫВАНИЕ (START): В HH {hh_msg_count_start} сообщений, а в БД {db_msg_count}. "
+                                f"🛑 ПРЕРЫВАНИЕ (START): В HH {hh_msg_count_start - 1} сообщений, а в БД {db_msg_count}. "
                                 f"Сканер еще не обновил базу. Пропускаю."
                             )
                             return # Выходим без rollback (ничего еще не меняли)
