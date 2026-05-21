@@ -503,6 +503,17 @@ class HHClient:
             logger.error(f"❌ Непредвиденная ошибка при отправке сообщения в HH: {e}", exc_info=True)
             return False
 
+    async def get_negotiation_status(self, account: Account, db: AsyncSession, negotiation_id: str) -> Optional[dict]:
+        """
+        Получает метаданные отклика (счетчики, статусы) без истории сообщений.
+        """
+        try:
+            logger.debug(f"🔎 HH_API: Проверка статуса/счетчиков для отклика {negotiation_id}...")
+            return await self._request(account, db, "GET", f"negotiations/{negotiation_id}")
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения статуса отклика {negotiation_id}: {e}")
+            return None
+
     async def move_response_to_folder(self, account: Account, db: AsyncSession, negotiation_id: str, folder_id: str):
         """
         Асинхронно перемещает отклик в указанную папку (PUT запрос).

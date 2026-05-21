@@ -2741,6 +2741,29 @@ class Engine:
             # ФИЗИЧЕСКАЯ ОТПРАВКА (Универсальная)
             real_id = None
             try:
+                # === 17.5 ПРОВЕРКА АКТУАЛЬНОСТИ (HH ONLY) ===
+                # Перед самой отправкой проверяем, не прислал ли кандидат новое сообщение, 
+                # пока мы думали. В HH счетчик непрочитанных сбрасывается при чтении сканером.
+                if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
+                    try:
+                        from app.connectors.hh.client import hh
+                        status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
+                        
+                        if status_data and status_data.get("counters"):
+                            unread = status_data["counters"].get("unread_messages", 0)
+                            if unread > 0:
+                                ctx_logger.warning(
+                                    f"🛑 ПРЕРЫВАНИЕ: Обнаружено {unread} новых сообщений в HH. "
+                                    f"Контекст устарел. Делаю ROLLBACK."
+                                )
+                                # Откатываем транзакцию (все изменения в БД исчезнут)
+                                await db.rollback()
+                                return # Выходим, воркер-сканер скоро принесет новые сообщения
+                    except Exception as e:
+                        # Если проверка упала (после всех ретраев внутри клиента) — 
+                        # игнорируем и отправляем как есть, чтобы не "молчать".
+                        ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH (игнорируем): {e}")
+
                 connector = get_connector(dialogue.account.platform)
                 
                 # Отправляем и ловим ID
