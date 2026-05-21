@@ -1,47 +1,46 @@
--21 10:29:04,909 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
-guess_hr_bot  | INFO:     Started server process [10]
-guess_hr_bot  | INFO:     Waiting for application startup.
-guess_hr_bot  | 2026-05-21 10:29:05,179 | INFO | guess_hr_01 | 🚀 [worker_main] Запуск HR-платформы... | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:05,388 | INFO | guess_hr_01 | ℹ️ [worker_main] Аккаунт Talantix API уже существует | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:05,390 | INFO | guess_hr_01 | ℹ️ [worker_main] Аккаунт Talantix Calendar уже существует | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:05,391 | INFO | guess_hr_01 | 🚀 Запуск HH Connector Service (Polling mode)... | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:05,391 | INFO | guess_hr_01 | ✅ [worker_main] HH коннектор запущен | ctx: {}
-guess_hr_bot  | INFO:     Application startup complete.
-guess_hr_bot  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-guess_hr_bot  | 2026-05-21 10:29:05,701 | INFO | guess_hr_01 | 🚀 [worker_scheduler] запущен | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:05,793 | INFO | guess_hr_01 | 🔍 Запуск цикла активного поиска кандидатов... | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:05,964 | INFO | guess_hr_01 | 🌐 OpenAI клиент настроен через прокси: 38.180.203.212:8787 | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:05,984 | INFO | guess_hr_01 | 👷 [worker_engine] (Brain) запущен | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:07,336 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:08,170 | INFO | guess_hr_01 | 🚀 [worker_services] & Interactive Bot стартуют... | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:08,172 | INFO | guess_hr_01 | 👷 Alerts Consumer запущен... | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:08,172 | INFO | guess_hr_01 | 👷 Services Output Consumer запущен... | ctx: {}
-guess_hr_bot  | 2026-05-21 10:29:29,398 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-21 10:29:29,743 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 2026-05-21 10:29:34,757 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 10:29:34,759 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 2026-05-21 10:29:35,014 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 10:29:40,957 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-21 10:29:45,300 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7805 (Cached: 0.0%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (END): В HH 19 сообщений, а было 17. Контекст устарел или другой воркер уже ответил. Делаю ROLLBACK.
-guess_hr_bot  | 2026-05-21 10:29:46,030 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 2026-05-21 10:29:51,044 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 10:29:51,046 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 2026-05-21 10:29:51,267 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 10:29:52,670 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-21 10:30:01,840 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7866 (Cached: 91.9%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (END): В HH 21 сообщений, а было 19. Контекст устарел или другой воркер уже ответил. Делаю ROLLBACK.
-guess_hr_bot  | 2026-05-21 10:30:02,654 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 2026-05-21 10:30:07,668 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 10:30:07,670 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (START): В HH 23 сообщений, а в БД 21. Сканер еще не обновил базу. Пропускаю.
-guess_hr_bot  | 2026-05-21 10:30:09,888 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-21 10:30:10,285 | INFO | guess_hr_01 | 📩 Добавлено 3 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 2026-05-21 10:30:15,297 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 10:30:15,298 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (START): В HH 25 сообщений, а в БД 24. Сканер еще не обновил базу. Пропускаю.
-guess_hr_bot  | 2026-05-21 10:30:15,998 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-21 10:30:16,507 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 2026-05-21 10:30:21,517 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 10:30:21,518 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
-guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (START): В HH 26 сообщений, а в БД 25. Сканер еще не обновил базу. Пропускаю.
+21 10:47:29,190 | INFO | guess_hr_01 | 👷 Alerts Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:47:29,190 | INFO | guess_hr_01 | 👷 Services Output Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:50:30,400 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
+guess_hr_bot  | 2026-05-21 10:50:39,990 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:50:40,869 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:50:45,893 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:50:45,894 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:50:46,301 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:50:51,493 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:50:54,267 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6088 (Cached: 86.2%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (END): В HH 40 сообщений, а было 39. Контекст устарел или другой воркер уже ответил. Делаю ROLLBACK.
+guess_hr_bot  | 2026-05-21 10:50:55,557 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:00,570 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:00,571 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:00,829 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:06,297 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6062 (Cached: 86.5%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (END): В HH 41 сообщений, а было 40. Контекст устарел или другой воркер уже ответил. Делаю ROLLBACK.
+guess_hr_bot  | 2026-05-21 10:51:09,466 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:51:10,152 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:15,166 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:15,168 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (START): В HH 44 сообщений, а в БД 42. Сканер еще не обновил базу. Пропускаю.
+guess_hr_bot  | 2026-05-21 10:51:15,772 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:51:16,455 | INFO | guess_hr_01 | 📩 Добавлено 3 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:21,473 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:21,475 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (START): В HH 46 сообщений, а в БД 45. Сканер еще не обновил базу. Пропускаю.
+guess_hr_bot  | 2026-05-21 10:51:22,014 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:51:22,718 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:27,728 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:27,731 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:28,061 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:34,219 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6094 (Cached: 86.2%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:34,495 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5310646935 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:51,388 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:51:52,229 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:57,240 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:51:57,241 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:51:57,617 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:52:01,301 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6075 (Cached: 85.7%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:52:01,313 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: unknown) | ctx: {'dialogue_id': 61, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:52:01,316 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:52:01,316 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:52:03,319 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: unknown) | ctx: {'dialogue_id': 61, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (START): В HH 50 сообщений, а в БД 49. Сканер еще не обновил базу. Пропускаю.

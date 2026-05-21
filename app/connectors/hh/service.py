@@ -124,14 +124,14 @@ class HHConnectorService(BaseConnector):
         else:
             logger.debug(f"Вакансия {vacancy_id}: директор '{director.name}' уже привязан")
 
-    async def _accumulate_and_dispatch(self, dialogue: Dialogue, source: str):
+    async def _accumulate_and_dispatch(self, dialogue: Dialogue, source: str, messages_count: int = 0):
         """
         Логика дебоунса (накопления). Ждем 5 секунд, чтобы собрать пачку сообщений,
         прежде чем будить ИИ-движок.
         """
         redis = get_redis_client()
         lock_key = f"debounce_lock:hh:{dialogue.external_chat_id}"
-        
+
         # Если лок уже стоит — значит, таймер запущен, просто выходим
         if await redis.get(lock_key):
             logger.info(f"⏳ Сообщения для HH чата {dialogue.external_chat_id} накапливаются...")
@@ -144,27 +144,27 @@ class HHConnectorService(BaseConnector):
             try:
                 # Ждем 5 секунд
                 await asyncio.sleep(5)
-                
+
                 # Формируем задачу для Engine
                 engine_task = {
                     "dialogue_id": dialogue.id,
                     "account_id": dialogue.account_id,
                     "candidate_id": dialogue.candidate_id,
                     "platform": "hh",
-                    "trigger": source
+                    "trigger": source,
+                    "initial_msg_count": messages_count
                 }
-                
+
                 await mq.publish("engine_tasks", engine_task)
-                logger.info(f"🚀 [Debounce HH] Пачка сообщений диалога {dialogue.id} отправлена в Engine")
-                
+                logger.info(f"🚀 [Debounce HH] Пачка сообщений диалога {dialogue.id} отправлена в Engine (Count: {messages_count})")
+
             except Exception as e:
                 logger.error(f"💥 Ошибка в дебоунсе HH: {e}", exc_info=True)
             finally:
                 await redis.delete(lock_key)
 
         # Запускаем ожидание в фоне
-        asyncio.create_task(wait_and_push())
-    # === РЕАЛИЗАЦИЯ ИНТЕРФЕЙСА BaseConnector ===
+        asyncio.create_task(wait_and_push())    # === РЕАЛИЗАЦИЯ ИНТЕРФЕЙСА BaseConnector ===
 
     async def start(self):
         """Запуск фонового поллинга HH"""
@@ -708,7 +708,17 @@ class HHConnectorService(BaseConnector):
 
             # 3. ОТПРАВКА В ENGINE (через дебоунс)
             if dialogue and dialogue.status not in ['rejected', 'closed', 'archive']:
-                await self._accumulate_and_dispatch(dialogue, "hh_poller")
+                # Получаем полные данные отклика (со счетчиками), так как в списке их нет
+                msg_count = 0
+                try:
+                    full_status = await hh.get_negotiation_status(account, db, hh_response_id)
+                    if full_status and "counters" in full_status:
+                        msg_count = full_status["counters"].get("messages", 0)
+                        logger.debug(f"📊 HH Counters for {hh_response_id}: messages={msg_count}")
+                except Exception as e:
+                    logger.error(f"⚠️ Не удалось получить счетчики для {hh_response_id} перед отправкой в Engine: {e}")
+
+                await self._accumulate_and_dispatch(dialogue, "hh_poller", messages_count=msg_count)
 
     async def _sync_dialogue_and_billing(self, account: Account, candidate: Candidate, job: JobContext, hh_response_id: str, db: AsyncSession, trigger_source: str):
         """

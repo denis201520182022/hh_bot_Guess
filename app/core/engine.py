@@ -921,17 +921,21 @@ class Engine:
                     status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
                     if status_data and status_data.get("counters"):
                         hh_msg_count_start = status_data["counters"].get("messages", 0)
-                        db_msg_count = self._count_real_messages(dialogue.history or [])
                         
-                        if hh_msg_count_start > db_msg_count + 1:
+                        # Счетчик из задачи (то, что видел сканер в момент формирования)
+                        task_msg_count = task_data.get("initial_msg_count", 0)
+                        
+                        # Если в HH уже больше, чем было в задаче — значит, пока задача шла,
+                        # сканер успел прислать еще одну, более свежую.
+                        if hh_msg_count_start > task_msg_count:
                             ctx_logger.warning(
-                                f"🛑 ПРЕРЫВАНИЕ (START): В HH {hh_msg_count_start - 1} сообщений, а в БД {db_msg_count}. "
-                                f"Сканер еще не обновил базу. Пропускаю."
+                                f"🛑 ПРЕРЫВАНИЕ (START): В HH {hh_msg_count_start} сообщений, а в задаче {task_msg_count}. "
+                                f"Уже есть более свежая задача в очереди. Пропускаю."
                             )
-                            return # Выходим без rollback (ничего еще не меняли)
+                            return # Выходим без rollback
                         else:
                             ctx_logger.info(
-                                f"✅ HH Check (START): Сообщений в HH = {hh_msg_count_start - 1}, в БД = {db_msg_count}. "
+                                f"✅ HH Check (START): В HH {hh_msg_count_start} сообщений, в задаче {task_msg_count}. "
                                 f"Продолжаю обработку."
                             )
                 except Exception as e:
