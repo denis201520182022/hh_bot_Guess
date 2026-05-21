@@ -1810,164 +1810,162 @@ class Engine:
                                     "initial_msg_count": hh_msg_count_start
                                 })
                                 return # ПРЕРЫВАЕМ обработку, уходим на круг перегенерации
-                                else:
-                                ctx_logger.debug(f"Игнорируем employment_type: стейт {current_state_at_update} не разрешает.")
+                    else:
+                        ctx_logger.debug(f"Игнорируем employment_type: стейт {current_state_at_update} не разрешает.")
 
-                                # --- 13.4 ОБРАБОТКА ГОТОВНОСТИ РАБОТАТЬ 20-40 ЧАСОВ (ready_20_40_hours) ---
-                                raw_ready_hours = extracted_data.get("ready_20_40_hours")
-                                if raw_ready_hours:
-                                allowed_hours_states = ['awaiting_ready_20_40_hours', 'clarifying_anything']
+                # --- 13.4 ОБРАБОТКА ГОТОВНОСТИ РАБОТАТЬ 20-40 ЧАСОВ (ready_20_40_hours) ---
+                raw_ready_hours = extracted_data.get("ready_20_40_hours")
+                if raw_ready_hours:
+                    allowed_hours_states = ['awaiting_ready_20_40_hours', 'clarifying_anything']
 
-                                if current_state_at_update in allowed_hours_states:
-                                if current_state_at_update == 'clarifying_anything' and profile.get("ready_20_40_hours"):
-                                ctx_logger.debug(f"Защита: поле ready_20_40_hours уже заполнено, пропускаем")
-                                else:
-                                hours_low = str(raw_ready_hours).lower()
-                                if hours_low in ["yes", "да", "готов", "согласен"]:
+                    if current_state_at_update in allowed_hours_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("ready_20_40_hours"):
+                            ctx_logger.debug(f"Защита: поле ready_20_40_hours уже заполнено, пропускаем")
+                        else:
+                            hours_low = str(raw_ready_hours).lower()
+                            if hours_low in ["yes", "да", "готов", "согласен"]:
                                 profile["ready_20_40_hours"] = "yes"
                                 changed = True
                                 ctx_logger.info(f"✅ Готовность работать 20-40 часов: yes")
-                                elif hours_low in ["no", "нет", "не готов", "не согласен"]:
+                            elif hours_low in ["no", "нет", "не готов", "не согласен"]:
                                 profile["ready_20_40_hours"] = "no"
                                 changed = True
                                 ctx_logger.info(f"✅ Готовность работать 20-40 часов: no")
-                                else:
+                            else:
                                 ctx_logger.warning(f"⚠️ Некорректное значение ready_20_40_hours: {raw_ready_hours}")
-                                else:
-                                ctx_logger.debug(f"Игнорируем ready_20_40_hours: стейт {current_state_at_update} не разрешает.")
+                    else:
+                        ctx_logger.debug(f"Игнорируем ready_20_40_hours: стейт {current_state_at_update} не разрешает.")
 
-                                # --- 13.5 ОБРАБОТКА ПРЕДПОЧТЕНИЙ ПО СМЕНЕ (shift_preference) ---
-                                raw_shift = extracted_data.get("shift_preference")
-                                if raw_shift:
-                                allowed_shift_states = ['awaiting_shift_preference', 'clarifying_anything']
+                # --- 13.5 ОБРАБОТКА ПРЕДПОЧТЕНИЙ ПО СМЕНЕ (shift_preference) ---
+                raw_shift = extracted_data.get("shift_preference")
+                if raw_shift:
+                    allowed_shift_states = ['awaiting_shift_preference', 'clarifying_anything']
 
-                                if current_state_at_update in allowed_shift_states:
-                                if current_state_at_update == 'clarifying_anything' and profile.get("shift_preference"):
-                                ctx_logger.debug(f"Защита: поле shift_preference уже заполнено, пропускаем")
-                                else:
-                                shift_low = str(raw_shift).lower()
-                                if shift_low in ["morning", "утро", "утренняя"]:
+                    if current_state_at_update in allowed_shift_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("shift_preference"):
+                            ctx_logger.debug(f"Защита: поле shift_preference уже заполнено, пропускаем")
+                        else:
+                            shift_low = str(raw_shift).lower()
+                            if shift_low in ["morning", "утро", "утренняя"]:
                                 profile["shift_preference"] = "morning"
                                 changed = True
                                 ctx_logger.info(f"✅ Предпочтение смены: morning")
-                                elif shift_low in ["evening", "вечер", "вечерняя"]:
+                            elif shift_low in ["evening", "вечер", "вечерняя"]:
                                 profile["shift_preference"] = "evening"
                                 changed = True
                                 ctx_logger.info(f"✅ Предпочтение смены: evening")
-                                elif shift_low in ["any", "любая", "без разницы", "не важно"]:
+                            elif shift_low in ["any", "любая", "без разницы", "не важно"]:
                                 profile["shift_preference"] = "any"
                                 changed = True
                                 ctx_logger.info(f"✅ Предпочтение смены: any")
-                                else:
+                            else:
                                 ctx_logger.warning(f"⚠️ Некорректное значение shift_preference: {raw_shift}")
-                                else:
-                                ctx_logger.debug(f"Игнорируем shift_preference: стейт {current_state_at_update} не разрешает.")
+                    else:
+                        ctx_logger.debug(f"Игнорируем shift_preference: стейт {current_state_at_update} не разрешает.")
 
-                                # --- 13.6 ОБРАБОТКА ГОТОВНОСТИ К ТК РФ (employment_contract_ready) ---
-                                raw_contract = extracted_data.get("employment_contract_ready")
-                                if raw_contract:
-                                allowed_contract_states = ['awaiting_employment_contract', 'clarifying_anything']
+                # --- 13.6 ОБРАБОТКА ГОТОВНОСТИ К ТК РФ (employment_contract_ready) ---
+                raw_contract = extracted_data.get("employment_contract_ready")
+                if raw_contract:
+                    allowed_contract_states = ['awaiting_employment_contract', 'clarifying_anything']
 
-                                if current_state_at_update in allowed_contract_states:
-                                if current_state_at_update == 'clarifying_anything' and profile.get("employment_contract_ready"):
-                                ctx_logger.debug(f"Защита: поле employment_contract_ready уже заполнено, пропускаем")
-                                else:
-                                contract_low = str(raw_contract).lower()
-                                if contract_low in ["yes", "да", "готов", "согласен"]:
+                    if current_state_at_update in allowed_contract_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("employment_contract_ready"):
+                            ctx_logger.debug(f"Защита: поле employment_contract_ready уже заполнено, пропускаем")
+                        else:
+                            contract_low = str(raw_contract).lower()
+                            if contract_low in ["yes", "да", "готов", "согласен"]:
                                 profile["employment_contract_ready"] = "yes"
                                 changed = True
                                 ctx_logger.info(f"✅ Готовность к ТК РФ: yes")
-                                elif contract_low in ["no", "нет", "не готов", "не согласен"]:
+                            elif contract_low in ["no", "нет", "не готов", "не согласен"]:
                                 profile["employment_contract_ready"] = "no"
                                 changed = True
                                 ctx_logger.info(f"✅ Готовность к ТК РФ: no")
-                                else:
+                            else:
                                 ctx_logger.warning(f"⚠️ Некорректное значение employment_contract_ready: {raw_contract}")
-                                else:
-                                ctx_logger.debug(f"Игнорируем employment_contract_ready: стейт {current_state_at_update} не разрешает.")
+                    else:
+                        ctx_logger.debug(f"Игнорируем employment_contract_ready: стейт {current_state_at_update} не разрешает.")
 
-                                # --- 13.7 ОБРАБОТКА ВОЕННОГО БИЛЕТА (has_military_document) ---
-                                raw_military = extracted_data.get("has_military_document")
-                                if raw_military:
-                                allowed_military_states = ['awaiting_military_document', 'clarifying_anything']
+                # --- 13.7 ОБРАБОТКА ВОЕННОГО БИЛЕТА (has_military_document) ---
+                raw_military = extracted_data.get("has_military_document")
+                if raw_military:
+                    allowed_military_states = ['awaiting_military_document', 'clarifying_anything']
 
-                                if current_state_at_update in allowed_military_states:
-                                if current_state_at_update == 'clarifying_anything' and profile.get("has_military_document"):
-                                ctx_logger.debug(f"Защита: поле has_military_document уже заполнено, пропускаем")
-                                else:
-                                military_low = str(raw_military).lower()
-                                if military_low in ["yes", "да", "есть", "имеется"]:
+                    if current_state_at_update in allowed_military_states:
+                        if current_state_at_update == 'clarifying_anything' and profile.get("has_military_document"):
+                            ctx_logger.debug(f"Защита: поле has_military_document уже заполнено, пропускаем")
+                        else:
+                            military_low = str(raw_military).lower()
+                            if military_low in ["yes", "да", "есть", "имеется"]:
                                 profile["has_military_document"] = "yes"
                                 changed = True
                                 ctx_logger.info(f"✅ Военный билет: yes")
-                                elif military_low in ["no", "нет", "не имеется"]:
+                            elif military_low in ["no", "нет", "не имеется"]:
                                 profile["has_military_document"] = "no"
                                 changed = True
                                 ctx_logger.info(f"✅ Военный билет: no")
-                                else:
+                            else:
                                 ctx_logger.warning(f"⚠️ Некорректное значение has_military_document: {raw_military}")
-                                else:
-                                ctx_logger.debug(f"Игнорируем has_military_document: стейт {current_state_at_update} не разрешает.")
+                    else:
+                        ctx_logger.debug(f"Игнорируем has_military_document: стейт {current_state_at_update} не разрешает.")
 
-                                # --- 13.8 ОСТАЛЬНЫЕ ПОЛЯ (Маппинг стейтов как в HH) ---
+                # --- 13.8 ОСТАЛЬНЫЕ ПОЛЯ (Маппинг стейтов как в HH) ---
+                
+                # ФИО и Телефон (Колонки) - пишем всегда, если их нет (защита от перезаписи)
+                # if extracted_data.get("full_name") and not dialogue.candidate.full_name:
+                #     dialogue.candidate.full_name = extracted_data["full_name"]
+                
+                # if extracted_data.get("phone") and not dialogue.candidate.phone_number:
+                #     dialogue.candidate.phone_number = extracted_data["phone"]
 
-                                # ФИО и Телефон (Колонки) - пишем всегда, если их нет (защита от перезаписи)
-                                # if extracted_data.get("full_name") and not dialogue.candidate.full_name:
-                                #     dialogue.candidate.full_name = extracted_data["full_name"]
+                
+                
+                
+                if changed:
+                    dialogue.candidate.profile_data = profile
+                    is_ok = True 
+                    reason = None
+                    # ПРОВЕРЯЕМ НА ОТКАЗ ТОЛЬКО ЕСЛИ МЫ ЕЩЕ НЕ В ПРОЦЕССЕ ЗАПИСИ
+                    SCHEDULING_STATES = ['init_scheduling_spb', 'scheduling_spb_day', 'scheduling_spb_time', 'interview_scheduled_spb', 'post_qualification_chat', 'forwarded_to_researcher']
+                    
+                    if current_state_at_update not in SCHEDULING_STATES:
+                        is_ok, reason = self._check_eligibility(profile)
+                    if not is_ok:
+                        ctx_logger.info(f"⛔ МГНОВЕННЫЙ ОТКАЗ: {reason}. Прерываем анкету.")
+                        new_state = 'qualification_failed'
+                        dialogue.status = 'rejected'
+                        # Берем прощальную фразу из твоего нового конфига
+                        bot_response_text = settings.messages.qualification_failed_farewell
+                        
+                        # Записываем аналитику отказа
+                        await log_event(
+                            db, dialogue, 
+                            'rejected_by_bot', 
+                            event_data={"reason": reason, "at_state": current_state_at_update}
+                        )
+                                
+                
+                await db.flush()
 
-                                # if extracted_data.get("phone") and not dialogue.candidate.phone_number:
-                                #     dialogue.candidate.phone_number = extracted_data["phone"]
+                # --- [НОВОЕ] Логика мгновенной перегенерации для уточнения типа занятости / ТК РФ ---
+                # is_part_time_refine = (new_state == 'awaiting_ready_20_40_hours' and profile.get("employment_type") == 'part')
+                # is_shift_refine = (new_state == 'awaiting_shift_preference' and profile.get("employment_type") == 'full')
+                is_contract_refine = (new_state == 'awaiting_employment_contract')
 
-
-
-
-                                if changed:
-                                dialogue.candidate.profile_data = profile
-                                is_ok = True 
-                                reason = None
-                                # ПРОВЕРЯЕМ НА ОТКАЗ ТОЛЬКО ЕСЛИ МЫ ЕЩЕ НЕ В ПРОЦЕССЕ ЗАПИСИ
-                                SCHEDULING_STATES = ['init_scheduling_spb', 'scheduling_spb_day', 'scheduling_spb_time', 'interview_scheduled_spb', 'post_qualification_chat', 'forwarded_to_researcher']
-
-                                if current_state_at_update not in SCHEDULING_STATES:
-                                is_ok, reason = self._check_eligibility(profile)
-                                if not is_ok:
-                                ctx_logger.info(f"⛔ МГНОВЕННЫЙ ОТКАЗ: {reason}. Прерываем анкету.")
-                                new_state = 'qualification_failed'
-                                dialogue.status = 'rejected'
-                                # Берем прощальную фразу из твоего нового конфига
-                                bot_response_text = settings.messages.qualification_failed_farewell
-
-                                # Записываем аналитику отказа
-                                await log_event(
-                                db, dialogue, 
-                                'rejected_by_bot', 
-                                event_data={"reason": reason, "at_state": current_state_at_update}
-                                )
-
-
-                                await db.flush()
-
-                                # --- [НОВОЕ] Логика мгновенной перегенерации для уточнения типа занятости / ТК РФ ---
-                                # is_part_time_refine = (new_state == 'awaiting_ready_20_40_hours' and profile.get("employment_type") == 'part')
-                                # is_shift_refine = (new_state == 'awaiting_shift_preference' and profile.get("employment_type") == 'full')
-                                is_contract_refine = (new_state == 'awaiting_employment_contract')
-
-                                # if (is_part_time_refine or is_shift_refine or is_contract_refine) and dialogue.current_state != new_state:
-                                if (is_contract_refine) and dialogue.current_state != new_state:
-                                ctx_logger.debug(f"🔄 Переход в {new_state}. Сохраняем и отправляем на перегенерацию.")
-
-                                dialogue.current_state = new_state
-                                dialogue.candidate.profile_data = profile
-
-                                await db.commit()
-
-                                await mq.publish("engine_tasks", {
-                                "dialogue_id": dialogue.id, 
-                                "trigger": f"{new_state}_refine_retry",
-                                "initial_msg_count": hh_msg_count_start
-                                })
-                                return # Прерываем текущий цикл, чтобы не слать старый ответ
-
+                # if (is_part_time_refine or is_shift_refine or is_contract_refine) and dialogue.current_state != new_state:
+                if (is_contract_refine) and dialogue.current_state != new_state:
+                    ctx_logger.debug(f"🔄 Переход в {new_state}. Сохраняем и отправляем на перегенерацию.")
+                    
+                    dialogue.current_state = new_state
+                    dialogue.candidate.profile_data = profile
+                    
+                    await db.commit()
+                    
+                    await mq.publish("engine_tasks", {
+                        "dialogue_id": dialogue.id, 
+                        "trigger": f"{new_state}_refine_retry"
+                    })
+                    return # Прерываем текущий цикл, чтобы не слать старый ответ
 
 
 
@@ -1992,144 +1990,145 @@ class Engine:
 
 
 
-                                # === 14. БЛОК КВАЛИФИКАЦИИ И ПРИНЯТИЯ РЕШЕНИЙ ===
 
-                                # ==========================================================================================
-                                # БЛОК ВАЛИДАЦИИ И ПРИНЯТИЯ РЕШЕНИЙ
-                                # ==========================================================================================
+            # === 14. БЛОК КВАЛИФИКАЦИИ И ПРИНЯТИЯ РЕШЕНИЙ ===
 
-                                # Проверяем условия, только если LLM пытается завершить анкету (new_state == 'qualification_complete')
-                                if dialogue.status not in ['qualified', 'rejected'] and new_state == 'qualification_complete':
+            # ==========================================================================================
+            # БЛОК ВАЛИДАЦИИ И ПРИНЯТИЯ РЕШЕНИЙ
+            # ==========================================================================================
+            
+            # Проверяем условия, только если LLM пытается завершить анкету (new_state == 'qualification_complete')
+            if dialogue.status not in ['qualified', 'rejected'] and new_state == 'qualification_complete':
 
-                                # --- 14.0 ПРОВЕРКА: ВОЕННЫЙ БИЛЕТ ДЛЯ МУЖЧИН ПРИЗЫВНОГО ВОЗРАСТА ---
-                                profile = dialogue.candidate.profile_data or {}
-                                gender = profile.get("gender")
-                                age = profile.get("age")
+                # --- 14.0 ПРОВЕРКА: ВОЕННЫЙ БИЛЕТ ДЛЯ МУЖЧИН ПРИЗЫВНОГО ВОЗРАСТА ---
+                profile = dialogue.candidate.profile_data or {}
+                gender = profile.get("gender")
+                age = profile.get("age")
 
-                                if gender == "male" and age is not None and 18 <= int(age) <= 30:
-                                if not profile.get("has_military_document"):
-                                ctx_logger.info(f"🎖️ Кандидат — мужчина {age} лет, требуется уточнение военного билета.")
+                if gender == "male" and age is not None and 18 <= int(age) <= 30:
+                    if not profile.get("has_military_document"):
+                        ctx_logger.info(f"🎖️ Кандидат — мужчина {age} лет, требуется уточнение военного билета.")
 
-                                correction_msg = (
-                                f"[SYSTEM COMMAND] Кандидат — мужчина призывного возраста ({age} лет). "
-                                f"Ты ОБЯЗАНА уточнить наличие военного билета или приписного свидетельства. "
-                                f"Установи стейт 'awaiting_military_document' и задай этот вопрос."
-                                )
+                        correction_msg = (
+                            f"[SYSTEM COMMAND] Кандидат — мужчина призывного возраста ({age} лет). "
+                            f"Ты ОБЯЗАНА уточнить наличие военного билета или приписного свидетельства. "
+                            f"Установи стейт 'awaiting_military_document' и задай этот вопрос."
+                        )
 
-                                sys_msg = {
-                                "role": "user",
-                                "content": correction_msg,
-                                "message_id": f"sys_military_check_{time.time()}",
-                                "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
-                                }
+                        sys_msg = {
+                            "role": "user",
+                            "content": correction_msg,
+                            "message_id": f"sys_military_check_{time.time()}",
+                            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        }
 
-                                # Сохраняем профиль и уходим на ретрай
-                                dialogue.candidate.profile_data = profile
-                                dialogue.history = (dialogue.history or []) + [sys_msg]
-                                dialogue.current_state = "awaiting_military_document"
-                                await db.commit()
+                        # Сохраняем профиль и уходим на ретрай
+                        dialogue.candidate.profile_data = profile
+                        dialogue.history = (dialogue.history or []) + [sys_msg]
+                        dialogue.current_state = "awaiting_military_document"
+                        await db.commit()
 
-                                await mq.publish("engine_tasks", {
-                                "dialogue_id": dialogue.id, 
-                                "trigger": "military_refine",
-                                "initial_msg_count": hh_msg_count_start
-                                })
-                                return
+                        await mq.publish("engine_tasks", {
+                            "dialogue_id": dialogue.id, 
+                            "trigger": "military_refine",
+                            "initial_msg_count": hh_msg_count_start
+                        })
+                        return
 
-                                # --- 14.1 ПРОВЕРКА: ЗАДАВАЛСЯ ЛИ ВОПРОС ПРО ТЕЛЕФОН (Копия логики HH) ---
-                                if not dialogue.candidate.phone_number:
-                                phone_keywords = ["телефон", "номер"]
-                                was_phone_asked = False
-
-                                # Пробегаем по истории сообщений БОТА
-                                history_to_check = dialogue.history or []
-                                for msg in history_to_check:
-                                if msg.get('role') == 'assistant':
-                                content_lower = str(msg.get('content', '')).lower()
-                                if any(kw in content_lower for kw in phone_keywords):
+                # --- 14.1 ПРОВЕРКА: ЗАДАВАЛСЯ ЛИ ВОПРОС ПРО ТЕЛЕФОН (Копия логики HH) ---
+                if not dialogue.candidate.phone_number:
+                    phone_keywords = ["телефон", "номер"]
+                    was_phone_asked = False
+                    
+                    # Пробегаем по истории сообщений БОТА
+                    history_to_check = dialogue.history or []
+                    for msg in history_to_check:
+                        if msg.get('role') == 'assistant':
+                            content_lower = str(msg.get('content', '')).lower()
+                            if any(kw in content_lower for kw in phone_keywords):
                                 was_phone_asked = True
                                 break
-
-                                if not was_phone_asked:
-                                ctx_logger.warning(f"🛑 БЛОКИРОВКА ЗАВЕРШЕНИЯ: Бот забыл спросить телефон.")
-                                system_command = {
-                                'message_id': f'sys_cmd_ask_phone_force_{time.time()}',
-                                'role': 'user',
-                                'content': (
+                    
+                    if not was_phone_asked:
+                        ctx_logger.warning(f"🛑 БЛОКИРОВКА ЗАВЕРШЕНИЯ: Бот забыл спросить телефон.")
+                        system_command = {
+                            'message_id': f'sys_cmd_ask_phone_force_{time.time()}',
+                            'role': 'user',
+                            'content': (
                                 "[SYSTEM COMMAND] Ты пытаешься завершить анкету (qualification_complete), "
                                 "но ты не спросила номер телефона. Это критическая ошибка. "
                                 "Ты ОБЯЗАНА спросить номер телефона прямо сейчас. Перейди в стейт awaiting_phone."
-                                ),
-                                'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
-                                }
-                                dialogue.current_state = 'awaiting_phone'
-                                dialogue.history = (dialogue.history or []) + [system_command]
-                                await db.commit()
+                            ),
+                            'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        }
+                        dialogue.current_state = 'awaiting_phone'
+                        dialogue.history = (dialogue.history or []) + [system_command]
+                        await db.commit()
+                        
+                        
+                        await mq.publish("engine_tasks", {
+                            "dialogue_id": dialogue.id, 
+                            "trigger": "force_phone_retry",
+                            "initial_msg_count": hh_msg_count_start
+                        })
+                        return
 
+                # --- 14.2 ПРОВЕРКА ПОЛНОТЫ АНКЕТЫ (Динамический LLM Recovery) ---
+                profile = dialogue.candidate.profile_data or {}
 
-                                await mq.publish("engine_tasks", {
-                                "dialogue_id": dialogue.id, 
-                                "trigger": "force_phone_retry",
-                                "initial_msg_count": hh_msg_count_start
-                                })
-                                return
+                # 1. Собираем карту РЕАЛЬНО отсутствующих данных
+                missing_data_map = self._get_missing_fields_map(profile)
 
-                                # --- 14.2 ПРОВЕРКА ПОЛНОТЫ АНКЕТЫ (Динамический LLM Recovery) ---
-                                profile = dialogue.candidate.profile_data or {}
+                # Если есть пробелы — запускаем точечный поиск в истории
+                if missing_data_map:
+                    ctx_logger.info(f"🔍 Анкета не полна. Запуск Recovery для ключей: {list(missing_data_map.keys())}")
 
-                                # 1. Собираем карту РЕАЛЬНО отсутствующих данных
-                                missing_data_map = self._get_missing_fields_map(profile)
+                    # Подготовка истории (последние 20 сообщений)
+                    clean_history_lines = []
+                    for m in (dialogue.history or []):
+                        content = m.get('content', '')
+                        # Фильтруем мусор и системные команды
+                        if self._is_technical_message(content):
+                            continue
+                        if not str(content).startswith('[SYSTEM'):
+                            role = "Кандидат" if m.get('role') == 'user' else "Бот"
+                            clean_history_lines.append(f"{role}: {content}")
+                    recent_history_text = "\n".join(clean_history_lines[-20:])
 
-                                # Если есть пробелы — запускаем точечный поиск в истории
-                                if missing_data_map:
-                                ctx_logger.info(f"🔍 Анкета не полна. Запуск Recovery для ключей: {list(missing_data_map.keys())}")
+                    # Генерируем динамическую инструкцию по формату JSON
+                    json_format_example = "{\n" + ",\n".join([f'  "{k}": <значение или null>' for k in missing_data_map.keys()]) + "\n}"
 
-                                # Подготовка истории (последние 20 сообщений)
-                                clean_history_lines = []
-                                for m in (dialogue.history or []):
-                                content = m.get('content', '')
-                                # Фильтруем мусор и системные команды
-                                if self._is_technical_message(content):
-                                continue
-                                if not str(content).startswith('[SYSTEM'):
-                                role = "Кандидат" if m.get('role') == 'user' else "Бот"
-                                clean_history_lines.append(f"{role}: {content}")
-                                recent_history_text = "\n".join(clean_history_lines[-20:])
+                    # Генерируем описание того, что искать
+                    fields_to_search = "\n".join([f"- {k} ({v})" for k, v in missing_data_map.items()])
 
-                                # Генерируем динамическую инструкцию по формату JSON
-                                json_format_example = "{\n" + ",\n".join([f'  "{k}": <значение или null>' for k in missing_data_map.keys()]) + "\n}"
+                    recovery_prompt = (
+                        f"Ты — технический аналитик-экстрактор. Твоя задача: найти в диалоге ответы на конкретные вопросы, которые бот мог пропустить.\n\n"
+                        f"[ЧТО НУЖНО НАЙТИ]:\n{fields_to_search}\n\n"
+                        f"[ПРАВИЛА]:\n"
+                        f"1. Используй ТОЛЬКО информацию из сообщений с пометкой 'Кандидат'.\n"
+                        f"2. Если информации НЕТ в тексте, строго пиши null.\n"
+                        f"3. НЕ ПРИДУМЫВАЙ данные. Если кандидат сомневается или не ответил — пиши null.\n\n"
+                        f"Ответ верни СТРОГО в формате JSON:\n{json_format_example}"
+                    )
 
-                                # Генерируем описание того, что искать
-                                fields_to_search = "\n".join([f"- {k} ({v})" for k, v in missing_data_map.items()])
+                    try:
+                        recovery_attempts = []
+                        recovery_response = await get_bot_response(
+                            system_prompt=recovery_prompt,
+                            dialogue_history=[],
+                            user_message=f"ИСТОРИЯ ДИАЛОГА ДЛЯ АНАЛИЗА:\n{recent_history_text}",
+                            attempt_tracker=recovery_attempts,
+                            extra_context=ctx_logger.extra
+                        )
 
-                                recovery_prompt = (
-                                f"Ты — технический аналитик-экстрактор. Твоя задача: найти в диалоге ответы на конкретные вопросы, которые бот мог пропустить.\n\n"
-                                f"[ЧТО НУЖНО НАЙТИ]:\n{fields_to_search}\n\n"
-                                f"[ПРАВИЛА]:\n"
-                                f"1. Используй ТОЛЬКО информацию из сообщений с пометкой 'Кандидат'.\n"
-                                f"2. Если информации НЕТ в тексте, строго пиши null.\n"
-                                f"3. НЕ ПРИДУМЫВАЙ данные. Если кандидат сомневается или не ответил — пиши null.\n\n"
-                                f"Ответ верни СТРОГО в формате JSON:\n{json_format_example}"
-                                )
+                        if recovery_response:
+                            await self._log_llm_usage(db, dialogue, "Data_Recovery_Audit", recovery_response.get("usage_stats"), model_name="gpt-4o-mini")
 
-                                try:
-                                recovery_attempts = []
-                                recovery_response = await get_bot_response(
-                                system_prompt=recovery_prompt,
-                                dialogue_history=[],
-                                user_message=f"ИСТОРИЯ ДИАЛОГА ДЛЯ АНАЛИЗА:\n{recent_history_text}",
-                                attempt_tracker=recovery_attempts,
-                                extra_context=ctx_logger.extra
-                                )
+                            extracted_data = recovery_response.get('parsed_response', {})
+                            is_profile_updated = False
 
-                                if recovery_response:
-                                await self._log_llm_usage(db, dialogue, "Data_Recovery_Audit", recovery_response.get("usage_stats"), model_name="gpt-4o-mini")
-
-                                extracted_data = recovery_response.get('parsed_response', {})
-                                is_profile_updated = False
-
-                                # Обрабатываем то, что удалось найти в истории
-                                for key in list(missing_data_map.keys()):
+                            # Обрабатываем то, что удалось найти в истории
+                            for key in list(missing_data_map.keys()):
                                 val = extracted_data.get(key)
                                 if val is not None and str(val).lower() != 'null':
                                     profile[key] = val
@@ -2137,152 +2136,152 @@ class Engine:
                                     missing_data_map.pop(key)
                                     is_profile_updated = True
 
-                                if is_profile_updated:
+                            if is_profile_updated:
                                 dialogue.candidate.profile_data = profile
                                 await db.flush()
 
-                                except Exception as e:
-                                ctx_logger.error(f"❌ Ошибка в блоке Recovery: {e}")
+                    except Exception as e:
+                        ctx_logger.error(f"❌ Ошибка в блоке Recovery: {e}")
 
-                                # 2. ФИНАЛЬНЫЙ ВЕРДИКТ: Если данные все еще нужны — отправляем бота спрашивать
-                                if missing_data_map:
-                                missing_human_names = ", ".join(missing_data_map.values())
-                                ctx_logger.warning(f"⚠️ Recovery не помог. Не хватает: {missing_human_names}")
+                # 2. ФИНАЛЬНЫЙ ВЕРДИКТ: Если данные все еще нужны — отправляем бота спрашивать
+                if missing_data_map:
+                    missing_human_names = ", ".join(missing_data_map.values())
+                    ctx_logger.warning(f"⚠️ Recovery не помог. Не хватает: {missing_human_names}")
 
-                                sys_cmd_content = (
-                                f"[SYSTEM COMMAND] Анкета не завершена. Тебе НЕОБХОДИМО уточнить следующие данные: {missing_human_names}. "
-                                f"Прямо сейчас задай вопрос кандидату, чтобы узнать эти сведения. "
-                                f"Используй стейт clarifying_anything для уточнения этих сведений. "
-                                f"ЗАПРЕЩЕНО переходить в 'qualification_complete', пока эти поля пусты."
-                                f"Если ты получила недостающие данные, то сразу переходи в 'qualification_complete'"
-                                )
+                    sys_cmd_content = (
+                        f"[SYSTEM COMMAND] Анкета не завершена. Тебе НЕОБХОДИМО уточнить следующие данные: {missing_human_names}. "
+                        f"Прямо сейчас задай вопрос кандидату, чтобы узнать эти сведения. "
+                        f"Используй стейт clarifying_anything для уточнения этих сведений. "
+                        f"ЗАПРЕЩЕНО переходить в 'qualification_complete', пока эти поля пусты."
+                        f"Если ты получила недостающие данные, то сразу переходи в 'qualification_complete'"
+                    )
 
-                                sys_msg = {
-                                "role": "user",
-                                "content": sys_cmd_content,
-                                "message_id": f"sys_missing_retry_{time.time()}",
-                                "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
-                                }
-                                dialogue.history = (dialogue.history or []) + [sys_msg]
-                                dialogue.current_state = "clarifying_anything"
-                                await db.commit()
+                    sys_msg = {
+                        "role": "user",
+                        "content": sys_cmd_content,
+                        "message_id": f"sys_missing_retry_{time.time()}",
+                        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    }
+                    dialogue.history = (dialogue.history or []) + [sys_msg]
+                    dialogue.current_state = "clarifying_anything"
+                    await db.commit()
 
-                                await mq.publish("engine_tasks", {
-                                "dialogue_id": dialogue.id, 
-                                "trigger": "data_fix_retry",
-                                "initial_msg_count": hh_msg_count_start
-                                })
-                                return
-
-
+                    await mq.publish("engine_tasks", {
+                        "dialogue_id": dialogue.id, 
+                        "trigger": "data_fix_retry",
+                        "initial_msg_count": hh_msg_count_start
+                    })
+                    return
 
 
 
 
 
-                                # --- 14.3 ФИНАЛЬНЫЙ АУДИТ ДАННЫХ (Smart LLM - Auditor) ---
-                                ctx_logger.info("Запуск финального аудита данных через Smart LLM...")
 
-                                # Собираем чистую историю без системных команд
-                                all_msgs_for_verify = (dialogue.history or [])
-                                verify_history_lines = []
-                                for m in all_msgs_for_verify:
-                                content = m.get('content', '')
-                                # Фильтруем через твой метод + старый фильтр
-                                if self._is_technical_message(content):
-                                continue
-                                if not str(content).startswith('[SYSTEM'):
-                                label = "Кандидат" if m.get('role') == 'user' else "Бот"
-                                verify_history_lines.append(f"{label}: {content}")
 
-                                full_history_text = "\n".join(verify_history_lines)
+                # --- 14.3 ФИНАЛЬНЫЙ АУДИТ ДАННЫХ (Smart LLM - Auditor) ---
+                ctx_logger.info("Запуск финального аудита данных через Smart LLM...")
 
-                                verification_prompt = (
-                                """[SYSTEM COMMAND] Ты — технический АУДИТОР данных.
-                                Проанализируй диалог и извлеки финальные данные для квалификации.
+                # Собираем чистую историю без системных команд
+                all_msgs_for_verify = (dialogue.history or [])
+                verify_history_lines = []
+                for m in all_msgs_for_verify:
+                    content = m.get('content', '')
+                    # Фильтруем через твой метод + старый фильтр
+                    if self._is_technical_message(content):
+                        continue
+                    if not str(content).startswith('[SYSTEM'):
+                        label = "Кандидат" if m.get('role') == 'user' else "Бот"
+                        verify_history_lines.append(f"{label}: {content}")
 
-                                ПРАВИЛА:
-                                1. citizenship: Если Россия (РФ, Российская федерация) -> верни "РФ". Иначе — название страны.
-                                2. age: Верни целое число лет. Если возраст не назывался — верни null.
-                                3. employment_type: "full" (полная занятость) или "part" (частичная/подработка). Если не известно — null.
-                                4. employment_contract_ready: "yes" если готов к ТК РФ, "no" если не готов. Если не известно — null.
-                                5. ready_20_40_hours: "yes"/"no" — готовность работать 20-40 часов. Только если employment_type=part.
-                                6. shift_preference: "morning"/"evening"/"any" — предпочтение по смене. Только если employment_type=full.
-                                7. has_military_document: "yes"/"no" — наличие военного билета. Только для мужчин.
+                full_history_text = "\n".join(verify_history_lines)
 
-                                Верни ответ ТОЛЬКО в формате JSON:
-                                {
-                                "age": <число или null>,
-                                "citizenship": "<строка или null>",
-                                "employment_type": "<full/part или null>",
-                                "employment_contract_ready": "<yes/no или null>",
-                                "ready_20_40_hours": "<yes/no или null>",
-                                "shift_preference": "<morning/evening/any или null>",
-                                "has_military_document": "<yes/no или null>",
-                                "reasoning": "<твое краткое обоснование>"
-                                }
-                                """
-                                )
+                verification_prompt = (
+                    """[SYSTEM COMMAND] Ты — технический АУДИТОР данных.
+                    Проанализируй диалог и извлеки финальные данные для квалификации.
 
-                                verify_attempts = []
-                                try:
-                                verify_response = await get_bot_response(
-                                system_prompt=verification_prompt,
-                                dialogue_history=[],
-                                user_message=f"ИСТОРИЯ ДИАЛОГА:\n{full_history_text}",
-                                attempt_tracker=verify_attempts,
-                                extra_context=ctx_logger.extra
-                                )
+                    ПРАВИЛА:
+                    1. citizenship: Если Россия (РФ, Российская федерация) -> верни "РФ". Иначе — название страны.
+                    2. age: Верни целое число лет. Если возраст не назывался — верни null.
+                    3. employment_type: "full" (полная занятость) или "part" (частичная/подработка). Если не известно — null.
+                    4. employment_contract_ready: "yes" если готов к ТК РФ, "no" если не готов. Если не известно — null.
+                    5. ready_20_40_hours: "yes"/"no" — готовность работать 20-40 часов. Только если employment_type=part.
+                    6. shift_preference: "morning"/"evening"/"any" — предпочтение по смене. Только если employment_type=full.
+                    7. has_military_document: "yes"/"no" — наличие военного билета. Только для мужчин.
 
-                                if verify_response:
-                                await self._log_llm_usage(db, dialogue, "Final_Audit", verify_response.get("usage_stats"), model_name="gpt-4o")
+                    Верни ответ ТОЛЬКО в формате JSON:
+                    {
+                        "age": <число или null>,
+                        "citizenship": "<строка или null>",
+                        "employment_type": "<full/part или null>",
+                        "employment_contract_ready": "<yes/no или null>",
+                        "ready_20_40_hours": "<yes/no или null>",
+                        "shift_preference": "<morning/evening/any или null>",
+                        "has_military_document": "<yes/no или null>",
+                        "reasoning": "<твое краткое обоснование>"
+                    }
+                    """
+                )
 
-                                v_data = verify_response.get('parsed_response', {})
+                verify_attempts = []
+                try:
+                    verify_response = await get_bot_response(
+                        system_prompt=verification_prompt,
+                        dialogue_history=[],
+                        user_message=f"ИСТОРИЯ ДИАЛОГА:\n{full_history_text}",
+                        attempt_tracker=verify_attempts,
+                        extra_context=ctx_logger.extra
+                    )
 
-                                # Сравниваем аудит с тем, что у нас в БД
-                                discrepancies = []
+                    if verify_response:
+                        await self._log_llm_usage(db, dialogue, "Final_Audit", verify_response.get("usage_stats"), model_name="gpt-4o")
 
-                                audit_fields = [
-                                "age", "citizenship", "employment_type", "employment_contract_ready",
-                                "ready_20_40_hours", "shift_preference", "has_military_document"
-                                ]
+                        v_data = verify_response.get('parsed_response', {})
 
-                                for field in audit_fields:
-                                v_val = v_data.get(field)
-                                db_val = profile.get(field)
+                        # Сравниваем аудит с тем, что у нас в БД
+                        discrepancies = []
 
-                                # Нормализуем для сравнения
-                                v_str = str(v_val).strip().lower() if v_val is not None else ""
-                                db_str = str(db_val).strip().lower() if db_val is not None else ""
+                        audit_fields = [
+                            "age", "citizenship", "employment_type", "employment_contract_ready",
+                            "ready_20_40_hours", "shift_preference", "has_military_document"
+                        ]
 
-                                if v_str and v_str != "null" and v_str != db_str:
+                        for field in audit_fields:
+                            v_val = v_data.get(field)
+                            db_val = profile.get(field)
+
+                            # Нормализуем для сравнения
+                            v_str = str(v_val).strip().lower() if v_val is not None else ""
+                            db_str = str(db_val).strip().lower() if db_val is not None else ""
+
+                            if v_str and v_str != "null" and v_str != db_str:
                                 discrepancies.append({
                                     "field": field,
                                     "db_value": db_val,
                                     "audit_value": v_val
                                 })
 
-                                if discrepancies:
-                                ctx_logger.warning(f"🚨 РАССИНХРОН АУДИТА! Найдено {len(discrepancies)} расхождений:")
-                                for d in discrepancies:
+                        if discrepancies:
+                            ctx_logger.warning(f"🚨 РАССИНХРОН АУДИТА! Найдено {len(discrepancies)} расхождений:")
+                            for d in discrepancies:
                                 ctx_logger.warning(f"   {d['field']}: БД={d['db_value']}, Аудит={d['audit_value']}")
 
-                                # Отправляем алерт верификации
-                                await mq.publish("tg_alerts", {
+                            # Отправляем алерт верификации
+                            await mq.publish("tg_alerts", {
                                 "type": "verification",
                                 "dialogue_id": dialogue.id,
                                 "external_chat_id": dialogue.external_chat_id,
                                 "discrepancies": discrepancies,
                                 "reasoning": v_data.get("reasoning", "не указано"),
                                 "history_text": self._get_history_as_text(dialogue)
-                                })
+                            })
 
-                                ctx_logger.info("✅ Финальная верификация (Аудитор) пройдена.")
+                    ctx_logger.info("✅ Финальная верификация (Аудитор) пройдена.")
 
-                                except Exception as e:
-                                ctx_logger.error(f"Ошибка процесса аудитора: {e}", exc_info=True)
-                                # В случае ошибки LLM аудита — не рискуем, возвращаемся
-                                return
+                except Exception as e:
+                    ctx_logger.error(f"Ошибка процесса аудитора: {e}", exc_info=True)
+                    # В случае ошибки LLM аудита — не рискуем, возвращаемся
+                    return
 
 
 
@@ -2331,134 +2330,134 @@ class Engine:
 
 
 
-                                # === 14.4 ПРИНЯТИЕ РЕШЕНИЯ (ELIGIBILITY) ===
-                                ctx_logger.info(f"[{dialogue.external_chat_id}] Запуск проверки критериев квалификации.")
+                    # === 14.4 ПРИНЯТИЕ РЕШЕНИЯ (ELIGIBILITY) ===
+                ctx_logger.info(f"[{dialogue.external_chat_id}] Запуск проверки критериев квалификации.")
 
-                                profile = dialogue.candidate.profile_data or {}
-                                is_ok, reason = self._check_eligibility(profile)
+                profile = dialogue.candidate.profile_data or {}
+                is_ok, reason = self._check_eligibility(profile)
 
-                                # --- ИТОГОВОЕ РЕШЕНИЕ ---
-                                if is_ok:
-                                # --- СЦЕНАРИЙ 1: ПОДХОДИТ (Начинаем запись) ---
-                                ctx_logger.info(
-                                f"[{dialogue.external_chat_id}] Кандидат прошел проверку. Запуск автоматической записи.",
-                                extra={"action": "qualification_passed_by_code"}
-                                )
+                # --- ИТОГОВОЕ РЕШЕНИЕ ---
+                if is_ok:
+                    # --- СЦЕНАРИЙ 1: ПОДХОДИТ (Начинаем запись) ---
+                    ctx_logger.info(
+                        f"[{dialogue.external_chat_id}] Кандидат прошел проверку. Запуск автоматической записи.",
+                        extra={"action": "qualification_passed_by_code"}
+                    )
 
-                                # 1. Сохраняем текущие ответы в историю (чтобы LLM их видела при перегенерации)
-                                current_history = list(dialogue.history or [])
-                                dialogue.history = (current_history)[-150:]
+                    # 1. Сохраняем текущие ответы в историю (чтобы LLM их видела при перегенерации)
+                    current_history = list(dialogue.history or [])
+                    dialogue.history = (current_history)[-150:]
 
-                                # 2. Формируем системную команду для LLM
-                                system_command = {
-                                'message_id': f'sys_cmd_start_sched_{time.time()}',
-                                'role': 'user',
-                                'content': (
-                                '[SYSTEM COMMAND] Кандидат успешно прошел квалификацию. '
-                                'Начни запись на собеседование: предложи выбрать день, используя календарь из промпта.'
-                                ),
-                                'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
-                                }
+                    # 2. Формируем системную команду для LLM
+                    system_command = {
+                        'message_id': f'sys_cmd_start_sched_{time.time()}',
+                        'role': 'user',
+                        'content': (
+                            '[SYSTEM COMMAND] Кандидат успешно прошел квалификацию. '
+                            'Начни запись на собеседование: предложи выбрать день, используя календарь из промпта.'
+                        ),
+                        'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    }
 
-                                # 3. Обновляем диалог для перегенерации
-                                # мы не используем pending_messages для этого, а кладем прямо в историю
-                                dialogue.history.append(system_command)
-                                dialogue.current_state = 'init_scheduling_spb'
-                                dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
+                    # 3. Обновляем диалог для перегенерации
+                    # мы не используем pending_messages для этого, а кладем прямо в историю
+                    dialogue.history.append(system_command)
+                    dialogue.current_state = 'init_scheduling_spb'
+                    dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
+                    
+                    await db.commit()
 
-                                await db.commit()
-
-                                # 4. Ретрай задачи в RabbitMQ для мгновенного ответа с датами
-
-                                await mq.publish("engine_tasks", {
-                                "dialogue_id": dialogue.id, 
-                                "trigger": "start_scheduling_trigger",
-                                "initial_msg_count": hh_msg_count_start
-                                })
-                                return
-
-                                else:
-                                # --- СЦЕНАРИЙ 2: ОТКАЗ ---
-                                ctx_logger.info(
-                                f"[{dialogue.external_chat_id}] Отказ по критериям квалификации. Причина: {reason}",
-                                extra={"action": "qualification_failed_by_code", "reason": reason}
-                                )
-
-                                # Устанавливаем статус и вежливую фразу из ТЗ
-                                new_state = 'qualification_failed'
-                                dialogue.status = 'rejected'
-                                bot_response_text = (
-                                "Спасибо! Я передам Вашу анкету для рассмотрения. "
-                                "Если по Вашей анкету будет принято положительное решение, "
-                                "с Вами свяжутся в течение трёх рабочих дней."
-                                )
-
-
-                                # ИСПРАВЛЕНИЕ: Проверка на существование записи перед добавлением
-                                existing_rejected_event = await db.scalar(
-                                select(AnalyticsEvent)
-                                .filter(AnalyticsEvent.dialogue_id == dialogue.id)
-                                .filter(AnalyticsEvent.event_type == 'rejected_by_bot')
-                                )
-
-                                await log_event(
-                                db, dialogue, 
-                                'rejected_by_bot', 
-                                event_data={"reason": "eligibility_failed", "details": profile},
-                                check_duplicates=True
-                                )
-
-                                # === 15. ОБРАБОТКА СПЕЦИФИЧНЫХ СОСТОЯНИЙ (Call Later & Scheduling) ===
-
-                                # --- 15.1 Состояние "Перезвонить позже" (call_later) ---
-                                if new_state == 'call_later':
-                                meta = dict(dialogue.metadata_json or {})
-
-                                # Проверяем, не помечали ли мы это уже (аналог проверки очереди в HH)
-                                if not meta.get("call_later_flag"):
-                                ctx_logger.info(f"[{dialogue.external_chat_id}] Кандидат попросил связаться позже. Фиксируем.")
-
-
-                                await log_event(
-                                db, dialogue, 
-                                'call_later_requested', 
-                                event_data={"previous_state": dialogue.current_state}
-                                )
-
-                                meta["call_later_flag"] = True
-                                dialogue.metadata_json = meta
-                                else:
-                                ctx_logger.debug("Флаг call_later уже стоит. Пропуск.")
-
-                                ## --- 15.2 Логика ПЕРЕНОСА (Reschedule) для уже квалифицированных ---
-                                if new_state in ['forwarded_to_researcher', 'interview_scheduled_spb'] and dialogue.status == 'qualified':
-                                if new_state == 'interview_scheduled_spb':
-                                interview_date = extracted_data.get("interview_date")
-                                interview_time = extracted_data.get("interview_time")
-
-                                if interview_date and interview_time:
-                                meta = dict(dialogue.metadata_json or {})
-                                old_date = meta.get("interview_date")
-                                old_time = meta.get("interview_time")
-
-                                # ПРОВЕРКА НА ПЕРЕНОС (Reschedule)
-                                if old_date is not None and (old_date != interview_date or old_time != interview_time):
-                                ctx_logger.info(f"🔄 ПЕРЕНОС В КАЛЕНДАРЕ: {old_date} {old_time} -> {interview_date} {interview_time}")
-
-                                # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем старый слот
-                                await sheets_service.release_slot(old_date, old_time, sheet_name)
-
-                                # 2. ПРЯМОЕ ДЕЙСТВИЕ: Занимаем новый слот
-                                await sheets_service.book_slot(
+                    # 4. Ретрай задачи в RabbitMQ для мгновенного ответа с датами
+                    
+                    await mq.publish("engine_tasks", {
+                        "dialogue_id": dialogue.id, 
+                        "trigger": "start_scheduling_trigger",
+                        "initial_msg_count": hh_msg_count_start
+                    })
+                    return
+
+                else:
+                    # --- СЦЕНАРИЙ 2: ОТКАЗ ---
+                    ctx_logger.info(
+                        f"[{dialogue.external_chat_id}] Отказ по критериям квалификации. Причина: {reason}",
+                        extra={"action": "qualification_failed_by_code", "reason": reason}
+                    )
+
+                    # Устанавливаем статус и вежливую фразу из ТЗ
+                    new_state = 'qualification_failed'
+                    dialogue.status = 'rejected'
+                    bot_response_text = (
+                        "Спасибо! Я передам Вашу анкету для рассмотрения. "
+                        "Если по Вашей анкету будет принято положительное решение, "
+                        "с Вами свяжутся в течение трёх рабочих дней."
+                    )
+                    
+                    
+                    # ИСПРАВЛЕНИЕ: Проверка на существование записи перед добавлением
+                    existing_rejected_event = await db.scalar(
+                        select(AnalyticsEvent)
+                        .filter(AnalyticsEvent.dialogue_id == dialogue.id)
+                        .filter(AnalyticsEvent.event_type == 'rejected_by_bot')
+                    )
+
+                    await log_event(
+                        db, dialogue, 
+                        'rejected_by_bot', 
+                        event_data={"reason": "eligibility_failed", "details": profile},
+                        check_duplicates=True
+                    )
+
+            # === 15. ОБРАБОТКА СПЕЦИФИЧНЫХ СОСТОЯНИЙ (Call Later & Scheduling) ===
+
+            # --- 15.1 Состояние "Перезвонить позже" (call_later) ---
+            if new_state == 'call_later':
+                meta = dict(dialogue.metadata_json or {})
+                
+                # Проверяем, не помечали ли мы это уже (аналог проверки очереди в HH)
+                if not meta.get("call_later_flag"):
+                    ctx_logger.info(f"[{dialogue.external_chat_id}] Кандидат попросил связаться позже. Фиксируем.")
+                    
+                    
+                    await log_event(
+                        db, dialogue, 
+                        'call_later_requested', 
+                        event_data={"previous_state": dialogue.current_state}
+                    )
+                    
+                    meta["call_later_flag"] = True
+                    dialogue.metadata_json = meta
+                else:
+                    ctx_logger.debug("Флаг call_later уже стоит. Пропуск.")
+
+            ## --- 15.2 Логика ПЕРЕНОСА (Reschedule) для уже квалифицированных ---
+            if new_state in ['forwarded_to_researcher', 'interview_scheduled_spb'] and dialogue.status == 'qualified':
+                if new_state == 'interview_scheduled_spb':
+                    interview_date = extracted_data.get("interview_date")
+                    interview_time = extracted_data.get("interview_time")
+
+                    if interview_date and interview_time:
+                        meta = dict(dialogue.metadata_json or {})
+                        old_date = meta.get("interview_date")
+                        old_time = meta.get("interview_time")
+
+                        # ПРОВЕРКА НА ПЕРЕНОС (Reschedule)
+                        if old_date is not None and (old_date != interview_date or old_time != interview_time):
+                            ctx_logger.info(f"🔄 ПЕРЕНОС В КАЛЕНДАРЕ: {old_date} {old_time} -> {interview_date} {interview_time}")
+
+                            # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем старый слот
+                            await sheets_service.release_slot(old_date, old_time, sheet_name)
+
+                            # 2. ПРЯМОЕ ДЕЙСТВИЕ: Занимаем новый слот
+                            await sheets_service.book_slot(
                                 target_date=interview_date,
                                 target_time=interview_time,
                                 candidate_name=dialogue.candidate.full_name or "Кандидат",
                                 candidate_phone=dialogue.candidate.phone_number or "",
                                 sheet_name=sheet_name
-                                )
+                            )
 
-                                # 3. Talantix: удаляем старую встречу и создаём новую
-                                if settings.services.talantix.enabled:
+                            # 3. Talantix: удаляем старую встречу и создаём новую
+                            if settings.services.talantix.enabled:
                                 talantix_data = meta.get("talantix")
                                 old_meeting_id = talantix_data.get("meeting_id") if talantix_data else None
 
@@ -2490,22 +2489,22 @@ class Engine:
                                     except Exception as e:
                                         ctx_logger.error(f"❌ Ошибка создания встречи в Talantix (reschedule): {e}", exc_info=True)
 
-                                # 4. Пушим задачу на уведомление в RabbitMQ
-                                await mq.publish("services_output", {
+                            # 4. Пушим задачу на уведомление в RabbitMQ
+                            await mq.publish("services_output", {
                                 "dialogue_id": dialogue.id,
                                 "type": "rescheduled",
                                 "old_slot": f"{old_date} {old_time}",
                                 "new_slot": f"{interview_date} {interview_time}"
-                                })
-
-                                # 4. Аналитика и напоминания
-                                await log_event(db, dialogue, 'interview_rescheduled', {
+                            })
+                            
+                            # 4. Аналитика и напоминания
+                            await log_event(db, dialogue, 'interview_rescheduled', {
                                 "old": f"{old_date} {old_time}", "new": f"{interview_date} {interview_time}"
-                                })
-                                await self._schedule_interview_reminders(db, dialogue, interview_date, interview_time)
+                            })
+                            await self._schedule_interview_reminders(db, dialogue, interview_date, interview_time)
 
-                                # 5. Комментарий в Talantix
-                                if settings.services.talantix.enabled:
+                            # 5. Комментарий в Talantix
+                            if settings.services.talantix.enabled:
                                 try:
                                     await talantix_crm_service.notify_talantix_comment(
                                         dialogue=dialogue,
@@ -2515,46 +2514,46 @@ class Engine:
                                 except Exception as e:
                                     ctx_logger.error(f"Ошибка создания комментария Talantix (rescheduled): {e}")
 
-                                # Обновляем метаданные
-                                meta["interview_date"] = interview_date
-                                meta["interview_time"] = interview_time
-                                dialogue.metadata_json = meta
-                                flag_modified(dialogue, "metadata_json")
+                            # Обновляем метаданные
+                            meta["interview_date"] = interview_date
+                            meta["interview_time"] = interview_time
+                            dialogue.metadata_json = meta
+                            flag_modified(dialogue, "metadata_json")
+                            
+                        else:
+                            ctx_logger.debug("Дата записи не изменилась или это не перенос.")
+                    
+                    # После обработки записи/переноса всегда уходим в чат поддержки
+                    new_state = 'post_qualification_chat'
 
-                                else:
-                                ctx_logger.debug("Дата записи не изменилась или это не перенос.")
+            # --- 15.3 Логика ПЕРВИЧНОЙ квалификации ---
+            if new_state in ['forwarded_to_researcher', 'interview_scheduled_spb'] and dialogue.status != 'qualified':
+                ctx_logger.info(f"🟢 Candidate qualified. Запись в календарь.")
+                
+                dialogue.status = 'qualified'
+                meta = dict(dialogue.metadata_json or {})
+                meta["interview_date"] = extracted_data.get("interview_date")
+                meta["interview_time"] = extracted_data.get("interview_time")
+                dialogue.metadata_json = meta
+                flag_modified(dialogue, "metadata_json")
 
-                                # После обработки записи/переноса всегда уходим в чат поддержки
-                                new_state = 'post_qualification_chat'
+                # 1. ПРЯМОЕ ДЕЙСТВИЕ: Занимаем слот в Google Таблице
+                if meta["interview_date"] and meta["interview_time"]:
+                    await sheets_service.book_slot(
+                        target_date=meta["interview_date"],
+                        target_time=meta["interview_time"],
+                        candidate_name=dialogue.candidate.full_name or "Кандидат",
+                        candidate_phone=dialogue.candidate.phone_number or "",
+                        sheet_name=sheet_name
+                    )
+                    # Планируем напоминания в БД
+                    await self._schedule_interview_reminders(db, dialogue, meta["interview_date"], meta["interview_time"])
 
-                                # --- 15.3 Логика ПЕРВИЧНОЙ квалификации ---
-                                if new_state in ['forwarded_to_researcher', 'interview_scheduled_spb'] and dialogue.status != 'qualified':
-                                ctx_logger.info(f"🟢 Candidate qualified. Запись в календарь.")
-
-                                dialogue.status = 'qualified'
-                                meta = dict(dialogue.metadata_json or {})
-                                meta["interview_date"] = extracted_data.get("interview_date")
-                                meta["interview_time"] = extracted_data.get("interview_time")
-                                dialogue.metadata_json = meta
-                                flag_modified(dialogue, "metadata_json")
-
-                                # 1. ПРЯМОЕ ДЕЙСТВИЕ: Занимаем слот в Google Таблице
-                                if meta["interview_date"] and meta["interview_time"]:
-                                await sheets_service.book_slot(
-                                target_date=meta["interview_date"],
-                                target_time=meta["interview_time"],
-                                candidate_name=dialogue.candidate.full_name or "Кандидат",
-                                candidate_phone=dialogue.candidate.phone_number or "",
-                                sheet_name=sheet_name
-                                )
-                                # Планируем напоминания в БД
-                                await self._schedule_interview_reminders(db, dialogue, meta["interview_date"], meta["interview_time"])
-
-                                # 1.1. Создаём встречу в Talantix
-                                if settings.services.talantix.enabled:
-                                talantix_data = meta.get("talantix")
-                                if talantix_data:
-                                try:
+                    # 1.1. Создаём встречу в Talantix
+                    if settings.services.talantix.enabled:
+                        talantix_data = meta.get("talantix")
+                        if talantix_data:
+                            try:
                                 meeting_id = await self._create_talantix_meeting(
                                     dialogue=dialogue,
                                     interview_date=meta["interview_date"],
@@ -2573,369 +2572,369 @@ class Engine:
                                     ctx_logger.info(f"✅ meeting_id={meeting_id} сохранён в metadata")
                                 else:
                                     ctx_logger.warning("⚠️ Talantix: встреча не создана (meeting_id=None)")
-                                except Exception as e:
+                            except Exception as e:
                                 ctx_logger.error(f"❌ Ошибка создания встречи в Talantix: {e}", exc_info=True)
-                                else:
-                                ctx_logger.warning("⚠️ talantix данные не найдены в metadata, встреча в Talantix не создана")
+                        else:
+                            ctx_logger.warning("⚠️ talantix данные не найдены в metadata, встреча в Talantix не создана")
 
-                                # 2. Аналитика
-                                await log_event(db, dialogue, 'qualified', check_duplicates=True)
+                # 2. Аналитика
+                await log_event(db, dialogue, 'qualified', check_duplicates=True)
 
-                                # 3. Пушим задачу на карточку в ТГ и запись в Таблицу Кандидатов
-                                await mq.publish("services_output", {
-                                "dialogue_id": dialogue.id,
-                                "type": "qualified"
-                                })
+                # 3. Пушим задачу на карточку в ТГ и запись в Таблицу Кандидатов
+                await mq.publish("services_output", {
+                    "dialogue_id": dialogue.id,
+                    "type": "qualified"
+                })
 
-                                # 4. Комментарий в Talantix
-                                if settings.services.talantix.enabled:
-                                try:
-                                await talantix_crm_service.notify_talantix_comment(
-                                dialogue=dialogue,
-                                event_type='qualified',
-                                db=db
-                                )
-                                except Exception as e:
-                                ctx_logger.error(f"Ошибка создания комментария Talantix (qualified): {e}")
+                # 4. Комментарий в Talantix
+                if settings.services.talantix.enabled:
+                    try:
+                        await talantix_crm_service.notify_talantix_comment(
+                            dialogue=dialogue,
+                            event_type='qualified',
+                            db=db
+                        )
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка создания комментария Talantix (qualified): {e}")
 
-                                # [HH ONLY] Перемещаем отклик в папку 'interview'
-                                if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
-                                try:
-                                await hh.move_response_to_folder(dialogue.account, db, dialogue.external_chat_id, 'interview')
-                                except Exception as e:
-                                ctx_logger.error(f"Ошибка перемещения отклика HH в 'interview': {e}")
+                # [HH ONLY] Перемещаем отклик в папку 'interview'
+                if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
+                    try:
+                        await hh.move_response_to_folder(dialogue.account, db, dialogue.external_chat_id, 'interview')
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка перемещения отклика HH в 'interview': {e}")
 
-                                dialogue.current_state = 'post_qualification_chat'
-                                new_state = 'post_qualification_chat'
+                dialogue.current_state = 'post_qualification_chat'
+                new_state = 'post_qualification_chat'
+            
+
+                
+                
+    
 
 
+            # === 16. ОБРАБОТКА ОТКАЗОВ И ЗАВЕРШЕНИЯ ===
+            if new_state in ['qualification_failed', 'declined_vacancy', 'declined_interview']:
+                
+                # --- 16.1 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ОТКАЗА (Механика "Судьи") ---
+                if new_state == 'declined_vacancy':
+                    ctx_logger.info("Проверка серьезности отказа кандидата через 'Судью'...")
+                    
+                    # 1. Сбор контекста (как в HH)
+                    all_msgs = (dialogue.history or [])
+                    clean_history_with_roles = []
+                    for m in all_msgs:
+                        content = m.get('content', '')
+                        # Добавляем твою фильтрацию
+                        if self._is_technical_message(content):
+                            continue
+                        if not str(content).startswith("[SYSTEM"):
+                            role_label = "Кандидат" if m.get('role') == 'user' else "Бот"
+                            clean_history_with_roles.append(f"{role_label}: {content}")
+                    
+                    recent_context = "\n".join(clean_history_with_roles[-20:])
 
+                    clarification_prompt = (
+                        'Проанализируй диалог и определи: действительно ли кандидат чётко отказался от вакансии? '
+                        'Смотри только на реплики с пометкой "Кандидат". '
+                        'Верни ответ строго в формате JSON: {"answer": "yes" или "no"} '
+                        'Ответ "yes" — только если кандидат прямо сказал, что вакансия его не интересует или он отказывается. '
+                        'Если кандидат задает вопросы или сомневается — верни "no".'
+                    )
 
+                    clarification_attempts = []
+                    clarification_result = None
+                    try:
+                        clarification_result = await get_bot_response(
+                            system_prompt=clarification_prompt,
+                            dialogue_history=[], 
+                            user_message=f"ИСТОРИЯ ДИАЛОГА (последние реплики):\n{recent_context}",
+                            
+                            attempt_tracker=clarification_attempts,
+                            skip_instructions=True,
+                            extra_context=ctx_logger.extra
+                        )
 
-
-
-                                # === 16. ОБРАБОТКА ОТКАЗОВ И ЗАВЕРШЕНИЯ ===
-                                if new_state in ['qualification_failed', 'declined_vacancy', 'declined_interview']:
-
-                                # --- 16.1 ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ОТКАЗА (Механика "Судьи") ---
-                                if new_state == 'declined_vacancy':
-                                ctx_logger.info("Проверка серьезности отказа кандидата через 'Судью'...")
-
-                                # 1. Сбор контекста (как в HH)
-                                all_msgs = (dialogue.history or [])
-                                clean_history_with_roles = []
-                                for m in all_msgs:
-                                content = m.get('content', '')
-                                # Добавляем твою фильтрацию
-                                if self._is_technical_message(content):
-                                continue
-                                if not str(content).startswith("[SYSTEM"):
-                                role_label = "Кандидат" if m.get('role') == 'user' else "Бот"
-                                clean_history_with_roles.append(f"{role_label}: {content}")
-
-                                recent_context = "\n".join(clean_history_with_roles[-20:])
-
-                                clarification_prompt = (
-                                'Проанализируй диалог и определи: действительно ли кандидат чётко отказался от вакансии? '
-                                'Смотри только на реплики с пометкой "Кандидат". '
-                                'Верни ответ строго в формате JSON: {"answer": "yes" или "no"} '
-                                'Ответ "yes" — только если кандидат прямо сказал, что вакансия его не интересует или он отказывается. '
-                                'Если кандидат задает вопросы или сомневается — верни "no".'
-                                )
-
-                                clarification_attempts = []
-                                clarification_result = None
-                                try:
-                                clarification_result = await get_bot_response(
-                                system_prompt=clarification_prompt,
-                                dialogue_history=[], 
-                                user_message=f"ИСТОРИЯ ДИАЛОГА (последние реплики):\n{recent_context}",
-
-                                attempt_tracker=clarification_attempts,
-                                skip_instructions=True,
-                                extra_context=ctx_logger.extra
-                                )
-
-                                # Логируем ретраи и токены (копия логики HH)
-                                if clarification_result:
-                                total_attempts = len(clarification_attempts)
-                                if total_attempts > 1:
+                        # Логируем ретраи и токены (копия логики HH)
+                        if clarification_result:
+                            total_attempts = len(clarification_attempts)
+                            if total_attempts > 1:
                                 for i in range(total_attempts - 1):
                                     await self._log_llm_usage(db, dialogue, f"Decline_Clarification (RETRY #{i+1})")
+                            
+                            await self._log_llm_usage(db, dialogue, "Decline_Clarification", clarification_result.get('usage_stats'))
 
-                                await self._log_llm_usage(db, dialogue, "Decline_Clarification", clarification_result.get('usage_stats'))
+                    except Exception as e:
+                        ctx_logger.warning(f"Ошибка при уточнении отказа: {e}. Считаем отказом по умолчанию.")
+                        # Логируем провальные попытки
+                        for i in range(len(clarification_attempts)):
+                            await self._log_llm_usage(db, dialogue, f"Decline_Clarification (FAILED #{i+1})")
+                        clarification_result = None
 
-                                except Exception as e:
-                                ctx_logger.warning(f"Ошибка при уточнении отказа: {e}. Считаем отказом по умолчанию.")
-                                # Логируем провальные попытки
-                                for i in range(len(clarification_attempts)):
-                                await self._log_llm_usage(db, dialogue, f"Decline_Clarification (FAILED #{i+1})")
-                                clarification_result = None
+                    is_real_decline = True # По умолчанию — отказ
+                    if clarification_result and 'parsed_response' in clarification_result:
+                        is_real_decline = (clarification_result['parsed_response'].get('answer') == 'yes')
 
-                                is_real_decline = True # По умолчанию — отказ
-                                if clarification_result and 'parsed_response' in clarification_result:
-                                is_real_decline = (clarification_result['parsed_response'].get('answer') == 'yes')
-
-                                if not is_real_decline:
-                                # Кандидат НЕ отказался → Оживляем диалог (Veto)
-                                ctx_logger.info("⚠️ Судья решил: отказ ложный. Возвращаем диалог в работу.")
-
-                                system_command = {
-                                'message_id': f'sys_revive_{time.time()}',
-                                'role': 'user',
-                                'content': (
+                    if not is_real_decline:
+                        # Кандидат НЕ отказался → Оживляем диалог (Veto)
+                        ctx_logger.info("⚠️ Судья решил: отказ ложный. Возвращаем диалог в работу.")
+                        
+                        system_command = {
+                            'message_id': f'sys_revive_{time.time()}',
+                            'role': 'user',
+                            'content': (
                                 '[SYSTEM COMMAND] Сейчас кандидат не отказывается от вакансии и анкетирования. '
                                 'Он задал вопрос или выразил сомнение. Не ставь declined_vacancy! '
                                 'Твоя задача — вежливо ответить на его вопрос/сомнение и продолжить анкету.'
-                                ),
-                                'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
-                                }
+                            ),
+                            'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        }
+                        
+                        # Сохраняем историю и триггерим воркер заново
+                        dialogue.history = (dialogue.history or []) + [system_command]
+                        await db.commit()
+                        
+                        
+                        await mq.publish("engine_tasks", {
+                            "dialogue_id": dialogue.id, 
+                            "trigger": "decline_veto_retry",
+                            "initial_msg_count": hh_msg_count_start
+                        })
+                        return 
 
-                                # Сохраняем историю и триггерим воркер заново
-                                dialogue.history = (dialogue.history or []) + [system_command]
-                                await db.commit()
+                # --- 16.2 ОТМЕНА В КАЛЕНДАРЕ ---
+                meta = dialogue.metadata_json or {}
+                if meta.get("interview_date") and meta.get("interview_time"):
+                    ctx_logger.info(f"🗑️ ОТМЕНА: Освобождаю слот {meta.get('interview_date')} {meta.get('interview_time')}")
 
+                    # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем слот
+                    await sheets_service.release_slot(meta.get("interview_date"), meta.get("interview_time"), sheet_name)
 
-                                await mq.publish("engine_tasks", {
-                                "dialogue_id": dialogue.id, 
-                                "trigger": "decline_veto_retry",
-                                "initial_msg_count": hh_msg_count_start
-                                })
-                                return 
+                    # 2. Talantix: удаляем встречу
+                    if settings.services.talantix.enabled:
+                        talantix_data = meta.get("talantix")
+                        meeting_id = talantix_data.get("meeting_id") if talantix_data else None
 
-                                # --- 16.2 ОТМЕНА В КАЛЕНДАРЕ ---
-                                meta = dialogue.metadata_json or {}
-                                if meta.get("interview_date") and meta.get("interview_time"):
-                                ctx_logger.info(f"🗑️ ОТМЕНА: Освобождаю слот {meta.get('interview_date')} {meta.get('interview_time')}")
-
-                                # 1. ПРЯМОЕ ДЕЙСТВИЕ: Освобождаем слот
-                                await sheets_service.release_slot(meta.get("interview_date"), meta.get("interview_time"), sheet_name)
-
-                                # 2. Talantix: удаляем встречу
-                                if settings.services.talantix.enabled:
-                                talantix_data = meta.get("talantix")
-                                meeting_id = talantix_data.get("meeting_id") if talantix_data else None
-
-                                if meeting_id:
-                                try:
+                        if meeting_id:
+                            try:
                                 ctx_logger.info(f"🗑️ Talantix: удаляю встречу meeting_id={meeting_id}")
                                 await talantix_service.release_interview(interview_id=meeting_id)
-                                except Exception as e:
+                            except Exception as e:
                                 ctx_logger.error(f"❌ Ошибка удаления встречи в Talantix: {e}", exc_info=True)
-                                else:
-                                ctx_logger.warning("⚠️ Talantix: meeting_id не найден, встреча не удалена")
+                        else:
+                            ctx_logger.warning("⚠️ Talantix: meeting_id не найден, встреча не удалена")
 
-                                # 3. Пушим задачу воркеру (например, отправить карточку отмены)
-                                await mq.publish("services_output", {
-                                "dialogue_id": dialogue.id,
-                                "type": "cancelled"
-                                })
+                    # 3. Пушим задачу воркеру (например, отправить карточку отмены)
+                    await mq.publish("services_output", {
+                        "dialogue_id": dialogue.id,
+                        "type": "cancelled"
+                    })
 
-                                # 4. Комментарий в Talantix
-                                if settings.services.talantix.enabled:
-                                try:
-                                await talantix_crm_service.notify_talantix_comment(
+                    # 4. Комментарий в Talantix
+                    if settings.services.talantix.enabled:
+                        try:
+                            await talantix_crm_service.notify_talantix_comment(
                                 dialogue=dialogue,
                                 event_type='cancelled',
                                 db=db
-                                )
-                                except Exception as e:
-                                ctx_logger.error(f"Ошибка создания комментария Talantix (cancelled): {e}")
+                            )
+                        except Exception as e:
+                            ctx_logger.error(f"Ошибка создания комментария Talantix (cancelled): {e}")
 
-                                # Отменяем напоминания в БД
-                                await db.execute(
-                                update(InterviewReminder)
-                                .where(InterviewReminder.dialogue_id == dialogue.id)
-                                .where(InterviewReminder.status == 'pending')
-                                .values(status='cancelled', processed_at=datetime.datetime.now(datetime.timezone.utc))
-                                )
+                # Отменяем напоминания в БД
+                await db.execute(
+                    update(InterviewReminder)
+                    .where(InterviewReminder.dialogue_id == dialogue.id)
+                    .where(InterviewReminder.status == 'pending')
+                    .values(status='cancelled', processed_at=datetime.datetime.now(datetime.timezone.utc))
+                )
+                
+                ctx_logger.info("Все запланированные напоминания отменены, освобожден слот.")
+                
+            
 
-                                ctx_logger.info("Все запланированные напоминания отменены, освобожден слот.")
+                # --- 16.3 ФИНАЛЬНАЯ ФИКСАЦИЯ СТАТУСА ---
+                dialogue.status = 'rejected'
+
+                # Определяем тип отказа для статистики
+                stat_event_type = 'rejected_by_bot'
+                if new_state in ['declined_vacancy', 'declined_interview']:
+                    stat_event_type = 'rejected_by_candidate'
+
+                await log_event(
+                    db, dialogue,
+                    stat_event_type,
+                    event_data={"reason_state": new_state}
+                )
+
+                # Комментарий в Talantix
+                if settings.services.talantix.enabled:
+                    try:
+                        reason_text = f"Отказ по причине: {new_state}" if new_state else "Отказ"
+                        await talantix_crm_service.notify_talantix_comment(
+                            dialogue=dialogue,
+                            event_type='rejected',
+                            db=db,
+                            reason=reason_text
+                        )
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка создания комментария Talantix (rejected): {e}")
+
+                ctx_logger.info(f"Диалог завершен со статусом REJECTED (Тип: {stat_event_type}, Состояние: {new_state})")
+                
+                # [HH ONLY] Перемещаем отклик в папку 'assessment' (как просил пользователь)
+                if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
+                    try:
+                        await hh.move_response_to_folder(dialogue.account, db, dialogue.external_chat_id, 'assessment')
+                    except Exception as e:
+                        ctx_logger.error(f"Ошибка перемещения отклика HH в 'assessment': {e}")
 
 
+            # === 17. ПОДГОТОВКА И ОТПРАВКА ОТВЕТА ===
 
-                                # --- 16.3 ФИНАЛЬНАЯ ФИКСАЦИЯ СТАТУСА ---
-                                dialogue.status = 'rejected'
+            # Если LLM не вернула текст
+            if bot_response_text is None or bot_response_text.strip() == "":
+                
+                # СЦЕНАРИЙ 1: ШТАТНОЕ МОЛЧАНИЕ (как в HH)
+                # При завершении анкеты бот может молчать, так как мы перехватываем управление
+                if new_state == 'qualification_complete':
+                    ctx_logger.info("LLM промолчала на этапе 'qualification_complete' (штатно).")
+                    
+                    new_history = (dialogue.history or [])
+                    dialogue.history = new_history[-150:]
+                    dialogue.current_state = new_state
+                    # Сбрасываем уровень напоминаний, так как мы "ответили" (обработали)
+                    dialogue.reminder_level = 0
+                    dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
+                    
+                    await db.commit()
+                    return
+                
+                # СЦЕНАРИЙ 2: ОШИБОЧНОЕ МОЛЧАНИЕ
+                else:
+                    ctx_logger.error(f"LLM вернула пустой текст для активного стейта '{new_state}'!")
+                    # Бросаем ошибку для отката транзакции и повтора
+                    raise ValueError(f"Empty response forbidden for state: {new_state}")
 
-                                # Определяем тип отказа для статистики
-                                stat_event_type = 'rejected_by_bot'
-                                if new_state in ['declined_vacancy', 'declined_interview']:
-                                stat_event_type = 'rejected_by_candidate'
-
-                                await log_event(
-                                db, dialogue,
-                                stat_event_type,
-                                event_data={"reason_state": new_state}
-                                )
-
-                                # Комментарий в Talantix
-                                if settings.services.talantix.enabled:
-                                try:
-                                reason_text = f"Отказ по причине: {new_state}" if new_state else "Отказ"
-                                await talantix_crm_service.notify_talantix_comment(
-                                dialogue=dialogue,
-                                event_type='rejected',
-                                db=db,
-                                reason=reason_text
-                                )
-                                except Exception as e:
-                                ctx_logger.error(f"Ошибка создания комментария Talantix (rejected): {e}")
-
-                                ctx_logger.info(f"Диалог завершен со статусом REJECTED (Тип: {stat_event_type}, Состояние: {new_state})")
-
-                                # [HH ONLY] Перемещаем отклик в папку 'assessment' (как просил пользователь)
-                                if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
-                                try:
-                                await hh.move_response_to_folder(dialogue.account, db, dialogue.external_chat_id, 'assessment')
-                                except Exception as e:
-                                ctx_logger.error(f"Ошибка перемещения отклика HH в 'assessment': {e}")
-
-
-                                # === 17. ПОДГОТОВКА И ОТПРАВКА ОТВЕТА ===
-
-                                # Если LLM не вернула текст
-                                if bot_response_text is None or bot_response_text.strip() == "":
-
-                                # СЦЕНАРИЙ 1: ШТАТНОЕ МОЛЧАНИЕ (как в HH)
-                                # При завершении анкеты бот может молчать, так как мы перехватываем управление
-                                if new_state == 'qualification_complete':
-                                ctx_logger.info("LLM промолчала на этапе 'qualification_complete' (штатно).")
-
-                                new_history = (dialogue.history or [])
-                                dialogue.history = new_history[-150:]
-                                dialogue.current_state = new_state
-                                # Сбрасываем уровень напоминаний, так как мы "ответили" (обработали)
-                                dialogue.reminder_level = 0
-                                dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
-
-                                await db.commit()
-                                return
-
-                                # СЦЕНАРИЙ 2: ОШИБОЧНОЕ МОЛЧАНИЕ
-                                else:
-                                ctx_logger.error(f"LLM вернула пустой текст для активного стейта '{new_state}'!")
-                                # Бросаем ошибку для отката транзакции и повтора
-                                raise ValueError(f"Empty response forbidden for state: {new_state}")
-
-                                # ФИЗИЧЕСКАЯ ОТПРАВКА (Универсальная)
-                                real_id = None
-                                try:
-                                # === 17.5 ПРОВЕРКА АКТУАЛЬНОСТИ (HH ONLY) ===
-                                # Перед самой отправкой проверяем, не изменился ли диалог в HH,
-                                # пока мы думали (LLM + Audit). 
-                                # Сверяем общее количество сообщений с тем, что было на старте.
-                                # Напоминалки и дожимы пропускаем всегда.
-                                if dialogue.account.platform == 'hh' and dialogue.external_chat_id and not is_reminder:
-                                try:
-                                from app.connectors.hh.client import hh
-                                status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
-
-                                if status_data and status_data.get("counters"):
-                                hh_msg_count_now = status_data["counters"].get("messages", 0)
-
-                                # Если в HH стало больше сообщений, чем было в начале нашей обработки
-                                if hh_msg_count_now > hh_msg_count_start:
+            # ФИЗИЧЕСКАЯ ОТПРАВКА (Универсальная)
+            real_id = None
+            try:
+            # === 17.5 ПРОВЕРКА АКТУАЛЬНОСТИ (HH ONLY) ===
+                # Перед самой отправкой проверяем, не изменился ли диалог в HH,
+                # пока мы думали (LLM + Audit). 
+                # Сверяем общее количество сообщений с тем, что было на старте.
+                # Напоминалки и дожимы пропускаем всегда.
+                if dialogue.account.platform == 'hh' and dialogue.external_chat_id and not is_reminder:
+                    try:
+                        from app.connectors.hh.client import hh
+                        status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
+                        
+                        if status_data and status_data.get("counters"):
+                            hh_msg_count_now = status_data["counters"].get("messages", 0)
+                            
+                            # ПРОВЕРКА: Делаем Rollback только если мы получили валидный счетчик на старте (> 0)
+                            if hh_msg_count_start > 0 and hh_msg_count_now > hh_msg_count_start:
                                 ctx_logger.warning(
                                     f"🛑 ПРЕРЫВАНИЕ (END): В HH {hh_msg_count_now} сообщений, а было {hh_msg_count_start}. "
                                     f"Контекст устарел или другой воркер уже ответил. Делаю ROLLBACK."
                                 )
                                 await db.rollback()
                                 return
+                                
+                    except Exception as e:
+                        # Если проверка упала — игнорируем, чтобы не "заткнуть" бота
+                        ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH (END): {e}")
+                elif is_reminder:
+                    ctx_logger.debug(f"🔔 Режим напоминания/дожима. Пропускаю проверку END.")
 
-                                except Exception as e:
-                                # Если проверка упала — игнорируем, чтобы не "заткнуть" бота
-                                ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH (END): {e}")
-                                elif is_reminder:
-                                ctx_logger.debug(f"🔔 Режим напоминания/дожима. Пропускаю проверку END.")
+                connector = get_connector(dialogue.account.platform)
+                
+                # Отправляем и ловим ID
+                send_result = await connector.send_message(
+                    account=dialogue.account,
+                    db=db,
+                    chat_id=dialogue.external_chat_id,
+                    text=bot_response_text
+                )
+                
+                if isinstance(send_result, dict):
+                    real_id = send_result.get("id")
 
-                                connector = get_connector(dialogue.account.platform)
+                ctx_logger.info(f"📤 Сообщение отправлено. ID: {real_id}")
+                
+                
+            except Exception as e:
+                # 3. Обработка ошибок
+                error_str = str(e).lower()
+                
+                # Ошибки "Чат закрыт" или "Заблокировано" (общие для большинства API)
+                if any(code in error_str for code in ["403", "404", "forbidden", "not found"]):
+                    ctx_logger.warning(f"Ошибка API ({dialogue.account.platform}). Закрываем диалог. Error: {e}")
+                    dialogue.status = 'closed'
+                    await db.commit()
+                    return
+                else:
+                    # Временные ошибки (500, таймаут) — возвращаем в очередь через rollback
+                    ctx_logger.error(f"❌ Сбой сети/API {dialogue.account.platform}: {e}")
+                    await db.rollback()
+                    raise e # Бросаем ошибку, чтобы воркер сделал requeue (как мы настраивали)
 
-                                # Отправляем и ловим ID
-                                send_result = await connector.send_message(
-                                account=dialogue.account,
-                                db=db,
-                                chat_id=dialogue.external_chat_id,
-                                text=bot_response_text
-                                )
+            # === 18. ФИНАЛЬНОЕ СОХРАНЕНИЕ ИСТОРИИ ===
 
-                                if isinstance(send_result, dict):
-                                real_id = send_result.get("id")
+            # Создаем запись ответа бота (Формат как в HH, но с UTC)
+            bot_msg_entry = {
+                # Используем ID от Авито, чтобы избежать дублей при синхронизации
+                'message_id': str(real_id) if real_id else f'bot_{time.time()}',
+                'role': 'assistant',
+                'content': bot_response_text,
+                'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'state': new_state,
+                'extracted_data': extracted_data
+            }
 
-                                ctx_logger.info(f"📤 Сообщение отправлено. ID: {real_id}")
+            # Склеиваем: Старая история + Новые сообщения юзера + Ответ бота
+            # Это гарантирует, что история в БД всегда будет полной и последовательной
+            final_history = (dialogue.history or []) + [bot_msg_entry]
+            
+            # Ограничиваем размер (150 как в HH)
+            dialogue.history = final_history[-150:]
+            
+            dialogue.current_state = new_state
+            dialogue.status = 'in_progress' if dialogue.status == 'new' else dialogue.status
+            dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
+            dialogue.reminder_level = 0 # Сбрасываем напоминания после успешного ответа
 
+            # Финальный коммит (с предварительным flush как в HH)
+            await db.flush()
+            await db.commit()
+            
+            ctx_logger.info(
+                f"✅ Диалог {dialogue.external_chat_id} успешно обработан. Стейт: {new_state}",
+                extra={"action": "dialogue_processed_success", "new_state": new_state}
+            )
 
-                                except Exception as e:
-                                # 3. Обработка ошибок
-                                error_str = str(e).lower()
+        except Exception as e:
+            # Глобальный перехват ошибок внутри диалога
+            ctx_logger.error(
+                f"💥 Критическая ошибка обработки диалога {dialogue_id}: {e}", 
+                exc_info=True,
+                extra={"action": "process_dialogue_critical_error"}
+            )
+            await mq.publish("tg_alerts", {
+                "type": "system",
+                "text": f"🧠 **ENGINE RETRY**\nДиалог: `{dialogue.id}`\nОшибка: `{str(e)}`\n*Задача возвращена в очередь.*",
+                "alert_type": "admin_only"
+            })
+            if db and db.is_active:
+                await db.rollback()
+            raise # Пробрасываем воркеру, чтобы он сделал nack (сообщение вернется в очередь)
 
-                                # Ошибки "Чат закрыт" или "Заблокировано" (общие для большинства API)
-                                if any(code in error_str for code in ["403", "404", "forbidden", "not found"]):
-                                ctx_logger.warning(f"Ошибка API ({dialogue.account.platform}). Закрываем диалог. Error: {e}")
-                                dialogue.status = 'closed'
-                                await db.commit()
-                                return
-                                else:
-                                # Временные ошибки (500, таймаут) — возвращаем в очередь через rollback
-                                ctx_logger.error(f"❌ Сбой сети/API {dialogue.account.platform}: {e}")
-                                await db.rollback()
-                                raise e # Бросаем ошибку, чтобы воркер сделал requeue (как мы настраивали)
+        finally:
+            # === 3. ОСВОБОЖДЕНИЕ БЛОКИРОВКИ ===
+            await release_lock(lock_key)
+            duration = time.monotonic() - dialogue_processing_start_time
+            ctx_logger.debug(f"🏁 Обработка завершена за {duration:.2f} сек. Lock снят.")
+     
 
-                                # === 18. ФИНАЛЬНОЕ СОХРАНЕНИЕ ИСТОРИИ ===
-
-                                # Создаем запись ответа бота (Формат как в HH, но с UTC)
-                                bot_msg_entry = {
-                                # Используем ID от Авито, чтобы избежать дублей при синхронизации
-                                'message_id': str(real_id) if real_id else f'bot_{time.time()}',
-                                'role': 'assistant',
-                                'content': bot_response_text,
-                                'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                                'state': new_state,
-                                'extracted_data': extracted_data
-                                }
-
-                                # Склеиваем: Старая история + Новые сообщения юзера + Ответ бота
-                                # Это гарантирует, что история в БД всегда будет полной и последовательной
-                                final_history = (dialogue.history or []) + [bot_msg_entry]
-
-                                # Ограничиваем размер (150 как в HH)
-                                dialogue.history = final_history[-150:]
-
-                                dialogue.current_state = new_state
-                                dialogue.status = 'in_progress' if dialogue.status == 'new' else dialogue.status
-                                dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
-                                dialogue.reminder_level = 0 # Сбрасываем напоминания после успешного ответа
-
-                                # Финальный коммит (с предварительным flush как в HH)
-                                await db.flush()
-                                await db.commit()
-
-                                ctx_logger.info(
-                                f"✅ Диалог {dialogue.external_chat_id} успешно обработан. Стейт: {new_state}",
-                                extra={"action": "dialogue_processed_success", "new_state": new_state}
-                                )
-
-                                except Exception as e:
-                                # Глобальный перехват ошибок внутри диалога
-                                ctx_logger.error(
-                                f"💥 Критическая ошибка обработки диалога {dialogue_id}: {e}", 
-                                exc_info=True,
-                                extra={"action": "process_dialogue_critical_error"}
-                                )
-                                await mq.publish("tg_alerts", {
-                                "type": "system",
-                                "text": f"🧠 **ENGINE RETRY**\nДиалог: `{dialogue.id}`\nОшибка: `{str(e)}`\n*Задача возвращена в очередь.*",
-                                "alert_type": "admin_only"
-                                })
-                                if db and db.is_active:
-                                await db.rollback()
-                                raise # Пробрасываем воркеру, чтобы он сделал nack (сообщение вернется в очередь)
-
-                                finally:
-                                # === 3. ОСВОБОЖДЕНИЕ БЛОКИРОВКИ ===
-                                await release_lock(lock_key)
-                                duration = time.monotonic() - dialogue_processing_start_time
-                                ctx_logger.debug(f"🏁 Обработка завершена за {duration:.2f} сек. Lock снят.")
-
-
-                                # Глобальный экземпляр
-                                dispatcher = Engine()
+# Глобальный экземпляр
+dispatcher = Engine()

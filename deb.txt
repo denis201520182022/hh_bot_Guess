@@ -1,15 +1,33 @@
-
-guess_hr_bot  | 2026-05-21 11:20:19,803 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-21 11:20:20,656 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 62 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310780397', 'dialogue_id': 62}
-guess_hr_bot  | 2026-05-21 11:20:25,908 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 62 (Платформа: hh) | ctx: {'dialogue_id': 62, 'account_id': 6, 'candidate_id': 52, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 11:20:25,909 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 62 отправлена в Engine (Count: 43) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310780397', 'dialogue_id': 62}
-guess_hr_bot  | 2026-05-21 11:20:26,203 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 62, 'account_id': 6, 'candidate_id': 52, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 11:20:32,423 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
-guess_hr_bot  | 2026-05-21 11:20:36,647 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 4525 (Cached: 49.4%) | ctx: {'dialogue_id': 62, 'account_id': 6, 'candidate_id': 52, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 11:20:36,661 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 62 (Платформа: unknown) | ctx: {'dialogue_id': 62, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | ⚠️ Диалог 62 уже обрабатывается другим воркером. Пропуск.
-guess_hr_bot  | 2026-05-21 11:20:36,662 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 62 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 62, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 11:20:36,662 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 62 в очередь для повторной попытки... | ctx: {'dialogue_id': 62, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-21 11:20:38,665 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 62 (Платформа: unknown) | ctx: {'dialogue_id': 62, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ (START): В HH 43 сообщений, а в задаче 0. Уже есть более свежая задача в очереди. Пропускаю.
+Error: invalid syntax
+guess_hr_bot  | 2026-05-21 11:34:48,881 WARN exited: engine (exit status 1; not expected)
+guess_hr_bot  | 2026-05-21 11:34:48,881 WARN exited: engine (exit status 1; not expected)
+guess_hr_bot  | 2026-05-21 11:34:49,318 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
+guess_hr_bot  | 2026-05-21 11:34:49,935 | INFO | guess_hr_01 | 🚀 [worker_services] & Interactive Bot стартуют... | ctx: {}
+guess_hr_bot  | 2026-05-21 11:34:49,946 | INFO | guess_hr_01 | 👷 Alerts Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-21 11:34:49,947 | INFO | guess_hr_01 | 👷 Services Output Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-21 11:34:50,950 INFO spawned: 'engine' with pid 24
+guess_hr_bot  | 2026-05-21 11:34:50,950 INFO spawned: 'engine' with pid 24
+guess_hr_bot  | Traceback (most recent call last):
+guess_hr_bot  |   File "/app/worker_engine.py", line 8, in <module>
+guess_hr_bot  |     from app.core.engine import dispatcher
+guess_hr_bot  |   File "/app/app/core/engine.py", line 1813
+guess_hr_bot  |     else:
+guess_hr_bot  |     ^^^^
+guess_hr_bot  | SyntaxError: invalid syntax
+guess_hr_bot  | 2026-05-21 11:34:51,329 WARN exited: engine (exit status 1; not expected)
+guess_hr_bot  | 2026-05-21 11:34:51,329 WARN exited: engine (exit status 1; not expected)
+guess_hr_bot  | 2026-05-21 11:34:54,335 INFO spawned: 'engine' with pid 25
+guess_hr_bot  | 2026-05-21 11:34:54,335 INFO spawned: 'engine' with pid 25
+guess_hr_bot  | Traceback (most recent call last):
+guess_hr_bot  |   File "/app/worker_engine.py", line 8, in <module>
+guess_hr_bot  |     from app.core.engine import dispatcher
+guess_hr_bot  |   File "/app/app/core/engine.py", line 1813
+guess_hr_bot  |     else:
+guess_hr_bot  |     ^^^^
+guess_hr_bot  | SyntaxError: invalid syntax
+guess_hr_bot  | 2026-05-21 11:34:54,684 WARN exited: engine (exit status 1; not expected)
+guess_hr_bot  | 2026-05-21 11:34:54,684 WARN exited: engine (exit status 1; not expected)
+guess_hr_bot  | 2026-05-21 11:34:55,686 INFO gave up: engine entered FATAL state, too many start retries too quickly
+guess_hr_bot  | 2026-05-21 11:34:55,686 INFO gave up: engine entered FATAL state, too many start retries too quickly
 ^C
+root@4646503-cv35803:/var/local/Bot_HH_Guess/hh_bot_Guess# 
