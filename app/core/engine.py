@@ -854,6 +854,17 @@ class Engine:
                 ctx_logger.info(f"🏁 Обработка завершена за {duration:.2f} сек.")
 
 
+    def _count_real_messages(self, history: List[dict]) -> int:
+        """Считает количество 'реальных' сообщений в истории (без системных команд)."""
+        if not history:
+            return 0
+        count = 0
+        for msg in history:
+            content = msg.get('content', '')
+            if not self._is_technical_message(content) and not str(content).startswith('[SYSTEM'):
+                count += 1
+        return count
+
     async def _process_single_dialogue(self, dialogue_id: int, db: AsyncSession, ctx_logger: logging.LoggerAdapter, task_data: Dict[str, Any]):
         """
         Адаптированная версия process_single_dialogue.
@@ -901,6 +912,25 @@ class Engine:
             if not dialogue:
                 ctx_logger.debug(f"Dialogue {dialogue_id} is locked or not found. Skipping.")
                 return
+
+            # === 2.05 ПРОВЕРКА АКТУАЛЬНОСТИ НА СТАРТЕ (HH ONLY) ===
+            hh_msg_count_start = 0
+            if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
+                try:
+                    from app.connectors.hh.client import hh
+                    status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
+                    if status_data and status_data.get("counters"):
+                        hh_msg_count_start = status_data["counters"].get("messages", 0)
+                        db_msg_count = self._count_real_messages(dialogue.history or [])
+                        
+                        if hh_msg_count_start > db_msg_count:
+                            ctx_logger.warning(
+                                f"🛑 ПРЕРЫВАНИЕ (START): В HH {hh_msg_count_start} сообщений, а в БД {db_msg_count}. "
+                                f"Сканер еще не обновил базу. Пропускаю."
+                            )
+                            return # Выходим без rollback (ничего еще не меняли)
+                except Exception as e:
+                    ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH на старте: {e}")
 
             account = dialogue.account
             if not account:
@@ -2741,28 +2771,30 @@ class Engine:
             # ФИЗИЧЕСКАЯ ОТПРАВКА (Универсальная)
             real_id = None
             try:
-                # === 17.5 ПРОВЕРКА АКТУАЛЬНОСТИ (HH ONLY) ===
-                # Перед самой отправкой проверяем, не прислал ли кандидат новое сообщение, 
-                # пока мы думали. В HH счетчик непрочитанных сбрасывается при чтении сканером.
+            # === 17.5 ПРОВЕРКА АКТУАЛЬНОСТИ (HH ONLY) ===
+                # Перед самой отправкой проверяем, не изменился ли диалог в HH,
+                # пока мы думали (LLM + Audit). 
+                # Сверяем общее количество сообщений с тем, что было на старте.
                 if dialogue.account.platform == 'hh' and dialogue.external_chat_id:
                     try:
                         from app.connectors.hh.client import hh
                         status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
                         
                         if status_data and status_data.get("counters"):
-                            unread = status_data["counters"].get("unread_messages", 0)
-                            if unread > 0:
+                            hh_msg_count_now = status_data["counters"].get("messages", 0)
+                            
+                            # Если в HH стало больше сообщений, чем было в начале нашей обработки
+                            if hh_msg_count_now > hh_msg_count_start:
                                 ctx_logger.warning(
-                                    f"🛑 ПРЕРЫВАНИЕ: Обнаружено {unread} новых сообщений в HH. "
-                                    f"Контекст устарел. Делаю ROLLBACK."
+                                    f"🛑 ПРЕРЫВАНИЕ (END): В HH {hh_msg_count_now} сообщений, а было {hh_msg_count_start}. "
+                                    f"Контекст устарел или другой воркер уже ответил. Делаю ROLLBACK."
                                 )
-                                # Откатываем транзакцию (все изменения в БД исчезнут)
                                 await db.rollback()
-                                return # Выходим, воркер-сканер скоро принесет новые сообщения
+                                return
+                                
                     except Exception as e:
-                        # Если проверка упала (после всех ретраев внутри клиента) — 
-                        # игнорируем и отправляем как есть, чтобы не "молчать".
-                        ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH (игнорируем): {e}")
+                        # Если проверка упала — игнорируем, чтобы не "заткнуть" бота
+                        ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH (END): {e}")
 
                 connector = get_connector(dialogue.account.platform)
                 

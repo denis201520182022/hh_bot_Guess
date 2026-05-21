@@ -1,93 +1,114 @@
-:28,824 INFO supervisord started with pid 1
-guess_hr_bot  | 2026-05-20 10:11:29,829 INFO spawned: 'connector' with pid 7
-guess_hr_bot  | 2026-05-20 10:11:29,829 INFO spawned: 'connector' with pid 7
-guess_hr_bot  | 2026-05-20 10:11:29,831 INFO spawned: 'engine' with pid 8
-guess_hr_bot  | 2026-05-20 10:11:29,831 INFO spawned: 'engine' with pid 8
-guess_hr_bot  | 2026-05-20 10:11:29,834 INFO spawned: 'fastapi' with pid 9
-guess_hr_bot  | 2026-05-20 10:11:29,834 INFO spawned: 'fastapi' with pid 9
-guess_hr_bot  | 2026-05-20 10:11:29,836 INFO spawned: 'scheduler' with pid 10
-guess_hr_bot  | 2026-05-20 10:11:29,836 INFO spawned: 'scheduler' with pid 10
-guess_hr_bot  | 2026-05-20 10:11:29,838 INFO spawned: 'services' with pid 11
-guess_hr_bot  | 2026-05-20 10:11:29,838 INFO spawned: 'services' with pid 11
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: connector entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: connector entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: engine entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: engine entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: fastapi entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: fastapi entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: scheduler entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: scheduler entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: services entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:30,843 INFO success: services entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-guess_hr_bot  | 2026-05-20 10:11:31,154 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,154 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,155 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,155 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,603 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,604 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,616 | INFO | guess_hr_01 | 👷 [worker_connector] запущен | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,848 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:31,849 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,098 | INFO | guess_hr_01 | 🚀 [worker_scheduler] запущен | ctx: {}
+ | 2026-05-21 10:01:27,169 | INFO | guess_hr_01 | 👷 [worker_connector] запущен | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,314 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,315 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,411 | INFO | guess_hr_01 | 🔌 [Redis] Инициализация клиента: redis://redis:6379/0 | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,412 | INFO | guess_hr_01 | ✅ [Redis] Клиент создан. | ctx: {}
 guess_hr_bot  | INFO:     Started server process [9]
 guess_hr_bot  | INFO:     Waiting for application startup.
-guess_hr_bot  | 2026-05-20 10:11:32,101 | INFO | guess_hr_01 | 🚀 [worker_main] Запуск HR-платформы... | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,215 | INFO | guess_hr_01 | 🔍 Запуск цикла активного поиска кандидатов... | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,228 | INFO | guess_hr_01 | ℹ️ [worker_main] Аккаунт Talantix API уже существует | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,230 | INFO | guess_hr_01 | ℹ️ [worker_main] Аккаунт Talantix Calendar уже существует | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,231 | INFO | guess_hr_01 | 🚀 Запуск HH Connector Service (Polling mode)... | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,231 | INFO | guess_hr_01 | ✅ [worker_main] HH коннектор запущен | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,513 | INFO | guess_hr_01 | 🚀 [worker_main] Запуск HR-платформы... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,599 | INFO | guess_hr_01 | ℹ️ [worker_main] Аккаунт Talantix API уже существует | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,601 | INFO | guess_hr_01 | ℹ️ [worker_main] Аккаунт Talantix Calendar уже существует | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,603 | INFO | guess_hr_01 | 🚀 Запуск HH Connector Service (Polling mode)... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,603 | INFO | guess_hr_01 | ✅ [worker_main] HH коннектор запущен | ctx: {}
 guess_hr_bot  | INFO:     Application startup complete.
 guess_hr_bot  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-guess_hr_bot  | 2026-05-20 10:11:32,567 | INFO | guess_hr_01 | 🌐 OpenAI клиент настроен через прокси: 38.180.203.212:8787 | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,592 | INFO | guess_hr_01 | 👷 [worker_engine] (Brain) запущен | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:32,624 | INFO | guess_hr_01 | ⏰ Напоминание ур.1 для диалога 47 | ctx: {'dialogue_id': 47, 'task': 'silence_reminder'}
-guess_hr_bot  | 2026-05-20 10:11:32,629 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 47 (Платформа: unknown) | ctx: {'dialogue_id': 47, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:32,648 | INFO | guess_hr_01 | ⏰ Напоминание ур.1 для диалога 50 | ctx: {'dialogue_id': 50, 'task': 'silence_reminder'}
-guess_hr_bot  | 2026-05-20 10:11:32,651 | INFO | guess_hr_01 | ⏰ Напоминание ур.1 для диалога 48 | ctx: {'dialogue_id': 48, 'task': 'silence_reminder'}
-guess_hr_bot  | 2026-05-20 10:11:32,655 | INFO | guess_hr_01 | ⏰ Напоминание ур.1 для диалога 51 | ctx: {'dialogue_id': 51, 'task': 'silence_reminder'}
-guess_hr_bot  | 2026-05-20 10:11:32,663 | INFO | guess_hr_01 | ⏰ Напоминание ур.1 для диалога 49 | ctx: {'dialogue_id': 49, 'task': 'silence_reminder'}
-guess_hr_bot  | 2026-05-20 10:11:32,667 | INFO | guess_hr_01 | ⏰ Напоминание ур.1 для диалога 52 | ctx: {'dialogue_id': 52, 'task': 'silence_reminder'}
-guess_hr_bot  | 2026-05-20 10:11:32,685 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 50 (Платформа: unknown) | ctx: {'dialogue_id': 50, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:32,686 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 48 (Платформа: unknown) | ctx: {'dialogue_id': 48, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:32,691 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 51 (Платформа: unknown) | ctx: {'dialogue_id': 51, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:32,702 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 49 (Платформа: unknown) | ctx: {'dialogue_id': 49, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:32,704 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 52 (Платформа: unknown) | ctx: {'dialogue_id': 52, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:32,999 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5307031345 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 50, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:33,018 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306664213 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 48, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:33,027 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306256865 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 47, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:33,033 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306539573 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 52, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:33,039 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5305427396 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 49, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:33,082 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306455156 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 51, 'account_id': None, 'candidate_id': None, 'platform': 'unknown', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:33,339 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response'}
-guess_hr_bot  | 2026-05-20 10:11:33,609 | INFO | guess_hr_01 | 📱 Получен номер телефона для кандидата 8da050bf000cecdd1600234e76325157374c6a: +7 916 360-93-02 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:33,642 | INFO | guess_hr_01 | 📁 HH_API: Перемещение отклика 5302536678 в папку 'consider'... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:33,679 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-20 10:11:33,682 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
-guess_hr_bot  | 2026-05-20 10:11:33,824 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5302536678 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:33,824 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 55 (телефон: +7 916 360-93-02, HH Resume: 8da050bf000cecdd1600234e76325157374c6a) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:33,985 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 47 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5306256865', 'dialogue_id': 47}
-guess_hr_bot  | 2026-05-20 10:11:34,095 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 48 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5306664213', 'dialogue_id': 48}
-guess_hr_bot  | 2026-05-20 10:11:34,263 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:34,446 | INFO | guess_hr_01 | ✅ Найден нужный кандидат в Talantix: person_id=136842235 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:34,643 | INFO | guess_hr_01 | 🎯 Найдено совпадение! Вакансия Talantix 370569 ('Продавец-консультант GUESS (ТЦ Каширская Плаза)') привязана к HH 132326437 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:34,751 | INFO | guess_hr_01 | ✅ Данные Talantix успешно привязаны к диалогу 55: person_id=136842235, vacancy_id=370569 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:34,996 | INFO | guess_hr_01 | ✅ Новый диалог HH 5302536678 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:35,154 | INFO | guess_hr_01 | 🚀 [worker_services] & Interactive Bot стартуют... | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:35,155 | INFO | guess_hr_01 | 👷 Alerts Consumer запущен... | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:35,156 | INFO | guess_hr_01 | 👷 Services Output Consumer запущен... | ctx: {}
-guess_hr_bot  | 2026-05-20 10:11:38,995 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 47 (Платформа: hh) | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:38,997 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 47 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5306256865', 'dialogue_id': 47}
-guess_hr_bot  | 2026-05-20 10:11:39,020 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:39,105 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 48 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5306664213', 'dialogue_id': 48}
-guess_hr_bot  | 2026-05-20 10:11:39,595 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 48 (Платформа: hh) | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:39,618 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:40,000 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 55 (Платформа: hh) | ctx: {'dialogue_id': 55, 'account_id': 6, 'candidate_id': 45, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:40,002 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 55 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5302536678'}
-guess_hr_bot  | 2026-05-20 10:11:40,028 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 55, 'account_id': 6, 'candidate_id': 45, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:44,497 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7579 (Cached: 49.8%) | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:44,507 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306664213 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 48, 'account_id': 6, 'candidate_id': 37, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:45,505 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7580 (Cached: 0.0%) | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:45,516 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5306256865 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 47, 'account_id': 6, 'candidate_id': 38, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:45,547 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6438 (Cached: 95.9%) | ctx: {'dialogue_id': 55, 'account_id': 6, 'candidate_id': 45, 'platform': 'hh', 'step': 'engine_start'}
-guess_hr_bot  | 2026-05-20 10:11:45,555 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5302536678 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 55, 'account_id': 6, 'candidate_id': 45, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:01:27,781 | INFO | guess_hr_01 | 🚀 [worker_scheduler] запущен | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:27,872 | INFO | guess_hr_01 | 🔍 Запуск цикла активного поиска кандидатов... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:28,176 | INFO | guess_hr_01 | 🌐 OpenAI клиент настроен через прокси: 38.180.203.212:8787 | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:28,192 | INFO | guess_hr_01 | 👷 [worker_engine] (Brain) запущен | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:29,924 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:30,530 | INFO | guess_hr_01 | 🚀 [worker_services] & Interactive Bot стартуют... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:30,532 | INFO | guess_hr_01 | 👷 Alerts Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:01:30,532 | INFO | guess_hr_01 | 👷 Services Output Consumer запущен... | ctx: {}
+guess_hr_bot  | 2026-05-21 10:02:38,710 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response'}
+guess_hr_bot  | 2026-05-21 10:02:38,973 | INFO | guess_hr_01 | 📱 Получен номер телефона для кандидата 75985089000fb1224f00234e765264746f5547: +7 961 440-12-64 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5310646935'}
+guess_hr_bot  | 2026-05-21 10:02:39,064 | INFO | guess_hr_01 | 📁 HH_API: Перемещение отклика 5310646935 в папку 'consider'... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5310646935'}
+guess_hr_bot  | 2026-05-21 10:02:39,274 | INFO | guess_hr_01 | ✅ УСПЕХ: Отклик 5310646935 перемещен в 'consider'. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5310646935'}
+guess_hr_bot  | 2026-05-21 10:02:39,274 | INFO | guess_hr_01 | 🔄 [Talantix Sync] Начинаю для диалога 61 (телефон: +7 961 440-12-64, HH Resume: 75985089000fb1224f00234e765264746f5547) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5310646935'}
+guess_hr_bot  | 2026-05-21 10:02:43,169 | INFO | guess_hr_01 | ❌ Среди найденных по телефону кандидатов нет того, у кого резюме 75985089000fb1224f00234e765264746f5547 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5310646935'}
+guess_hr_bot  | 2026-05-21 10:02:43,628 | INFO | guess_hr_01 | ✅ Новый диалог HH 5310646935 успешно создан и инициализирован. | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5310646935'}
+guess_hr_bot  | 2026-05-21 10:02:48,633 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:02:48,635 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'response', 'chat_id': '5310646935'}
+guess_hr_bot  | 2026-05-21 10:02:48,767 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:02:58,301 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 6438 (Cached: 0.0%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:02:58,572 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5310646935 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:03:31,834 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:03:32,042 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:37,058 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:03:37,060 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:37,084 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:03:37,783 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:03:43,730 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:03:49,855 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:03:51,645 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7516 (Cached: 81.8%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ: Обнаружено 3 новых сообщений в HH. Контекст устарел. Делаю ROLLBACK.
+guess_hr_bot  | 2026-05-21 10:03:52,035 | INFO | guess_hr_01 | 📩 Добавлено 3 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:52,250 | INFO | guess_hr_01 | ⏳ Сообщения для HH чата 5310646935 накапливаются... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:52,594 | INFO | guess_hr_01 | ⏳ Сообщения для HH чата 5310646935 накапливаются... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:55,777 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:03:56,016 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:56,021 | INFO | guess_hr_01 | ⏳ Сообщения для HH чата 5310646935 накапливаются... | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:57,049 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:03:57,053 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:03:57,078 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:08,451 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:04:09,360 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7616 (Cached: 0.0%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ: Обнаружено 3 новых сообщений в HH. Контекст устарел. Делаю ROLLBACK.
+guess_hr_bot  | 2026-05-21 10:04:09,801 | INFO | guess_hr_01 | 📩 Добавлено 3 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:04:14,750 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:04:14,809 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:14,810 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:04:14,969 | INFO | guess_hr_01 | 📩 Добавлено 2 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:04:15,020 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:19,991 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:19,992 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:19,992 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:19,992 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:04:21,361 | INFO | guess_hr_01 | 📥 [Connector] Унификация события от HH (Source: hh_poller) | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider'}
+guess_hr_bot  | 2026-05-21 10:04:21,995 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:21,996 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:21,996 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:23,999 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:24,000 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:24,000 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:26,002 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:26,004 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:26,004 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:26,301 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7655 (Cached: 94.4%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 🛑 ПРЕРЫВАНИЕ: Обнаружено 1 новых сообщений в HH. Контекст устарел. Делаю ROLLBACK.
+guess_hr_bot  | 2026-05-21 10:04:26,696 | INFO | guess_hr_01 | 📩 Добавлено 1 новых сообщений в историю диалога 61 | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:04:28,006 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:28,029 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:31,709 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:31,710 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:31,711 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:31,711 | INFO | guess_hr_01 | 🚀 [Debounce HH] Пачка сообщений диалога 61 отправлена в Engine | ctx: {'source': 'hh_poller', 'account_id': 6, 'folder': 'consider', 'chat_id': '5310646935', 'dialogue_id': 61}
+guess_hr_bot  | 2026-05-21 10:04:31,830 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
+guess_hr_bot  | 2026-05-21 10:04:33,713 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:33,714 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:33,714 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:35,717 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:35,718 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:35,719 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:37,720 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:37,722 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:37,722 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:38,226 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7669 (Cached: 94.3%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:39,459 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5310646935 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:39,725 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | ⚠️ Диалог 61 уже обрабатывается другим воркером. Пропуск.
+guess_hr_bot  | 2026-05-21 10:04:39,726 | WARNING | guess_hr_01 | ⚠️ [Engine] Диалог 61 заблокирован другим воркером. Пропуск и повтор... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:39,726 | INFO | guess_hr_01 | ♻️ Возвращаем задачу диалога 61 в очередь для повторной попытки... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:41,731 | INFO | guess_hr_01 | 🧠 [Engine] Обработка ИИ-логики диалога ID: 61 (Платформа: hh) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:41,756 | INFO | guess_hr_01 | 🧬🧬🧬 [Action: llm_request_start] Model: gpt-4o-mini | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:47,450 | INFO | guess_hr_01 | ✅ LLM Response. [Action: llm_response_success] Tokens: 7661 (Cached: 93.1%) | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:04:47,695 | INFO | guess_hr_01 | ✉️ HH_API: Отправка сообщения в диалог 5310646935 (Аккаунт: Guess(Юлия))... | ctx: {'dialogue_id': 61, 'account_id': 6, 'candidate_id': 51, 'platform': 'hh', 'step': 'engine_start'}
+guess_hr_bot  | 2026-05-21 10:07:33,699 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
