@@ -929,6 +929,11 @@ class Engine:
                                 f"Сканер еще не обновил базу. Пропускаю."
                             )
                             return # Выходим без rollback (ничего еще не меняли)
+                        else:
+                            ctx_logger.info(
+                                f"✅ HH Check (START): Сообщений в HH = {hh_msg_count_start - 1}, в БД = {db_msg_count}. "
+                                f"Продолжаю обработку."
+                            )
                 except Exception as e:
                     ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH на старте: {e}")
 
