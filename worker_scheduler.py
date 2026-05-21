@@ -280,23 +280,31 @@ class Scheduler:
                     await asyncio.sleep(900)
                     continue
 
+                # Проверяем, включен ли поиск хотя бы на одной платформе
+                avito_enabled = settings.platforms.avito.enabled and settings.platforms.avito.outbound_search.enabled
+                hh_enabled = settings.platforms.hh.enabled and settings.platforms.hh.outbound_search.enabled
+                
+                logger.debug(f"DEBUG: avito_enabled={avito_enabled} (plat={settings.platforms.avito.enabled}, out={settings.platforms.avito.outbound_search.enabled})")
+                logger.debug(f"DEBUG: hh_enabled={hh_enabled} (plat={settings.platforms.hh.enabled}, out={settings.platforms.hh.outbound_search.enabled})")
+
+                if not avito_enabled and not hh_enabled:
+                    logger.debug("🔍 Активный поиск (Outbound) отключен в конфиге.")
+                    await asyncio.sleep(900)
+                    continue
+
                 logger.info("🔍 Запуск цикла активного поиска кандидатов...")
 
                 # === ПРОВЕРКА AVITO ===
-                if settings.platforms.avito.enabled and settings.platforms.avito.outbound_search.enabled:
+                if avito_enabled:
                     logger.info("🔍 Avito outbound поиск включен")
                     await avito_search_service.discover_and_propose()
                     logger.info("✅ Avito outbound поиск завершен")
-                else:
-                    logger.debug("🔍 Avito outbound поиск отключен в конфиге")
 
                 # === ПРОВЕРКА HH ===
-                if settings.platforms.hh.enabled and settings.platforms.hh.outbound_search.enabled:
+                if hh_enabled:
                     logger.info("🔍 HH outbound поиск включен")
                     await hh_search_service.discover_and_propose()
                     logger.info("✅ HH outbound поиск завершен")
-                else:
-                    logger.debug("🔍 HH outbound поиск отключен в конфиге")
 
             except Exception as e:
                 error_msg = f"❌ Ошибка в цикле активного поиска [worker_scheduler]:\n{str(e)}"
