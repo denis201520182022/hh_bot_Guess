@@ -1,33 +1,30 @@
-Error: invalid syntax
-guess_hr_bot  | 2026-05-21 11:34:48,881 WARN exited: engine (exit status 1; not expected)
-guess_hr_bot  | 2026-05-21 11:34:48,881 WARN exited: engine (exit status 1; not expected)
-guess_hr_bot  | 2026-05-21 11:34:49,318 | INFO | guess_hr_01 | ✅ Кэш Redis обновлен. Загружено блоков: 10. Блоки: ['#ROLE_AND_STYLE#', '#DECLINED_VAC#', '#QUALIFICATION_RULES#', '#FINAL_ASK#', '#PART_TIME_RULES#', '#SHIFT_RULES#', '#MILITARY_RULES#', '#SCHEDULING_ALGORITHM#', '#POSTCVAL#', '#FAQ#'] | ctx: {}
-guess_hr_bot  | 2026-05-21 11:34:49,935 | INFO | guess_hr_01 | 🚀 [worker_services] & Interactive Bot стартуют... | ctx: {}
-guess_hr_bot  | 2026-05-21 11:34:49,946 | INFO | guess_hr_01 | 👷 Alerts Consumer запущен... | ctx: {}
-guess_hr_bot  | 2026-05-21 11:34:49,947 | INFO | guess_hr_01 | 👷 Services Output Consumer запущен... | ctx: {}
-guess_hr_bot  | 2026-05-21 11:34:50,950 INFO spawned: 'engine' with pid 24
-guess_hr_bot  | 2026-05-21 11:34:50,950 INFO spawned: 'engine' with pid 24
-guess_hr_bot  | Traceback (most recent call last):
-guess_hr_bot  |   File "/app/worker_engine.py", line 8, in <module>
-guess_hr_bot  |     from app.core.engine import dispatcher
-guess_hr_bot  |   File "/app/app/core/engine.py", line 1813
-guess_hr_bot  |     else:
-guess_hr_bot  |     ^^^^
-guess_hr_bot  | SyntaxError: invalid syntax
-guess_hr_bot  | 2026-05-21 11:34:51,329 WARN exited: engine (exit status 1; not expected)
-guess_hr_bot  | 2026-05-21 11:34:51,329 WARN exited: engine (exit status 1; not expected)
-guess_hr_bot  | 2026-05-21 11:34:54,335 INFO spawned: 'engine' with pid 25
-guess_hr_bot  | 2026-05-21 11:34:54,335 INFO spawned: 'engine' with pid 25
-guess_hr_bot  | Traceback (most recent call last):
-guess_hr_bot  |   File "/app/worker_engine.py", line 8, in <module>
-guess_hr_bot  |     from app.core.engine import dispatcher
-guess_hr_bot  |   File "/app/app/core/engine.py", line 1813
-guess_hr_bot  |     else:
-guess_hr_bot  |     ^^^^
-guess_hr_bot  | SyntaxError: invalid syntax
-guess_hr_bot  | 2026-05-21 11:34:54,684 WARN exited: engine (exit status 1; not expected)
-guess_hr_bot  | 2026-05-21 11:34:54,684 WARN exited: engine (exit status 1; not expected)
-guess_hr_bot  | 2026-05-21 11:34:55,686 INFO gave up: engine entered FATAL state, too many start retries too quickly
-guess_hr_bot  | 2026-05-21 11:34:55,686 INFO gave up: engine entered FATAL state, too many start retries too quickly
-^C
-root@4646503-cv35803:/var/local/Bot_HH_Guess/hh_bot_Guess# 
+
+
+Надо объединить аудитора и hint подсказки
+Финальную валидацию слотов оставить отдельно
+Когда идет процесс записи (стейты записи) надо держать системе ухо на чеку: определять правильно дату которую хочет пользователь и давать пользователю информацию о доступности.
+Для получения свободных дат и слотов надо определиться с датой
+Пользователь изъявляет свое желание в диалоге и основной запрос может заполнить поле interview_date но основная модель тупая она неправильно определяет и заполняет дату
+Поэтому нам нужен умный аудитор, который будет понимать какую дату хочет пользователь и исправлять основную модель.
+Но если пользователь выбрал день когда нет записи основная модель должна об этом узнать, сказать пользователю и в interview_date нулл поставить, и аудитор не должен будет исправлять такое поведение
+Как это определить в коде?
+
+Если первая модель вернула дату или есть слова маркеры времени (), а также то входим в блок валидации и подсказки:
+
+Если предидущее сообщение это системная команда про дату и слоты:
+Надо парсить эту команду и если модель ее выполнила (interview_date от основной модели соответствует команде) то все окей, аудит и команду новую не надо пропускаем следующий блок.
+
+
+Если аудит нужен все таки 
+В аудитора отправляем историю диалога (последние 10 сообщений, не берем [SYSTEM COMMAND]), аудитор возвращает нам правильную дату
+Мы сравниваем ее с ответом основной модели, если не сходится отправляем алерт в тг (как сейчас)
+
+С правильной датой идем в гугл за слотами: 
+- Если есть слоты кладем системную команду что пользователь выбрал такой то день (дату, день недели) и в этот день есть такие то слоты, расскажи о них пользователю и в interview_date поставь {дату} и отправляем на перегенерацию
+- Если нет слотов в этот день {дата}то кладем команду что слотов нет, к сожалению, скажи об этом пользователю и в interview_date поставь null,  и отправляем на перегенерацию
+
+Примечание: перед тем как положить системную команду в историю надо проверить, а последнее сообщение это случаем ли не копия нашей новой команды? Если копия то нахуй не нужно новую ложить
+Примечание2: Убрать жесткий запрет на воскресенье - все берем из таблицы гугл
+
+
+
