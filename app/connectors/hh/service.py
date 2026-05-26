@@ -555,7 +555,7 @@ class HHConnectorService(BaseConnector):
                 if dialogue and dialogue.candidate:
                     candidate_name = dialogue.candidate.full_name
                 elif folder == 'response':
-                    resume_info = item.get('resume', {})
+                    resume_info = item.get('resume') or {}
                     candidate_first_name = resume_info.get('first_name', 'Неизвестно')
                     candidate_last_name = resume_info.get('last_name', '')
                     candidate_name = f"{candidate_first_name} {candidate_last_name}".strip()
@@ -575,10 +575,14 @@ class HHConnectorService(BaseConnector):
                     return
 
                 # Извлекаем данные кандидата из отклика
-                resume_info = item.get('resume', {})
+                resume_info = item.get('resume')
+                if not resume_info:
+                    logger.warning(f"⚠️ Отклик {hh_response_id} пришел с пустыми данными резюме (resume=None). Пропуск.")
+                    return
+
                 hh_resume_id = resume_info.get('id')
                 if not hh_resume_id:
-                    logger.warning(f"Отклик {hh_response_id} пришел без resume_id. Пропуск.")
+                    logger.warning(f"⚠️ Отклик {hh_response_id} пришел без resume_id. Пропуск.")
                     return
 
                 candidate_first_name = resume_info.get('first_name', 'Неизвестно')
