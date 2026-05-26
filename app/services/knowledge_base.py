@@ -65,7 +65,7 @@ class KnowledgeBaseService:
                 self.ttl, 
                 json.dumps(library, ensure_ascii=False)
             )
-            logger.info(f"✅ Кэш Redis обновлен. Загружено блоков: {len(library)}. Блоки: {list(library.keys())}")
+            logger.debug(f"✅ Кэш Redis обновлен. Загружено блоков: {len(library)}. Блоки: {list(library.keys())}")
             return library  # Возвращаем данные, если всё ок
         
         # Если библиотека пуста (этот код теперь достижим)

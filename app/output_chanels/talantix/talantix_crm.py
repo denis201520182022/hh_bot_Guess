@@ -52,7 +52,7 @@ class TalantixClient:
         except Exception:
             self.logger.error("Не удалось отправить алерт")
 
-    async def get_token(self, account: Account, db: AsyncSession) -> str:
+    async def get_token(self, account: Account, db: AsyncSession, force_refresh: bool = False) -> str:
         """
         Получение/обновление access_token.
         """
@@ -65,7 +65,7 @@ class TalantixClient:
         now_ts = int(datetime.datetime.now(datetime.UTC).timestamp())
 
         # Проверяем валидность текущего токена (с запасом 300 секунд)
-        if auth_data.expires_in + auth_data.created_at > now_ts + 300:
+        if not force_refresh and auth_data.expires_in + auth_data.created_at > now_ts + 300:
             return auth_data.access_token
 
         lock_key = f"talantix_token_lock:{account.id}"
@@ -97,6 +97,12 @@ class TalantixClient:
             await db.commit()
 
             self.logger.info(f"✅ Токен успешно получен для аккаунта {account.id}")
+            
+            await self._send_alert(
+                f"✅ **Talantix OAuth Refresh Success**\n"
+                f"Аккаунт: {account.name} (ID: {account.id})\n"
+                f"Статус: Новый access_token получен и сохранен."
+            )
             return token_data.access_token
 
         except httpx.HTTPStatusError as e:
@@ -124,6 +130,8 @@ class TalantixClient:
         self, query: str, variables: dict | None, account: Account, db: AsyncSession, **kwargs
     ) -> GraphQLResponse:
         url = self.base_url + "/graphql"
+        
+        # Первая попытка
         token = await self.get_token(account, db)
 
         headers = kwargs.pop("headers", {})
@@ -138,6 +146,27 @@ class TalantixClient:
                 resp = await self.http_client.request(
                     "POST", url, json=data, headers=headers, **kwargs
                 )
+
+            # Обработка 401 Unauthorized (истекший токен)
+            if resp.status_code == 401:
+                try:
+                    error_data = resp.json()
+                    if error_data.get("type") == "invalid_token" and error_data.get("detail") == "token_expired":
+                        self.logger.warning(f"🔄 Токен Talantix для {account.name} протух (401 token_expired). Принудительное обновление...")
+                        
+                        # Принудительно обновляем токен
+                        token = await self.get_token(account, db, force_refresh=True)
+                        headers["Authorization"] = f"Bearer {token}"
+                        
+                        # Повторная попытка
+                        async with DistributedSemaphore(
+                            name="talantix_api_global", limit=TALANTIX_CONCURRENCY_LIMIT
+                        ):
+                            resp = await self.http_client.request(
+                                "POST", url, json=data, headers=headers, **kwargs
+                            )
+                except Exception as e:
+                    self.logger.error(f"Ошибка при обработке 401 Talantix: {e}")
 
             resp.raise_for_status()
             return GraphQLResponse.model_validate(resp.json())

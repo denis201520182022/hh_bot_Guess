@@ -854,6 +854,17 @@ class Engine:
                 ctx_logger.info(f"🏁 Обработка завершена за {duration:.2f} сек.")
 
 
+    def _count_real_messages(self, history: List[dict]) -> int:
+        """Считает количество 'реальных' сообщений в истории (без системных команд)."""
+        if not history:
+            return 0
+        count = 0
+        for msg in history:
+            content = msg.get('content', '')
+            if not self._is_technical_message(content) and not str(content).startswith('[SYSTEM'):
+                count += 1
+        return count
+
     async def _process_single_dialogue(self, dialogue_id: int, db: AsyncSession, ctx_logger: logging.LoggerAdapter, task_data: Dict[str, Any]):
         """
         Адаптированная версия process_single_dialogue.
@@ -901,6 +912,39 @@ class Engine:
             if not dialogue:
                 ctx_logger.debug(f"Dialogue {dialogue_id} is locked or not found. Skipping.")
                 return
+
+            # === 2.05 ПРОВЕРКА АКТУАЛЬНОСТИ НА СТАРТЕ (HH ONLY) ===
+            hh_msg_count_start = 0
+            trigger = task_data.get("trigger", "unknown")
+            is_reminder = trigger in ["silence_reminder", "follow_up"]
+
+            if dialogue.account.platform == 'hh' and dialogue.external_chat_id and not is_reminder:
+                try:
+                    from app.connectors.hh.client import hh
+                    status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
+                    if status_data and status_data.get("counters"):
+                        hh_msg_count_start = status_data["counters"].get("messages", 0)
+                        
+                        # Счетчик из задачи (то, что видел сканер в момент формирования)
+                        task_msg_count = task_data.get("initial_msg_count", 0)
+                        
+                        # Если в HH уже больше, чем было в задаче — значит, пока задача шла,
+                        # сканер успел прислать еще одну, более свежую.
+                        if hh_msg_count_start > task_msg_count:
+                            ctx_logger.warning(
+                                f"🛑 ПРЕРЫВАНИЕ (START): В HH {hh_msg_count_start} сообщений, а в задаче {task_msg_count}. "
+                                f"Уже есть более свежая задача в очереди. Пропускаю."
+                            )
+                            return # Выходим без rollback
+                        else:
+                            ctx_logger.info(
+                                f"✅ HH Check (START): В HH {hh_msg_count_start} сообщений, в задаче {task_msg_count}. "
+                                f"Продолжаю обработку."
+                            )
+                except Exception as e:
+                    ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH на старте: {e}")
+            elif is_reminder:
+                ctx_logger.info(f"🔔 Режим напоминания/дожима ({trigger}). Пропускаю проверку START.")
 
             account = dialogue.account
             if not account:
@@ -1387,7 +1431,11 @@ class Engine:
                 await db.commit()
                 
                 # 4. Отправляем задачу на переобработку с новой системной командой
-                await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "state_correction_retry"})
+                await mq.publish("engine_tasks", {
+                    "dialogue_id": dialogue.id, 
+                    "trigger": "state_correction_retry",
+                    "initial_msg_count": hh_msg_count_start
+                })
                 
                 ctx_logger.info(f"Отправлено на исправление галлюцинации стейта: {new_state}")
                 return # Обязательно выходим, чтобы текущая обработка прекратилась
@@ -1417,166 +1465,158 @@ class Engine:
                 # Входим, если есть дата в JSON или обсуждение времени в тексте
                 if interview_date or has_time_keywords:
                     ctx_logger.info("Есть дата или маркеры")
-                    # --- 12.1 УМНЫЙ АУДИТ ДАТЫ (Smart Model) ---
 
-                    # Берем сохраненную дату из метаданных (аналог interview_datetime_utc в HH)
-                    stored_meta = dialogue.metadata_json or {}
-                    stored_date = stored_meta.get("interview_date")
+                    # --- [НОВОЕ] ПРОВЕРКА: ВЫПОЛНИЛ ЛИ БОТ ПРЕДЫДУЩУЮ КОМАНДУ? ---
+                    is_obeyed = False
+                    last_msg = dialogue.history[-1] if dialogue.history else {}
+                    last_content = str(last_msg.get("content", ""))
 
-                    run_audit = True
-                    # Экономим деньги: если дата совпадает с сохраненной и юзер не пишет про время -> пропускаем
-                    if stored_date == interview_date and not has_time_keywords:
-                        ctx_logger.debug("Дата совпадает с сохраненной и нет новых триггеров. Пропуск аудита.")
-                        run_audit = False
-                    elif stored_date == interview_date: 
-                        ctx_logger.info("Дата совпадает, но найдены временные триггеры. ПРИНУДИТЕЛЬНЫЙ АУДИТ.")
+                    if last_msg.get("role") == "user" and "[SYSTEM COMMAND]" in last_content:
+                        import re
+                        # Ищем в прошлой команде указание установить дату или null
+                        target_date_match = re.search(r"interview_date' в JSON на '(\d{4}-\d{2}-\d{2})'", last_content)
+                        target_null = "interview_date' в JSON на null" in last_content
 
-                    if run_audit:
-                        ctx_logger.info(f"🔍 Запуск аудита даты: {interview_date}")
+                        if target_date_match and interview_date == target_date_match.group(1):
+                            is_obeyed = True
+                            ctx_logger.info(f"✅ Бот выполнил инструкцию по дате: {interview_date}")
+                        elif target_null and (interview_date is None or interview_date == ""):
+                            is_obeyed = True
+                            ctx_logger.info("✅ Бот выполнил инструкцию: установил interview_date в null")
+
+                    if not is_obeyed:
+                        # --- 12.1 ЕДИНЫЙ ЦЕНТР ВАЛИДАЦИИ ДАТЫ И ДОСТУПНОСТИ СЛОТОВ ---
+                        # Мы объединяем Аудитора (понимание намерений) и Гугл Таблицу (реальность)
+
+                        # 1. Узнаем, какую дату реально ХОЧЕТ пользователь (через Умного Аудитора)
                         full_hist = (dialogue.history or [])
-                        all_slots = await sheets_service.get_all_slots_map(sheet_name)
-                        calendar_ctx = self._generate_calendar_context_2(all_slots) 
+                        # Убираем системные команды для Аудитора, чтобы он не запутался в прошлых исправлениях
+                        clean_hist_for_audit = [m for m in full_hist if not str(m.get("content", "")).startswith("[SYSTEM")]
                         
-                        verified_date, audit_reason = await self._verify_date_audit(db, dialogue, interview_date, full_hist, calendar_ctx, ctx_logger.extra) 
-                        ctx_logger.info(verified_date, ' ОБЪЯСНЕНИЕ МОДЕЛИ ', audit_reason)
-                        # Если аудитор не согласен
-                        if verified_date != interview_date and verified_date != "none":
-                            ctx_logger.warning(f"🚨 ГАЛЛЮЦИНАЦИЯ ДАТЫ! LLM: {interview_date}, Аудитор: {verified_date}")
+                        # Оптимизация: запускаем Аудитора только если дата новая или есть маркеры времени
+                        stored_meta = dialogue.metadata_json or {}
+                        stored_date = stored_meta.get("interview_date")
+                        
+                        run_audit = True
+                        verified_date = "none"
+                        audit_reason = "Ожидание аудита"
+
+                        if stored_date == interview_date and not has_time_keywords:
+                            ctx_logger.debug("Дата совпадает с сохраненной и нет новых триггеров. Пропуск аудита.")
+                            run_audit = False
+                            verified_date = interview_date
+                            audit_reason = "Совпадение с метаданными"
+                        
+                        if run_audit:
+                            ctx_logger.info(f"🔍 Запуск аудита даты: {interview_date}")
+                            all_slots_map = await sheets_service.get_all_slots_map(sheet_name)
+                            calendar_ctx = self._generate_calendar_context_2(all_slots_map)
                             
-                            # Вычисляем день недели для сообщения
-                            try:
-                                v_date_obj = datetime.datetime.strptime(verified_date, '%Y-%m-%d')
-                                weekdays_ru = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
-                                v_weekday = weekdays_ru[v_date_obj.weekday()]
-                            except:
-                                v_weekday = "указанный день"
-
-                            await mq.publish("tg_alerts", {
-                                "type": "hallucination",
-                                "dialogue_id": dialogue.id,
-                                "external_chat_id": dialogue.external_chat_id,
-                                "user_said": combined_masked_message, # Что написал юзер последним
-                                "llm_suggested": interview_date,      # Что придумал бот
-                                "corrected_val": verified_date,       # Как исправил аудитор
-                                "reasoning": audit_reason,            # Обоснование от GPT-4o
-                                "history_text": self._get_history_as_text(dialogue) # Текст истории
-                            })
-
-                            correction_msg = (
-                                f"[SYSTEM COMMAND] В прошлом шаге ты ошибся и предложил дату {interview_date}. "
-                                f"На самом деле пользователь выбрал {v_weekday} ({verified_date}) согласно календарю. "
-                                f"Сгенерируй ответ заново, подтвердив ПРАВИЛЬНУЮ дату ({v_weekday}, {verified_date}). "
-                                f"ОБЯЗАТЕЛЬНО обнови поле 'interview_date' в JSON на '{verified_date}'. Если запись на этот день недоступна, то предложи выбрать другой день."
+                            verified_date, audit_reason = await self._verify_date_audit(
+                                db, dialogue, interview_date, clean_hist_for_audit, calendar_ctx, ctx_logger.extra
                             )
-                            
-                            sys_msg = {
-                                "role": "user", 
-                                "content": correction_msg, 
-                                "message_id": f"sys_audit_{time.time()}",
-                                "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
-                            }
-                            
-                            # Сохраняем и перезапускаем
-                            dialogue.history = (dialogue.history or []) + [sys_msg]
-                            # В HH мы клали user_entries_to_history в pending, но здесь pending нет, поэтому пишем сразу в историю
-                            # И важно обновить last_message_at, чтобы не потеряться
-                            dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
-                            await db.commit()
-                            
-                            
-                            await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "system_audit_retry"})
-                            ctx_logger.info(f"♻️ Отправлено на исправление даты ({v_weekday}).")
-                            return 
+                            ctx_logger.info(f"Auditor result: {verified_date} | Reason: {audit_reason}")
 
-                        # Если аудитор подтвердил или исправил на валидную дату
-                        if verified_date != "none":
-                            interview_date = verified_date
+                        if verified_date and verified_date != "none":
+                            # 2. Проверяем РЕАЛЬНУЮ доступность этой даты в Google Sheets
+                            try:
+                                now_msk = datetime.datetime.now(MOSCOW_TZ)
+                                today_str = now_msk.strftime('%Y-%m-%d')
+                                
+                                available_slots = await sheets_service.get_available_slots(verified_date, sheet_name)
+                                
+                                # Фильтр "Сегодня": только слоты, на которые человек успеет доехать (+1 час запаса)
+                                if verified_date == today_str:
+                                    available_slots = [s for s in available_slots if int(s.split(':')[0]) > now_msk.hour]
 
-                    if interview_date:
-                        # --- ШАГ 2: ПОДСКАЗКА ДНЯ НЕДЕЛИ И РЕГЛАМЕНТА (HINT) ---
-                        # Если дата подтверждена, проверяем, что на неё есть в Google Таблице
-                        try:
-                            # 1. Получаем текущее время в МСК для сравнения (логика "Сегодня")
-                            now_msk = datetime.datetime.now(MOSCOW_TZ)
-                            today_str = now_msk.strftime('%Y-%m-%d')
-                            current_hour = now_msk.hour
+                                # Определяем день недели для текста системных команд
+                                try:
+                                    v_date_obj = datetime.datetime.strptime(verified_date, '%Y-%m-%d')
+                                    weekdays_ru = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
+                                    v_weekday = weekdays_ru[v_date_obj.weekday()]
+                                except:
+                                    v_weekday = "указанный день"
 
-                            # 2. Запрашиваем РЕАЛЬНЫЕ свободные слоты из Google Sheets
-                            available_slots = await sheets_service.get_available_slots(interview_date, sheet_name)
-
-                            # 3. Применяем фильтрацию для "Сегодня" (как в HH)
-                            if interview_date == today_str:
-                                # Оставляем только те слоты, которые минимум на 1 час позже текущего времени
-                                available_slots = [s for s in available_slots if int(s.split(':')[0]) > current_hour]
-
-                            # 4. Вычисляем день недели для текста команды
-                            v_date_obj = datetime.datetime.strptime(interview_date, '%Y-%m-%d')
-                            weekday_idx = v_date_obj.weekday()
-                            weekdays_ru = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
-                            correct_weekday = weekdays_ru[weekday_idx]
-
-                            # 5. Формируем текст инструкции (Системная команда)
-                            hint_content = None
-
-                            if weekday_idx == 6: # Воскресенье (даже если в таблице есть строки, мы их игнорим по логике HH)
-                                hint_content = (
-                                    f"[SYSTEM COMMAND] Внимание!!! {interview_date} это {correct_weekday}!!! "
-                                    f"По воскресеньям собеседования не проводятся. Запись невозможна. Предложи другой день."
-                                )
-                            elif not available_slots: # Если в таблице нет слотов "Свободно" или на сегодня всё вышло
-                                if interview_date == today_str:
-                                    time_now = now_msk.strftime('%H:%M')
-                                    hint_content = (
-                                        f"[SYSTEM COMMAND] Внимание!!! На сегодня ({interview_date}) запись уже окончена "
-                                        f"(сейчас {time_now}). Предложи кандидату выбрать другой день (завтра или ближайший будний)."
-                                    )
+                                # 3. ПРИНЯТИЕ РЕШЕНИЯ (Анализ расхождений)
+                                is_day_full = not available_slots
+                                is_hallucination = (verified_date != interview_date)
+                                
+                                # Проверяем, не выполнил ли бот задачу самостоятельно с первого раза
+                                is_already_correct = False
+                                if is_day_full and (interview_date is None or interview_date == ""):
+                                    is_already_correct = True
+                                elif not is_day_full and interview_date == verified_date:
+                                    is_already_correct = True
+                                
+                                if is_already_correct:
+                                    ctx_logger.info(f"✅ Бот самостоятельно верно определил дату и доступность ({verified_date})")
+                                    interview_date = verified_date # Синхронизируем для дальнейшей логики
                                 else:
-                                    hint_content = (
-                                        f"[SYSTEM COMMAND] Внимание!!! На {interview_date} ({correct_weekday}) нет свободных мест "
-                                        f"в графике. Ты ОБЯЗАНА сообщить об этом и предложить выбрать любой другой свободный день."
-                                    )
-                            else:
-                                # Если слоты есть, даем боту их список (как в HH)
-                                slots_str = ", ".join(available_slots)
-                                hint_content = (
-                                    f"[SYSTEM COMMAND] Внимание!!! На {interview_date} ({correct_weekday}) строго разрешены "
-                                    f"только следующие слоты: {slots_str}. "
-                                    # f"Ты ОБЯЗАНА "
-                                    # f"чтобы кандидат мог выбрать один из них."
-                                )
+                                    hint_content = None
+                                    if is_day_full:
+                                        # Сценарий А: Мест нет. Требуем отказать и занулить JSON.
+                                        hint_content = (
+                                            f"[SYSTEM COMMAND] Внимание!!! На {verified_date} ({v_weekday}) нет свободных мест в графике. "
+                                            f"Ты ОБЯЗАНА сообщить об этом кандидату и предложить выбрать любой другой свободный день из календаря. "
+                                            f"ОБЯЗАТЕЛЬНО установи 'interview_date' в JSON на null."
+                                        )
+                                    elif is_hallucination:
+                                        # Сценарий Б: Ошибка извлечения (дата в JSON не та), но места есть.
+                                        slots_str = ", ".join(available_slots)
+                                        hint_content = (
+                                            f"[SYSTEM COMMAND] В прошлом шаге ты ошиблась в извлечении даты. "
+                                            f"На самом деле пользователь выбрал {v_weekday} ({verified_date}). "
+                                            f"На этот день есть свободные места: {slots_str}. "
+                                            f"Сгенерируй ответ заново: подтверди дату ({v_weekday}, {verified_date}), "
+                                            f"расскажи про доступное время и ОБЯЗАТЕЛЬНО установи 'interview_date' в JSON на '{verified_date}'."
+                                        )
+                                        
+                                        # Алерт о галлюцинации в ТГ
+                                        await mq.publish("tg_alerts", {
+                                            "type": "hallucination",
+                                            "dialogue_id": dialogue.id,
+                                            "external_chat_id": dialogue.external_chat_id,
+                                            "user_said": combined_masked_message,
+                                            "llm_suggested": interview_date,
+                                            "corrected_val": verified_date,
+                                            "reasoning": audit_reason,
+                                            "history_text": self._get_history_as_text(dialogue)
+                                        })
 
-                            # 6. Проверяем историю на дубли (анти-луп из HH)
-                            history_to_check = (dialogue.history or [])[-5:]
-                            already_hinted = any(hint_content == m.get('content') for m in history_to_check)
+                                    # 4. ИСПОЛНЕНИЕ (Ретрай)
+                                    if hint_content:
+                                        # Проверка на дубликаты (чтобы не спамить одной и той же командой подряд)
+                                        last_msg_content = str(full_hist[-1].get("content", "")) if full_hist else ""
+                                        
+                                        if hint_content != last_msg_content:
+                                            ctx_logger.info(f"Adding system command for {verified_date}. Retry triggered.")
+                                            sys_msg = {
+                                                "role": "user",
+                                                "content": hint_content,
+                                                "message_id": f"sys_date_fix_{time.time()}",
+                                                "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                                            }
+                                            dialogue.history = full_hist + [sys_msg]
+                                            dialogue.last_message_at = datetime.datetime.now(datetime.timezone.utc)
+                                            await db.commit()
+                                        else:
+                                            ctx_logger.warning(f"System command already in history, but bot ignored it. Re-triggering retry for {verified_date}.")
 
-                            if hint_content and not already_hinted:
-                                ctx_logger.info(f"[{dialogue.external_chat_id}] Добавляю регламент из Google Sheets для {interview_date}")
-                                
-                                hint_cmd = {
-                                    'message_id': f'sys_hint_{time.time()}',
-                                    'role': 'user',
-                                    'content': hint_content,
-                                    'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
-                                }
-                                
-                                # Сохраняем и вызываем перегенерацию
-                                dialogue.history = (dialogue.history or []) + [hint_cmd]
-                                await db.commit()
-                                
-                                
-                                await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "slot_hint_retry"})
-                                return 
-
-                        except Exception as e:
-                            ctx_logger.error(f"Ошибка в этапе Hint (Google Sheets): {e}")
-                            await mq.publish("tg_alerts", {
-                                "type": "system",
-                                "text": f"🚨 **СБОЙ GOOGLE SHEETS:** Не удалось получить слоты для диалога `{dialogue.id}`. Проверьте таблицу!",
-                                "alert_type": "admin_only"
-                            })
-                            # Здесь я бы советовал делать raise e, чтобы задача ушла в ретрай, 
-                            # если тебе важно, чтобы бот видел регламент
-                            raise e
+                                        # В ЛЮБОМ СЛУЧАЕ прерываем текущую отправку и отправляем на ретрай
+                                        await mq.publish("engine_tasks", {
+                                            "dialogue_id": dialogue.id, 
+                                            "trigger": "date_slots_refine",
+                                            "initial_msg_count": hh_msg_count_start
+                                        })
+                                        return
+                            except Exception as e:
+                                ctx_logger.error(f"Ошибка в этапе Hint (Google Sheets): {e}")
+                                await mq.publish("tg_alerts", {
+                                    "type": "system",
+                                    "text": f"🚨 **СБОЙ GOOGLE SHEETS:** Не удалось получить слоты для диалога `{dialogue.id}`. Проверьте таблицу!",
+                                    "alert_type": "admin_only"
+                                })
+                                raise e
 
             # =====================================================================
             # [START] ШАГ 3: ЖЕСТКАЯ ВАЛИДАЦИЯ ВРЕМЕНИ (TIME ENFORCEMENT)
@@ -1597,13 +1637,13 @@ class Engine:
                     if clean_time not in available_slots:
                         ctx_logger.warning(f"🚨 МОДЕЛЬ ВЫБРАЛА ЗАНЯТОЕ ВРЕМЯ! Выбрано: {clean_time}, Свободно: {available_slots}")
 
-                        error_msg = f"На дату {interview_date} доступно только время: {', '.join(available_slots)}. Слот {clean_time} недоступен или уже занят."
+                        error_msg = f"На дату {interview_date} сейчас доступно только время: {', '.join(available_slots)}. Слот {clean_time} недоступен или уже занят."
                         
                         time_corr_cmd = {
                             'message_id': f'sys_time_corr_{time.time()}',
                             'role': 'user',
                             'content': (
-                                f"[SYSTEM COMMAND] {error_msg} Предложи выбрать из реально свободных слотов: "
+                                f"[SYSTEM COMMAND] {error_msg} Извинись и предложи выбрать из свободных сейчас слотов: "
                                 f"{', '.join(available_slots) if available_slots else 'другой день'}. "
                                 f"ОБЯЗАТЕЛЬНО обнови поле 'interview_time' в JSON на null."
                             ),
@@ -1614,7 +1654,11 @@ class Engine:
                         await db.commit()
                         
                        
-                        await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "time_enforce_retry"})
+                        await mq.publish("engine_tasks", {
+                            "dialogue_id": dialogue.id, 
+                            "trigger": "time_enforce_retry",
+                            "initial_msg_count": hh_msg_count_start
+                        })
                         return 
 
                 except Exception as e:
@@ -1746,7 +1790,8 @@ class Engine:
                                 
                                 await mq.publish("engine_tasks", {
                                     "dialogue_id": dialogue.id, 
-                                    "trigger": f"{target_state}_forced_refine"
+                                    "trigger": f"{target_state}_forced_refine",
+                                    "initial_msg_count": hh_msg_count_start
                                 })
                                 return # ПРЕРЫВАЕМ обработку, уходим на круг перегенерации
                     else:
@@ -1967,7 +2012,11 @@ class Engine:
                         dialogue.current_state = "awaiting_military_document"
                         await db.commit()
 
-                        await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "military_refine"})
+                        await mq.publish("engine_tasks", {
+                            "dialogue_id": dialogue.id, 
+                            "trigger": "military_refine",
+                            "initial_msg_count": hh_msg_count_start
+                        })
                         return
 
                 # --- 14.1 ПРОВЕРКА: ЗАДАВАЛСЯ ЛИ ВОПРОС ПРО ТЕЛЕФОН (Копия логики HH) ---
@@ -2001,7 +2050,11 @@ class Engine:
                         await db.commit()
                         
                         
-                        await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "force_phone_retry"})
+                        await mq.publish("engine_tasks", {
+                            "dialogue_id": dialogue.id, 
+                            "trigger": "force_phone_retry",
+                            "initial_msg_count": hh_msg_count_start
+                        })
                         return
 
                 # --- 14.2 ПРОВЕРКА ПОЛНОТЫ АНКЕТЫ (Динамический LLM Recovery) ---
@@ -2097,7 +2150,11 @@ class Engine:
                     dialogue.current_state = "clarifying_anything"
                     await db.commit()
 
-                    await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "data_fix_retry"})
+                    await mq.publish("engine_tasks", {
+                        "dialogue_id": dialogue.id, 
+                        "trigger": "data_fix_retry",
+                        "initial_msg_count": hh_msg_count_start
+                    })
                     return
 
 
@@ -2298,7 +2355,8 @@ class Engine:
                     
                     await mq.publish("engine_tasks", {
                         "dialogue_id": dialogue.id, 
-                        "trigger": "start_scheduling_trigger"
+                        "trigger": "start_scheduling_trigger",
+                        "initial_msg_count": hh_msg_count_start
                     })
                     return
 
@@ -2621,7 +2679,11 @@ class Engine:
                         await db.commit()
                         
                         
-                        await mq.publish("engine_tasks", {"dialogue_id": dialogue.id, "trigger": "decline_veto_retry"})
+                        await mq.publish("engine_tasks", {
+                            "dialogue_id": dialogue.id, 
+                            "trigger": "decline_veto_retry",
+                            "initial_msg_count": hh_msg_count_start
+                        })
                         return 
 
                 # --- 16.2 ОТМЕНА В КАЛЕНДАРЕ ---
@@ -2741,6 +2803,34 @@ class Engine:
             # ФИЗИЧЕСКАЯ ОТПРАВКА (Универсальная)
             real_id = None
             try:
+            # === 17.5 ПРОВЕРКА АКТУАЛЬНОСТИ (HH ONLY) ===
+                # Перед самой отправкой проверяем, не изменился ли диалог в HH,
+                # пока мы думали (LLM + Audit). 
+                # Сверяем общее количество сообщений с тем, что было на старте.
+                # Напоминалки и дожимы пропускаем всегда.
+                if dialogue.account.platform == 'hh' and dialogue.external_chat_id and not is_reminder:
+                    try:
+                        from app.connectors.hh.client import hh
+                        status_data = await hh.get_negotiation_status(dialogue.account, db, dialogue.external_chat_id)
+                        
+                        if status_data and status_data.get("counters"):
+                            hh_msg_count_now = status_data["counters"].get("messages", 0)
+                            
+                            # ПРОВЕРКА: Делаем Rollback только если мы получили валидный счетчик на старте (> 0)
+                            if hh_msg_count_start > 0 and hh_msg_count_now > hh_msg_count_start:
+                                ctx_logger.warning(
+                                    f"🛑 ПРЕРЫВАНИЕ (END): В HH {hh_msg_count_now} сообщений, а было {hh_msg_count_start}. "
+                                    f"Контекст устарел или другой воркер уже ответил. Делаю ROLLBACK."
+                                )
+                                await db.rollback()
+                                return
+                                
+                    except Exception as e:
+                        # Если проверка упала — игнорируем, чтобы не "заткнуть" бота
+                        ctx_logger.error(f"⚠️ Ошибка проверки актуальности HH (END): {e}")
+                elif is_reminder:
+                    ctx_logger.debug(f"🔔 Режим напоминания/дожима. Пропускаю проверку END.")
+
                 connector = get_connector(dialogue.account.platform)
                 
                 # Отправляем и ловим ID

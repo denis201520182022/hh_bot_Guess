@@ -238,7 +238,13 @@ class HHClient:
                     oauth_error = error_data.get("oauth_error")
 
                     if oauth_error in ["token-revoked", "token-expired"]:
-                        logger.warning(f"🔄 Токен HH для {account.name} протух (403 {oauth_error}). Сбрасываю и пробую обновить...")
+                        msg_proactive = (
+                            f"🔄 **HH Token Proactive Reset**\n"
+                            f"Аккаунт: {account.name}\n"
+                            f"Причина: 403 {oauth_error}. Сбрасываю токен и пробую обновить..."
+                        )
+                        logger.warning(msg_proactive)
+                        await self._send_system_alert(msg_proactive)
                         
                         # Сбрасываем токен в auth_data
                         auth_data = dict(account.auth_data or {})
@@ -496,6 +502,17 @@ class HHClient:
         except Exception as e:
             logger.error(f"❌ Непредвиденная ошибка при отправке сообщения в HH: {e}", exc_info=True)
             return False
+
+    async def get_negotiation_status(self, account: Account, db: AsyncSession, negotiation_id: str) -> Optional[dict]:
+        """
+        Получает метаданные отклика (счетчики, статусы) без истории сообщений.
+        """
+        try:
+            logger.debug(f"🔎 HH_API: Проверка статуса/счетчиков для отклика {negotiation_id}...")
+            return await self._request(account, db, "GET", f"negotiations/{negotiation_id}")
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения статуса отклика {negotiation_id}: {e}")
+            return None
 
     async def move_response_to_folder(self, account: Account, db: AsyncSession, negotiation_id: str, folder_id: str):
         """

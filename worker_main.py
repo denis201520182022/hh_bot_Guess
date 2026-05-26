@@ -88,8 +88,14 @@ async def lifespan(app: FastAPI):
         await init_dal_accounts()
         
     except Exception as e:
+        logger.error(f"❌ Ошибка подключения к RabbitMQ при старте: {e}")
         from app.utils.tg_alerts import send_system_alert
-        await send_system_alert(f"🚨 КРИТИЧЕСКАЯ ОШИБКА: RabbitMQ не доступен!\n{e}")
+        await send_system_alert(
+            f"🚨 **CRITICAL STARTUP ERROR**\n"
+            f"Бот: {settings.bot.id}\n"
+            f"Ошибка: Не удалось подключиться к RabbitMQ.\n"
+            f"Детали: {str(e)}"
+        )
         raise e
 
     # 2. Запускаем коннекторы в зависимости от конфига
