@@ -12,7 +12,10 @@ engine = create_async_engine(
     DATABASE_URL,
     # echo=True, # Включи, если хочешь видеть SQL запросы в консоли
     future=True,
+    pool_size=20,
+    max_overflow=40,
     pool_pre_ping=True,
+    pool_timeout=30,
     # НАСТРОЙКИ ДЛЯ PGBOUNCER (ОБЯЗАТЕЛЬНО):
     connect_args={
         "prepared_statement_cache_size": 0,

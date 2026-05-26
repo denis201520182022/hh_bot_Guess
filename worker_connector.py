@@ -109,8 +109,8 @@ async def on_hh_inbound(message: IncomingMessage):
 async def main():
     await mq.connect()
     channel = mq.channel
-    # Унификатор быстрый, можно брать много задач (prefetch_count=50)
-    await channel.set_qos(prefetch_count=50)
+    # Снизили prefetch_count до 15, чтобы не превышать лимиты подключений к БД
+    await channel.set_qos(prefetch_count=15)
 
     # === AVITO QUEUE ===
     inbound_queue_avito = await channel.get_queue("avito_inbound")
@@ -120,7 +120,7 @@ async def main():
     inbound_queue_hh = await channel.get_queue("hh_inbound")
     await inbound_queue_hh.consume(on_hh_inbound)
 
-    logger.info("👷 [worker_connector] запущен", extra={"prefetch_count": 50})
+    logger.info("👷 [worker_connector] запущен", extra={"prefetch_count": 15})
 
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()
