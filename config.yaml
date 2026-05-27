@@ -8,7 +8,7 @@ system:
   docker_mode: false
   log_level: "INFO"
   test_mode:
-    enabled: false
+    enabled: true
     allowed_candidate_names: ["Denis Denisov", "Алиса Ветрицкая"]
   
 
