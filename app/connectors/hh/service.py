@@ -672,7 +672,8 @@ class HHConnectorService(BaseConnector):
                             phone_number=phone_number,
                             hh_resume_id=hh_resume_id,
                             hh_vacancy_id=ext_vacancy_id,
-                            db=db
+                            db=db,
+                            account=account
                         )
                     except Exception as e:
                         logger.error(f"❌ Ошибка синхронизации с Talantix для диалога {dialogue.id}: {e}", exc_info=True)
@@ -899,7 +900,8 @@ class HHConnectorService(BaseConnector):
         phone_number: str, 
         hh_resume_id: str,
         hh_vacancy_id: str,
-        db: AsyncSession
+        db: AsyncSession,
+        account: Account
     ):
         """
         Синхронизация с Talantix CRM по новому алгоритму (api.txt):
