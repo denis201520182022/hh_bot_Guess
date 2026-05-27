@@ -34,10 +34,13 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: guess_rabbitmq
+    hostname: 9575ee6c2409
     restart: always
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "127.0.0.1:15672:15672" # Порт для веб-админки
     volumes:
       - guess_rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -77,7 +80,7 @@ services:
       - DB_NAME=${DB_NAME}
       - POOL_MODE=transaction
       - MAX_CLIENT_CONN=1000
-      - DEFAULT_POOL_SIZE=20
+      - DEFAULT_POOL_SIZE=100
       - LISTEN_PORT=6432
       - AUTH_TYPE=scram-sha-256
       - IGNORE_STARTUP_PARAMETERS=extra_float_digits,client_encoding
