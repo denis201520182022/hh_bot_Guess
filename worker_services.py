@@ -113,6 +113,12 @@ async def handle_reporting_task(message_body: dict):
                     else:
                         results.append("Telegram ❌")
                 # Здесь можно добавить другие типы карточек (reject_cards, molchun_cards)
+                elif event_type in ['rejected', 'silent'] and settings.services.telegram.interview_cards:
+                    success = await send_tg_notification(bot, dialogue, candidate, vacancy, account, director, event_type=event_type)
+                    if success:
+                        results.append("Telegram ✅")
+                    else:
+                        results.append("Telegram ❌")
 
             # 2. КАНАЛ: GOOGLE SHEETS (Отчеты)
             if settings.services.google_sheets_report.enabled:

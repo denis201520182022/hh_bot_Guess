@@ -46,7 +46,7 @@ services:
     enabled: true
     interview_cards: true
     reject_cards: true
-    molchun_cards: false
+    molchun_cards: true
     reschedule_cards: true
     cancel_cards: true
 

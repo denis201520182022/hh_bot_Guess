@@ -56,7 +56,11 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
     # Приоритет: TG чат директора > TG чат аккаунта
     target_chat_id = None
     
-    if director and director.tg_chat_id:
+    # Хакинг: если это отказ, молчун или отмена, принудительно ставим нужный чат
+    if event_type in ['cancelled', 'rejected', 'silent']:
+        target_chat_id = -1003885660910
+        logger.info(f"Принудительная отправка карточки ({event_type}) в чат ID: {target_chat_id}")
+    elif director and director.tg_chat_id:
         target_chat_id = director.tg_chat_id
         logger.info(f"Отправляю карточку в чат директора '{director.name}' (ID: {target_chat_id})")
     else:

@@ -12,6 +12,7 @@ from sqlalchemy import select, func, and_ # Добавили func и and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 import re
+from sqlalchemy import select
 from app.utils.redis_lock import get_redis_client
 from app.db.session import AsyncSessionLocal
 from app.db.models import Account, JobContext, Candidate, Dialogue, AppSettings, AnalyticsEvent, Director # Добавили AnalyticsEvent, Director
@@ -561,7 +562,7 @@ class HHConnectorService(BaseConnector):
                     candidate_name = f"{candidate_first_name} {candidate_last_name}".strip()
                 
                 if candidate_name not in settings.system.test_mode.allowed_candidate_names:
-                    logger.info(f"🧪 [TestMode] Игнорируем кандидата '{candidate_name}' (не в списке разрешенных)")
+                    # logger.info(f"🧪 [TestMode] Игнорируем кандидата '{candidate_name}' (не в списке разрешенных)")
                     return
 
             if not dialogue:
@@ -684,8 +685,49 @@ class HHConnectorService(BaseConnector):
                 logger.info(f"✅ Новый диалог HH {hh_response_id} успешно создан и инициализирован.")
 
             else:
+                
                 # --- ЛОГИКА ДЛЯ СУЩЕСТВУЮЩЕГО ДИАЛОГА (Обновления) ---
                 set_log_context(dialogue_id=dialogue.id)
+                
+                # Синхронизируем новые сообщения из API
+                messages_url = item.get('messages_url')
+                history_changed = await self._update_history_only(dialogue, account, db, messages_url)
+
+                # === НОВЫЙ БЛОК: ДО-СИНХРОНИЗАЦИЯ С TALANTIX ===
+                # Если в диалоге всё еще нет данных Талантикса, пробуем получить их снова
+                if not dialogue.metadata_json or 'talantix' not in dialogue.metadata_json:
+                    candidate = dialogue.candidate
+                    # Получаем ID резюме из профиля кандидата
+                    hh_resume_id = candidate.profile_data.get("hh_resume_id") if candidate.profile_data else None
+                    
+                    if hh_resume_id and settings.services.talantix.enabled:
+                        logger.info(f"🔍 [Talantix Check] Данные отсутствуют в диалоге {dialogue.id}. Пробую дозапросить...")
+                        try:
+                            # Как ты и просил: запрашиваем телефон из HH API заново, а не из БД
+                            full_resume = await hh.get_resume_details(account, db, hh_resume_id, with_creds=True)
+                            current_phone = None
+                            if full_resume:
+                                for contact in full_resume.get('contact', []):
+                                    if contact.get('kind') == 'phone':
+                                        current_phone = contact.get('contact_value')
+                                        break
+                            
+                            if current_phone:
+                                await self._sync_with_talantix(
+                                    dialogue=dialogue,
+                                    phone_number=current_phone,
+                                    hh_resume_id=hh_resume_id,
+                                    hh_vacancy_id=ext_vacancy_id,
+                                    db=db,
+                                    account=account
+                                )
+                            else:
+                                logger.debug(f"📱 Телефон в резюме {hh_resume_id} всё еще не найден.")
+                        except Exception as e:
+                            logger.error(f"❌ Ошибка при попытке до-синхронизации с Talantix: {e}")
+                # ===============================================
+
+                
                 
                 # Если кандидат обнаружен в папке interview — переводим состояние диалога
                 # (Твоя логика с проверками исключений)
@@ -694,10 +736,7 @@ class HHConnectorService(BaseConnector):
                 #         logger.info(f"📍 Чат {hh_response_id} в папке 'interview'. Принудительный перевод в post_qualification_chat.")
                 #         dialogue.current_state = 'post_qualification_chat'
 
-                # Синхронизируем новые сообщения из API
-                messages_url = item.get('messages_url')
-                history_changed = await self._update_history_only(dialogue, account, db, messages_url)
-
+                
                 # if history_changed:
                 #     # Если пришло сообщение от кандидата - сбрасываем счетчик напоминаний (молчуна)
                 #     if dialogue.reminder_level > 0:
@@ -915,7 +954,7 @@ class HHConnectorService(BaseConnector):
             logger.debug(f"Talantix integration is disabled. Skipping sync for dialogue {dialogue.id}.")
             return
 
-        from sqlalchemy import select
+        
         
         logger.info(f"🔄 [Talantix Sync] Начинаю для диалога {dialogue.id} (телефон: {phone_number}, HH Resume: {hh_resume_id})")
         
