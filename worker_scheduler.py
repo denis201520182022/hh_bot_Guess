@@ -20,7 +20,7 @@ from app.services.google_sync_search_hh import google_sync_search_hh_service
 from app.utils.logger import logger, set_log_context, log_context
 from app.utils.analytics import log_event
 from app.db.models import Account, JobContext, Candidate, Dialogue, AppSettings
-
+from sqlalchemy.orm import selectinload
 MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 
 class Scheduler:
@@ -166,7 +166,7 @@ class Scheduler:
     # --- 2. НАПОМИНАНИЯ ПЕРЕД СОБЕСЕДОВАНИЕМ ---
     async def _loop_interview_reminders(self):
         """Проверка таблицы InterviewReminder и отправка напоминаний"""
-        from sqlalchemy.orm import selectinload # Убедись, что этот импорт есть в начале файла
+         # Убедись, что этот импорт есть в начале файла
         
         while self.is_running:
             try:

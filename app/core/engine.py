@@ -920,7 +920,7 @@ class Engine:
             # === 2.05 ПРОВЕРКА АКТУАЛЬНОСТИ НА СТАРТЕ (HH ONLY) ===
             hh_msg_count_start = 0
             trigger = task_data.get("trigger", "unknown")
-            is_reminder = trigger in ["silence_reminder", "follow_up"]
+            is_reminder = trigger in ["reminder", "follow_up"]
 
             if dialogue.account.platform == 'hh' and dialogue.external_chat_id and not is_reminder:
                 try:
@@ -932,9 +932,11 @@ class Engine:
                         # Счетчик из задачи (то, что видел сканер в момент формирования)
                         task_msg_count = task_data.get("initial_msg_count", 0)
                         
+                        # Если task_msg_count == 0, значит сканер не смог определить счетчик, пропускаем проверку.
+                        # Если hh_msg_count_start == 0, значит мы не смогли получить статус, пропускаем.
                         # Если в HH уже больше, чем было в задаче — значит, пока задача шла,
                         # сканер успел прислать еще одну, более свежую.
-                        if hh_msg_count_start > task_msg_count:
+                        if task_msg_count > 0 and hh_msg_count_start > 0 and hh_msg_count_start > task_msg_count:
                             ctx_logger.warning(
                                 f"🛑 ПРЕРЫВАНИЕ (START): В HH {hh_msg_count_start} сообщений, а в задаче {task_msg_count}. "
                                 f"Уже есть более свежая задача в очереди. Пропускаю."
