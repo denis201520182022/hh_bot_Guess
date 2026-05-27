@@ -34,7 +34,7 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: guess_rabbitmq
-    hostname: 9575ee6c2409
+    hostname: guess_rabbit_node
     restart: always
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}

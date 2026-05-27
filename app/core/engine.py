@@ -774,7 +774,10 @@ class Engine:
         # Если нет менеджеров — пробуем получить хотя бы одного ADMIN
         if not manager_ids:
             try:
-                all_managers = await talantix_service.get_managers(roles=["ADMIN"])
+                all_managers = await talantix_service.get_managers(
+                    roles=["ADMIN"],
+                    account_name=dialogue.account.name
+                )
                 if all_managers:
                     manager_ids = [all_managers[0]["id"]]
                     ctx_logger.info(f"⚠️ Менеджеры не найдены в talantix_data, использую ADMIN: {manager_ids}")
@@ -805,6 +808,7 @@ class Engine:
             send_person_message=False,
             sync_with_external_calendar=False,
             person_message_file_ids=[],
+            account_name=dialogue.account.name
         )
 
         if not success:
@@ -1146,7 +1150,8 @@ class Engine:
                             await talantix_crm_service.notify_talantix_comment(
                                 dialogue=dialogue,
                                 event_type='silence',
-                                db=db
+                                db=db,
+                                account_name=dialogue.account.name
                             )
                         except Exception as e:
                             ctx_logger.error(f"Ошибка создания комментария Talantix (silence): {e}")
@@ -2448,7 +2453,10 @@ class Engine:
                                 if old_meeting_id:
                                     try:
                                         ctx_logger.info(f"🗑️ Talantix: удаляю старую встречу meeting_id={old_meeting_id}")
-                                        await talantix_service.release_interview(interview_id=old_meeting_id)
+                                        await talantix_service.release_interview(
+                                            interview_id=old_meeting_id,
+                                            account_name=dialogue.account.name
+                                        )
                                     except Exception as e:
                                         ctx_logger.error(f"❌ Ошибка удаления встречи в Talantix: {e}", exc_info=True)
 
@@ -2493,7 +2501,8 @@ class Engine:
                                     await talantix_crm_service.notify_talantix_comment(
                                         dialogue=dialogue,
                                         event_type='rescheduled',
-                                        db=db
+                                        db=db,
+                                        account_name=dialogue.account.name
                                     )
                                 except Exception as e:
                                     ctx_logger.error(f"Ошибка создания комментария Talantix (rescheduled): {e}")
@@ -2576,7 +2585,8 @@ class Engine:
                         await talantix_crm_service.notify_talantix_comment(
                             dialogue=dialogue,
                             event_type='qualified',
-                            db=db
+                            db=db,
+                            account_name=dialogue.account.name
                         )
                     except Exception as e:
                         ctx_logger.error(f"Ошибка создания комментария Talantix (qualified): {e}")
@@ -2702,7 +2712,10 @@ class Engine:
                         if meeting_id:
                             try:
                                 ctx_logger.info(f"🗑️ Talantix: удаляю встречу meeting_id={meeting_id}")
-                                await talantix_service.release_interview(interview_id=meeting_id)
+                                await talantix_service.release_interview(
+                                    interview_id=meeting_id,
+                                    account_name=dialogue.account.name
+                                )
                             except Exception as e:
                                 ctx_logger.error(f"❌ Ошибка удаления встречи в Talantix: {e}", exc_info=True)
                         else:
@@ -2720,7 +2733,8 @@ class Engine:
                             await talantix_crm_service.notify_talantix_comment(
                                 dialogue=dialogue,
                                 event_type='cancelled',
-                                db=db
+                                db=db,
+                                account_name=dialogue.account.name
                             )
                         except Exception as e:
                             ctx_logger.error(f"Ошибка создания комментария Talantix (cancelled): {e}")
@@ -2759,7 +2773,8 @@ class Engine:
                             dialogue=dialogue,
                             event_type='rejected',
                             db=db,
-                            reason=reason_text
+                            reason=reason_text,
+                            account_name=dialogue.account.name
                         )
                     except Exception as e:
                         ctx_logger.error(f"Ошибка создания комментария Talantix (rejected): {e}")

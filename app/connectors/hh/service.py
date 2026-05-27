@@ -917,27 +917,18 @@ class HHConnectorService(BaseConnector):
         
         logger.info(f"🔄 [Talantix Sync] Начинаю для диалога {dialogue.id} (телефон: {phone_number}, HH Resume: {hh_resume_id})")
         
-        # Получаем аккаунт Talantix API
-        talantix_account = await db.scalar(
-            select(Account).where(
-                Account.platform == "talantix_api",
-                Account.is_active == True
-            )
-        )
+        # Используем имя HH аккаунта для поиска соответствующего Talantix аккаунта
+        account_name = account.name
         
-        if not talantix_account:
-            logger.warning("⚠️ Аккаунт talantix_api не найден или не активен. Пропуск синхронизации.")
-            return
-
         # 1. Поиск всех кандидатов по номеру телефона
         persons = await talantix_crm_service.find_persons_by_phone(
             phone=phone_number,
-            account=talantix_account,
-            db=db
+            db=db,
+            account_name=account_name
         )
         
         if not persons:
-            logger.info(f"ℹ️ Кандидаты с номером {phone_number} не найдены в Talantix")
+            logger.info(f"ℹ️ Кандидаты с номером {phone_number} не найдены в Talantix (Account: {account_name})")
             return
         
         matched_person_id = None
@@ -947,7 +938,11 @@ class HHConnectorService(BaseConnector):
             p_id = p.get('id')
             logger.debug(f"🧐 Проверка кандидата Talantix {p_id} ({p.get('firstName')} {p.get('lastName')})...")
             
-            talantix_resume_ids = await talantix_crm_service.get_person_resume_ids(p_id, talantix_account, db)
+            talantix_resume_ids = await talantix_crm_service.get_person_resume_ids(
+                person_id=p_id, 
+                db=db,
+                account_name=account_name
+            )
             if hh_resume_id in talantix_resume_ids:
                 logger.info(f"✅ Найден нужный кандидат в Talantix: person_id={p_id}")
                 matched_person_id = p_id
@@ -960,8 +955,8 @@ class HHConnectorService(BaseConnector):
         # 3. Находим конкретный отклик и вакансию
         person_data = await talantix_crm_service.get_person_responses(
             person_id=matched_person_id,
-            account=talantix_account,
-            db=db
+            db=db,
+            account_name=account_name
         )
         
         if not person_data:
@@ -984,8 +979,8 @@ class HHConnectorService(BaseConnector):
             
             hh_external_ids = await talantix_crm_service.get_vacancy_external_ids(
                 vacancy_id=talantix_vacancy_id, 
-                account=talantix_account, 
-                db=db
+                db=db,
+                account_name=account_name
             )
             
             if hh_vacancy_id in hh_external_ids:
@@ -994,8 +989,8 @@ class HHConnectorService(BaseConnector):
                 # Собираем данные менеджеров ТОЧЕЧНЫМ ЗАПРОСОМ (из men_api.txt)
                 managers_data = await talantix_crm_service.get_vacancy_managers(
                     vacancy_id=talantix_vacancy_id,
-                    account=talantix_account,
-                    db=db
+                    db=db,
+                    account_name=account_name
                 )
                 
                 matched_talantix_data = {

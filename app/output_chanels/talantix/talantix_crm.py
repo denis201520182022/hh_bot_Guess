@@ -200,24 +200,31 @@ class TalantixService:
         self.logger = logging.getLogger("talantix.service")
 
     async def _get_account(
-        self, db: AsyncSession, platform: str
+        self, db: AsyncSession, platform: str, name: str | None = None
     ) -> Account | None:
-        """Получение аккаунта из БД по платформе."""
-        result = await db.execute(
-            select(Account).where(Account.platform == platform, Account.is_active == True)
-        )
+        """Получение аккаунта из БД по платформе и имени."""
+        # Если имя не передано, используем дефолт для обратной совместимости
+        
+        # Если искали по дефолту, пробуем найти по имени, если нет - по дефолту
+        stmt = select(Account).where(Account.platform == platform, Account.is_active == True)
+        if name:
+            stmt = stmt.where(Account.name == name)
+        else:
+            stmt = stmt.where(Account.name == "Talantix API Integration")
+            
+        result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
     # --- МЕТОДЫ ДЛЯ КАНДИДАТОВ ---
 
-    async def upsert_candidate(self, candidate_data: dict) -> int | None:
+    async def upsert_candidate(self, candidate_data: dict, account_name: str | None = None) -> int | None:
         """
         Создание или обновление кандидата в Talantix.
         """
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_api")
+            account = await self._get_account(db, "talantix_api", account_name)
             if not account:
-                self.logger.error("Аккаунт talantix_api не найден")
+                self.logger.error(f"Аккаунт talantix_api (name={account_name}) не найден")
                 return None
 
             full_name = (candidate_data.get("full_name") or "").strip()
@@ -289,12 +296,12 @@ class TalantixService:
             self.logger.error("upsert_candidate: ошибка Talantix: %s", payload)
             return None
 
-    async def transfer_candidate_to_stage(self, person_id: int, workflow_status_id: int) -> bool:
+    async def transfer_candidate_to_stage(self, person_id: int, workflow_status_id: int, account_name: str | None = None) -> bool:
         """Перевод кандидата на этап вакансии в Talantix."""
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_api")
+            account = await self._get_account(db, "talantix_api", account_name)
             if not account:
-                self.logger.error("Аккаунт talantix_api не найден")
+                self.logger.error(f"Аккаунт talantix_api (name={account_name}) не найден")
                 return False
 
             mutation = """
@@ -328,42 +335,42 @@ class TalantixService:
             )
             return False
 
-    async def ensure_candidate_response(self, person_id: int, vacancy_id: int) -> bool:
+    async def ensure_candidate_response(self, person_id: int, vacancy_id: int, db: AsyncSession, account: Account | None = None, account_name: str | None = None) -> bool:
         """Прикрепление кандидата к вакансии в Talantix, если отклик отсутствует."""
-        async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_api")
-            if not account:
-                self.logger.error("Аккаунт talantix_api не найден")
-                return False
-
-            mutation = """
-            mutation CreateResponses($vacancyIds: [Int!]!, $personIds: [Int!]!) {
-              createResponses(vacancyIds: $vacancyIds, personIds: $personIds) {
-                __typename
-                ... on ResponsesCreatedSuccess { message }
-                ... on ResponsesCreatedError { errorType message }
-              }
-            }
-            """
-            variables = {
-                "vacancyIds": [int(vacancy_id)],
-                "personIds": [int(person_id)],
-            }
-
-            response = await self.graphql_client._send_graphql_request(
-                mutation, variables, account, db
-            )
-            payload = (response.data or {}).get("createResponses", {})
-            if payload.get("__typename") == "ResponsesCreatedSuccess":
-                self.logger.info(
-                    "✅ Talantix отклик создан (person_id=%s, vacancy_id=%s)",
-                    person_id,
-                    vacancy_id,
-                )
-                return True
-
-            self.logger.warning("ensure_candidate_response: ответ Talantix: %s", payload)
+        if not account:
+            account = await self._get_account(db, "talantix_api", account_name)
+        if not account:
+            self.logger.error(f"ensure_candidate_response: Аккаунт talantix_api (name={account_name}) не найден")
             return False
+
+        mutation = """
+        mutation CreateResponses($vacancyIds: [Int!]!, $personIds: [Int!]!) {
+          createResponses(vacancyIds: $vacancyIds, personIds: $personIds) {
+            __typename
+            ... on ResponsesCreatedSuccess { message }
+            ... on ResponsesCreatedError { errorType message }
+          }
+        }
+        """
+        variables = {
+            "vacancyIds": [int(vacancy_id)],
+            "personIds": [int(person_id)],
+        }
+
+        response = await self.graphql_client._send_graphql_request(
+            mutation, variables, account, db
+        )
+        payload = (response.data or {}).get("createResponses", {})
+        if payload.get("__typename") == "ResponsesCreatedSuccess":
+            self.logger.info(
+                "✅ Talantix отклик создан (person_id=%s, vacancy_id=%s)",
+                person_id,
+                vacancy_id,
+            )
+            return True
+
+        self.logger.warning("ensure_candidate_response: ответ Talantix: %s", payload)
+        return False
 
     @staticmethod
     def _split_full_name(full_name: str) -> tuple[str, str | None, str | None]:
@@ -406,17 +413,24 @@ class TalantixService:
         return None
 
     async def find_persons_by_phone(
-        self, phone: str, account: Account, db: AsyncSession
+        self, phone: str, db: AsyncSession, account: Account | None = None, account_name: str | None = None
     ) -> list[dict]:
         """
         Поиск всех кандидатов по номеру телефона.
         """
+        if not account:
+            account = await self._get_account(db, "talantix_api", account_name)
+        
+        if not account:
+            self.logger.error(f"❌ Аккаунт talantix_api (name={account_name}) не найден. Пропуск поиска.")
+            return []
+
         normalized_phone = self._normalize_phone(phone)
         if not normalized_phone:
             self.logger.warning("find_persons_by_phone: пустой номер телефона")
             return []
 
-        self.logger.info(f"🔍 Поиск кандидатов в Talantix по номеру: {phone}")
+        self.logger.info(f"🔍 [Account: {account.name}] Поиск кандидатов в Talantix по номеру: {phone}")
 
         query = """
         query {
@@ -444,11 +458,16 @@ class TalantixService:
         return persons_data
 
     async def get_person_resume_ids(
-        self, person_id: int, account: Account, db: AsyncSession
+        self, person_id: int, db: AsyncSession, account: Account | None = None, account_name: str | None = None
     ) -> list[str]:
         """
         Получение списка ID резюме (externalId) кандидата.
         """
+        if not account:
+            account = await self._get_account(db, "talantix_api", account_name)
+        if not account:
+            return []
+
         query = """
         query {
           person(id: %d) {
@@ -482,12 +501,17 @@ class TalantixService:
         return [r.get("externalId") for r in resumes if r.get("externalId")]
 
     async def get_person_responses(
-        self, person_id: int, account: Account, db: AsyncSession
+        self, person_id: int, db: AsyncSession, account: Account | None = None, account_name: str | None = None
     ) -> dict | None:
         """
         Получение информации о кандидате и его откликах (GetFinalData).
         """
-        self.logger.info(f"🔍 Получение данных кандидата Talantix (person_id={person_id})")
+        if not account:
+            account = await self._get_account(db, "talantix_api", account_name)
+        if not account:
+            return None
+
+        self.logger.info(f"🔍 [Account: {account.name}] Получение данных кандидата Talantix (person_id={person_id})")
 
         query = """
         query GetFinalData {
@@ -544,11 +568,16 @@ class TalantixService:
         return person_data
 
     async def get_vacancy_external_ids(
-        self, vacancy_id: int, account: Account, db: AsyncSession
+        self, vacancy_id: int, db: AsyncSession, account: Account | None = None, account_name: str | None = None
     ) -> list[str]:
         """
         Получение списка ID привязанных вакансий HH для вакансии Talantix.
         """
+        if not account:
+            account = await self._get_account(db, "talantix_api", account_name)
+        if not account:
+            return []
+
         query = """
         query GetVacancyDetails {
           vacancy(id: %d) {
@@ -584,11 +613,16 @@ class TalantixService:
         return [v.get("externalId") for v in hh_items if v.get("externalId")]
 
     async def get_vacancy_managers(
-        self, vacancy_id: int, account: Account, db: AsyncSession
+        self, vacancy_id: int, db: AsyncSession, account: Account | None = None, account_name: str | None = None
     ) -> list[dict]:
         """
         Получение списка менеджеров для конкретной вакансии (GetVacancyManagers).
         """
+        if not account:
+            account = await self._get_account(db, "talantix_api", account_name)
+        if not account:
+            return []
+
         query = """
         query GetVacancyManagers {
           vacancy(id: %d) {
@@ -639,8 +673,9 @@ class TalantixService:
         self,
         person_id: int,
         text: str,
-        account: Account,
         db: AsyncSession,
+        account: Account | None = None,
+        account_name: str | None = None,
         visible_for_all: bool = True,
         vacancy_id: int | None = None
     ) -> int | None:
@@ -650,15 +685,23 @@ class TalantixService:
         Args:
             person_id: ID кандидата в Talantix
             text: Текст комментария
-            account: Аккаунт Talantix
             db: Сессия БД
+            account: Аккаунт Talantix
+            account_name: Имя аккаунта Talantix
             visible_for_all: Видимость комментария (True = виден всем)
             vacancy_id: ID вакансии в Talantix (опционально)
             
         Returns:
             ID созданного комментария или None при ошибке
         """
-        self.logger.info(f"💬 Создание комментария для кандидата {person_id} в Talantix")
+        if not account:
+            account = await self._get_account(db, "talantix_api", account_name)
+        
+        if not account:
+            self.logger.error(f"create_person_comment: Аккаунт talantix_api (name={account_name}) не найден")
+            return None
+
+        self.logger.info(f"💬 [Account: {account.name}] Создание комментария для кандидата {person_id} в Talantix")
 
         mutation = """
         mutation CreatePersonComment($commentCreate: PersonCommentCreateInput!) {
@@ -841,7 +884,8 @@ class TalantixService:
         dialogue: 'Dialogue',
         event_type: str,
         db: AsyncSession,
-        reason: str = None
+        reason: str = None,
+        account_name: str | None = None
     ):
         """
         Универсальный метод для создания комментария в Talantix.
@@ -852,7 +896,12 @@ class TalantixService:
             event_type: Тип события ('qualified', 'rescheduled', 'cancelled', 'rejected', 'silence')
             db: Сессия БД
             reason: Причина (для отмены/отказа)
+            account_name: Имя аккаунта Talantix
         """
+        # Если имя не передано, берем из аккаунта диалога (HH аккаунта)
+        if not account_name and dialogue.account:
+            account_name = dialogue.account.name
+
         # Получаем данные из metadata_json
         metadata = dialogue.metadata_json or {}
         talantix_data = metadata.get('talantix') or {}
@@ -883,9 +932,9 @@ class TalantixService:
         )
         
         # Получаем аккаунт Talantix
-        talantix_account = await self._get_account(db, "talantix_api")
+        talantix_account = await self._get_account(db, "talantix_api", account_name)
         if not talantix_account:
-            self.logger.warning("⚠️ Аккаунт talantix_api не найден. Пропуск комментария.")
+            self.logger.warning(f"⚠️ Аккаунт talantix_api (name={account_name}) не найден. Пропуск комментария.")
             return None
         
         # Создаём комментарий

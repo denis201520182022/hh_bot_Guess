@@ -545,24 +545,32 @@ class TalantixService:
         self.logger = logging.getLogger("talantix.service")
 
     async def _get_account(
-        self, db: AsyncSession, platform: str
+        self, db: AsyncSession, platform: str, name: str | None = None
     ) -> Account | None:
-        """Получение аккаунта из БД по платформе."""
-        result = await db.execute(
-            select(Account).where(Account.platform == platform, Account.is_active == True)
-        )
+        """Получение аккаунта из БД по платформе и имени (для мультиаккаунтности)."""
+        # Если имя не передано, используем дефолт для обратной совместимости
+        search_name = name if name else "talantix_calend"
+        
+        # Если искали по дефолту, пробуем найти по имени, если нет - по дефолту
+        stmt = select(Account).where(Account.platform == platform, Account.is_active == True)
+        if name:
+            stmt = stmt.where(Account.name == name)
+        else:
+            stmt = stmt.where(Account.name == "Talantix Calendar Integration")
+            
+        result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
     # --- МЕТОДЫ ДЛЯ КАЛЕНДАРЯ ---
 
-    async def get_available_slots(self, date: str | None = None, days: int = 7) -> dict[str, list[str]]:
+    async def get_available_slots(self, date: str | None = None, days: int = 7, account_name: str | None = None) -> dict[str, list[str]]:
         """
         Получение доступных слотов на указанную дату или на период.
         """
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_calend")
+            account = await self._get_account(db, "talantix_calend", account_name)
             if not account:
-                self.logger.error("Аккаунт talantix_calend не найден")
+                self.logger.error(f"Аккаунт talantix_calend (name={account_name}) не найден")
                 return {}
 
             try:
@@ -600,14 +608,14 @@ class TalantixService:
                 self.logger.error(f"Ошибка получения слотов: {e}")
                 return {}
 
-    async def get_nearest_slots(self, limit: int = 2) -> list[tuple[str, str]]:
+    async def get_nearest_slots(self, limit: int = 2, account_name: str | None = None) -> list[tuple[str, str]]:
         """
         Получение ближайших доступных слотов (на сегодня и завтра).
         """
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_calend")
+            account = await self._get_account(db, "talantix_calend", account_name)
             if not account:
-                self.logger.error("Аккаунт talantix_calend не найден")
+                self.logger.error(f"Аккаунт talantix_calend (name={account_name}) не найден")
                 return []
 
             try:
@@ -675,7 +683,7 @@ class TalantixService:
         except (TypeError, ValueError):
             return None
 
-    async def resolve_slot_id(self, date: str, time_str: str) -> int | None:
+    async def resolve_slot_id(self, date: str, time_str: str, account_name: str | None = None) -> int | None:
         """
         Находит slot_id в Talantix по дате и времени (HH:MM).
         """
@@ -687,9 +695,9 @@ class TalantixService:
         self.logger.info("🔍 resolve_slot_id: поиск slot_id для date=%s time=%s (normalized=%s)", date, time_str, normalized_target)
         
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_calend")
+            account = await self._get_account(db, "talantix_calend", account_name)
             if not account:
-                self.logger.error("❌ resolve_slot_id: Аккаунт talantix_calend не найден")
+                self.logger.error(f"❌ resolve_slot_id: Аккаунт talantix_calend (name={account_name}) не найден")
                 return None
 
             try:
@@ -730,6 +738,7 @@ class TalantixService:
         send_person_message: bool = False,
         sync_with_external_calendar: bool = False,
         person_message_file_ids: list[int] | None = None,
+        account_name: str | None = None,
     ) -> int | None:
         """
         Создание встречи/собеседования в календаре Talantix.
@@ -747,19 +756,20 @@ class TalantixService:
             send_person_message: отправить уведомление кандидату
             sync_with_external_calendar: синхронизация с внешним календарём
             person_message_file_ids: файлы для сообщения кандидату
+            account_name: имя аккаунта для использования
 
         Returns:
             int | None: ID созданной встречи (meeting_id) или None при ошибке
         """
         self.logger.info(
-            "🔍 book_interview вызван: start_date=%s, end_date=%s, person_ids=%s, vacancy_ids=%s, manager_ids=%s, title=%s",
-            start_date, end_date, person_ids, vacancy_ids, manager_ids, title,
+            "🔍 book_interview вызван: start_date=%s, end_date=%s, person_ids=%s, vacancy_ids=%s, manager_ids=%s, title=%s, account_name=%s",
+            start_date, end_date, person_ids, vacancy_ids, manager_ids, title, account_name,
         )
 
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_calend")
+            account = await self._get_account(db, "talantix_calend", account_name)
             if not account:
-                self.logger.error("❌ Аккаунт talantix_calend не найден")
+                self.logger.error(f"❌ Аккаунт talantix_calend (name={account_name}) не найден")
                 return None
 
             try:
@@ -802,20 +812,21 @@ class TalantixService:
                 self.logger.error(f"❌ Ошибка создания встречи: {e}", exc_info=True)
                 return None
 
-    async def release_interview(self, interview_id: int) -> bool:
+    async def release_interview(self, interview_id: int, account_name: str | None = None) -> bool:
         """
         Освобождение забронированного слота (отмена собеседования).
 
         Args:
             interview_id: ID встречи в календаре Talantix
+            account_name: имя аккаунта
 
         Returns:
             bool: True если встреча успешно удалена
         """
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_calend")
+            account = await self._get_account(db, "talantix_calend", account_name)
             if not account:
-                self.logger.error("Аккаунт talantix_calend не найден")
+                self.logger.error(f"Аккаунт talantix_calend (name={account_name}) не найден")
                 return False
 
             try:
@@ -848,6 +859,7 @@ class TalantixService:
         self,
         roles: list[str] | None = None,
         search_by_name: str = "",
+        account_name: str | None = None,
     ) -> list[dict]:
         """
         Получение списка менеджеров (участников) из Talantix.
@@ -855,6 +867,7 @@ class TalantixService:
         Args:
             roles: список ролей для фильтрации (ADMIN, RECRUITER, LINE_MANAGER, MEMBER)
             search_by_name: поиск по имени
+            account_name: имя аккаунта
 
         Returns:
             list[dict]: список менеджеров с полями:
@@ -870,9 +883,9 @@ class TalantixService:
                 print(f"{m['id']}: {m['firstName']} {m['lastName']} ({m['managerRole']})")
         """
         async with AsyncSessionLocal() as db:
-            account = await self._get_account(db, "talantix_calend")
+            account = await self._get_account(db, "talantix_calend", account_name)
             if not account:
-                self.logger.error("Аккаунт talantix_calend не найден")
+                self.logger.error(f"Аккаунт talantix_calend (name={account_name}) не найден")
                 return []
 
             try:
