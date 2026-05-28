@@ -118,6 +118,25 @@ async def get_bot_response(
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     full_system_prompt = f"{system_prompt}\n\nCurrent time: {now_str}"
 
+    # --- [ОБНОВЛЕНО] ДУБЛИРОВАНИЕ ТОЛЬКО ПОСЛЕДНИХ СИСТЕМНЫХ КОМАНД ---
+    system_commands_to_duplicate = []
+    
+    # 1. Проверяем только последнее сообщение в истории
+    if dialogue_history:
+        last_msg_content = str(dialogue_history[-1].get("content", ""))
+        if "[SYSTEM COMMAND]" in last_msg_content:
+            system_commands_to_duplicate.append(last_msg_content)
+            
+    # 2. Проверяем текущее входящее сообщение
+    if "[SYSTEM COMMAND]" in str(user_message):
+        system_commands_to_duplicate.append(str(user_message))
+
+    if system_commands_to_duplicate:
+        # Убираем дубли (если вдруг в истории и в текущем сообщении одна и та же команда)
+        unique_cmds = list(dict.fromkeys(system_commands_to_duplicate))
+        commands_block = "\n\n\n### 🚨 CRITICAL SYSTEM INSTRUCTION 🚨\n" + "\n".join(unique_cmds)
+        full_system_prompt += commands_block
+
     messages = [{"role": "system", "content": full_system_prompt}]
     messages.extend(dialogue_history)
     messages.append({"role": "user", "content": user_message})
@@ -203,10 +222,29 @@ async def get_smart_bot_response(
     ctx_logger = logging.LoggerAdapter(logger, extra_context or {})
     
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    full_system_prompt = f"{system_prompt}\nContext time: {now_str}"
+
+    # --- [ОБНОВЛЕНО] ДУБЛИРОВАНИЕ ТОЛЬКО ПОСЛЕДНИХ СИСТЕМНЫХ КОМАНД ---
+    system_commands_to_duplicate = []
     
+    # 1. Проверяем только последнее сообщение в истории
+    if dialogue_history:
+        last_msg_content = str(dialogue_history[-1].get("content", ""))
+        if "[SYSTEM COMMAND]" in last_msg_content:
+            system_commands_to_duplicate.append(last_msg_content)
+            
+    # 2. Проверяем текущее входящее сообщение
+    if "[SYSTEM COMMAND]" in str(user_message):
+        system_commands_to_duplicate.append(str(user_message))
+
+    if system_commands_to_duplicate:
+        # Убираем дубли (если вдруг в истории и в текущем сообщении одна и та же команда)
+        unique_cmds = list(dict.fromkeys(system_commands_to_duplicate))
+        commands_block = "\n\n\n### 🚨 CRITICAL SYSTEM INSTRUCTION 🚨\n" + "\n".join(unique_cmds)
+        full_system_prompt += commands_block
     # Для моделей o1/gpt-4o рекомендуется роль developer
     messages = [
-        {"role": "developer", "content": f"{system_prompt}\nContext time: {now_str}"}
+        {"role": "developer", "content": full_system_prompt}
     ]
     messages.extend(dialogue_history)
     messages.append({"role": "user", "content": user_message})
