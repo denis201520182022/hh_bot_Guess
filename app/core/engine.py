@@ -8,6 +8,7 @@ from sqlalchemy import select, update, delete
 import datetime
 from app.services.sheets import sheets_service
 import time
+from app.utils.redis_lock import acquire_lock, release_lock, get_redis_client # Добавь get_redis_client
 from sqlalchemy import select, update, delete # Добавили delete
 from app.db.models import Dialogue, Candidate, JobContext, Account, LlmLog, AnalyticsEvent, Director, InterviewReminder, InterviewFollowup # Добавили AnalyticsEvent, Director
 from app.core.rabbitmq import mq
@@ -890,7 +891,14 @@ class Engine:
             if not db.is_active:
                 ctx_logger.error(f"Session is not active for dialogue {dialogue_id}")
                 return
-
+            correlation_id = task_data.get("correlation_id")
+            if correlation_id:
+                redis = get_redis_client()
+                status = await redis.get(f"task_status:{correlation_id}")
+                if status == 'done':
+                    ctx_logger.info(f"✅ [Идемпотентность] Задача {correlation_id} уже выполнена. Пропуск.")
+                    return # Выходим, lock освободится в finally внизу
+                
             db_fetch_start = time.monotonic()
 
             # === 2. ЗАГРУЗКА ДАННЫХ С БЛОКИРОВКОЙ (Row-Level Lock) ===
@@ -998,6 +1006,8 @@ class Engine:
                 f"Processing dialogue {dialogue.external_chat_id}...",
                 extra={"action": "start_processing", "fetch_time": time.monotonic() - db_fetch_start}
             )
+
+            
             # === БЛОК КОНТРОЛЯ СТОИМОСТИ (STOP-CRANE) ===
             try:
                 usage_stats = dialogue.usage_stats or {}
@@ -1441,7 +1451,8 @@ class Engine:
                 await mq.publish("engine_tasks", {
                     "dialogue_id": dialogue.id, 
                     "trigger": "state_correction_retry",
-                    "initial_msg_count": hh_msg_count_start
+                    "initial_msg_count": hh_msg_count_start,
+                    "correlation_id": task_data.get("correlation_id")
                 })
                 
                 ctx_logger.info(f"Отправлено на исправление галлюцинации стейта: {new_state}")
@@ -1612,8 +1623,9 @@ class Engine:
                                         # В ЛЮБОМ СЛУЧАЕ прерываем текущую отправку и отправляем на ретрай
                                         await mq.publish("engine_tasks", {
                                             "dialogue_id": dialogue.id, 
-                                            "trigger": "date_slots_refine",
-                                            "initial_msg_count": hh_msg_count_start
+                                            "trigger": "state_correction_retry",
+                                            "initial_msg_count": hh_msg_count_start,
+                                            "correlation_id": task_data.get("correlation_id")
                                         })
                                         return
                             except Exception as e:
@@ -1660,12 +1672,13 @@ class Engine:
                         dialogue.history = (dialogue.history or []) + [time_corr_cmd]
                         await db.commit()
                         
-                       
                         await mq.publish("engine_tasks", {
-                            "dialogue_id": dialogue.id, 
-                            "trigger": "time_enforce_retry",
-                            "initial_msg_count": hh_msg_count_start
+                           "dialogue_id": dialogue.id, 
+                           "trigger": "state_correction_retry",
+                           "initial_msg_count": hh_msg_count_start,
+                           "correlation_id": task_data.get("correlation_id")
                         })
+                        
                         return 
 
                 except Exception as e:
@@ -1797,8 +1810,9 @@ class Engine:
                                 
                                 await mq.publish("engine_tasks", {
                                     "dialogue_id": dialogue.id, 
-                                    "trigger": f"{target_state}_forced_refine",
-                                    "initial_msg_count": hh_msg_count_start
+                                    "trigger": "state_correction_retry",
+                                    "initial_msg_count": hh_msg_count_start,
+                                    "correlation_id": task_data.get("correlation_id")
                                 })
                                 return # ПРЕРЫВАЕМ обработку, уходим на круг перегенерации
                     else:
@@ -1954,7 +1968,9 @@ class Engine:
                     
                     await mq.publish("engine_tasks", {
                         "dialogue_id": dialogue.id, 
-                        "trigger": f"{new_state}_refine_retry"
+                        "trigger": f"{new_state}_refine_retry",
+                        "initial_msg_count": hh_msg_count_start, # Добавили счетчик
+                        "correlation_id": task_data.get("correlation_id") # Рекомендую также пробрасывать ID цепочки
                     })
                     return # Прерываем текущий цикл, чтобы не слать старый ответ
 
@@ -2018,12 +2034,13 @@ class Engine:
                         dialogue.history = (dialogue.history or []) + [sys_msg]
                         dialogue.current_state = "awaiting_military_document"
                         await db.commit()
-
                         await mq.publish("engine_tasks", {
                             "dialogue_id": dialogue.id, 
-                            "trigger": "military_refine",
-                            "initial_msg_count": hh_msg_count_start
+                            "trigger": "state_correction_retry",
+                            "initial_msg_count": hh_msg_count_start,
+                            "correlation_id": task_data.get("correlation_id")
                         })
+                        
                         return
 
                 # --- 14.1 ПРОВЕРКА: ЗАДАВАЛСЯ ЛИ ВОПРОС ПРО ТЕЛЕФОН (Копия логики HH) ---
@@ -2056,12 +2073,13 @@ class Engine:
                         dialogue.history = (dialogue.history or []) + [system_command]
                         await db.commit()
                         
-                        
                         await mq.publish("engine_tasks", {
                             "dialogue_id": dialogue.id, 
-                            "trigger": "force_phone_retry",
-                            "initial_msg_count": hh_msg_count_start
+                            "trigger": "state_correction_retry",
+                            "initial_msg_count": hh_msg_count_start,
+                            "correlation_id": task_data.get("correlation_id")
                         })
+                        
                         return
 
                 # --- 14.2 ПРОВЕРКА ПОЛНОТЫ АНКЕТЫ (Динамический LLM Recovery) ---
@@ -2156,12 +2174,13 @@ class Engine:
                     dialogue.history = (dialogue.history or []) + [sys_msg]
                     dialogue.current_state = "clarifying_anything"
                     await db.commit()
-
                     await mq.publish("engine_tasks", {
                         "dialogue_id": dialogue.id, 
-                        "trigger": "data_fix_retry",
-                        "initial_msg_count": hh_msg_count_start
+                        "trigger": "state_correction_retry",
+                        "initial_msg_count": hh_msg_count_start,
+                        "correlation_id": task_data.get("correlation_id")
                     })
+                    
                     return
 
 
@@ -2359,12 +2378,13 @@ class Engine:
                     await db.commit()
 
                     # 4. Ретрай задачи в RabbitMQ для мгновенного ответа с датами
-                    
                     await mq.publish("engine_tasks", {
                         "dialogue_id": dialogue.id, 
-                        "trigger": "start_scheduling_trigger",
-                        "initial_msg_count": hh_msg_count_start
+                        "trigger": "state_correction_retry",
+                        "initial_msg_count": hh_msg_count_start,
+                        "correlation_id": task_data.get("correlation_id")
                     })
+                    
                     return
 
                 else:
@@ -2690,12 +2710,13 @@ class Engine:
                         dialogue.history = (dialogue.history or []) + [system_command]
                         await db.commit()
                         
-                        
                         await mq.publish("engine_tasks", {
                             "dialogue_id": dialogue.id, 
-                            "trigger": "decline_veto_retry",
-                            "initial_msg_count": hh_msg_count_start
+                            "trigger": "state_correction_retry",
+                            "initial_msg_count": hh_msg_count_start,
+                            "correlation_id": task_data.get("correlation_id")
                         })
+                        
                         return 
 
                 # --- 16.2 ОТМЕНА В КАЛЕНДАРЕ ---
@@ -2869,7 +2890,12 @@ class Engine:
 
                 ctx_logger.info(f"📤 Сообщение отправлено. ID: {real_id}")
                 
-                
+                if correlation_id:
+                    redis = get_redis_client()
+                    # Ставим статус "done" на 24 часа
+                    await redis.set(f"task_status:{correlation_id}", 'done', ex=86400)
+                    ctx_logger.info(f"🎯 [Идемпотентность] Correlation ID {correlation_id} помечен как DONE.")
+                    
             except Exception as e:
                 # 3. Обработка ошибок
                 error_str = str(e).lower()

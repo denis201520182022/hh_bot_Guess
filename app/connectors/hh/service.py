@@ -4,6 +4,7 @@ import json
 import logging
 import datetime
 import time # Добавили для замеров времени из старого кода
+import uuid
 from typing import Optional, Any, Dict, List
 from decimal import Decimal
 from zoneinfo import ZoneInfo # Для работы с таймзонами
@@ -143,21 +144,25 @@ class HHConnectorService(BaseConnector):
 
         async def wait_and_push():
             try:
-                # Ждем 5 секунд
-                await asyncio.sleep(5)
+                # Ждем 3 секунды
+                await asyncio.sleep(3)
+                
+                # Генерируем уникальный ID непосредственно перед публикацией
+                correlation_id = str(uuid.uuid4())
 
-                # Формируем задачу для Engine
+                # Формируем задачу для Engine с новым correlation_id
                 engine_task = {
                     "dialogue_id": dialogue.id,
                     "account_id": dialogue.account_id,
                     "candidate_id": dialogue.candidate_id,
                     "platform": "hh",
                     "trigger": source,
-                    "initial_msg_count": messages_count
+                    "initial_msg_count": messages_count,
+                    "correlation_id": correlation_id
                 }
 
                 await mq.publish("engine_tasks", engine_task)
-                logger.info(f"🚀 [Debounce HH] Пачка сообщений диалога {dialogue.id} отправлена в Engine (Count: {messages_count})")
+                logger.info(f"🚀 [Debounce HH] Пачка сообщений диалога {dialogue.id} отправлена в Engine (Count: {messages_count}, ID: {correlation_id})")
 
             except Exception as e:
                 logger.error(f"💥 Ошибка в дебоунсе HH: {e}", exc_info=True)

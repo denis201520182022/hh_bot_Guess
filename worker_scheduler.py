@@ -21,6 +21,9 @@ from app.utils.logger import logger, set_log_context, log_context
 from app.utils.analytics import log_event
 from app.db.models import Account, JobContext, Candidate, Dialogue, AppSettings
 from sqlalchemy.orm import selectinload
+import uuid
+
+
 MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 
 class Scheduler:
@@ -124,12 +127,17 @@ class Scheduler:
                                 new_level = current_level + 1
                                 logger.info(f"⏰ Напоминание ур.{new_level} для диалога {dialogue.id}")
                                 
+                                # ГЕНЕРИРУЕМ УНИКАЛЬНЫЙ ID
+                                task_uuid = str(uuid.uuid4())
+
                                 await mq.publish("engine_tasks", {
                                     "dialogue_id": dialogue.id,
                                     "trigger": "reminder",
                                     "reminder_text": reminder_cfg.text,
                                     "new_level": new_level,
-                                    "stop_bot": False # Мы не стопаем тут, стоп будет позже
+                                    "stop_bot": False,
+                                    "correlation_id": task_uuid, # Добавили
+                                    "initial_msg_count": 0       # Добавили
                                 })
                                 dialogue.reminder_level = new_level
 
@@ -248,11 +256,16 @@ class Scheduler:
                                     vacancy_title=vacancy_title
                                 )
                                 
+                                # ГЕНЕРИРУЕМ УНИКАЛЬНЫЙ ID
+                                task_uuid = str(uuid.uuid4())
+
                                 # 5. Публикуем в Engine для отправки
                                 await mq.publish("engine_tasks", {
                                     "dialogue_id": rem.dialogue_id,
                                     "trigger": "reminder",
-                                    "reminder_text": formatted_text
+                                    "reminder_text": formatted_text,
+                                    "correlation_id": task_uuid, # Добавили
+                                    "initial_msg_count": 0       # Добавили
                                 })
                                 
                                 rem.status = 'sent'

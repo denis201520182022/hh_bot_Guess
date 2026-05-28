@@ -28,7 +28,7 @@ platforms:
     concurrency_limit: 10
   hh:
     enabled: true
-    poll_interval: 5      # Для HH обычно хватает 1 раза в минуту
+    poll_interval: 1      # Для HH обычно хватает 1 раза в минуту
     vacancy_description_source: "platform" # "platform" или "google_doc"
     dry_run_search: false  # Тестовый режим поиска (без открытия контактов)
 
