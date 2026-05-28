@@ -111,7 +111,7 @@ class TalantixCalendClient:
         except httpx.HTTPStatusError as e:
             error_msg = f"❌ Talantix Internal API Error {e.response.status_code} на {url}: {e.response.text[:200]}"
             self.logger.error(error_msg)
-            if e.response.status_code >= 500:
+            if e.response.status_code >= 400:
                 await self._send_alert(error_msg)
             raise
         except Exception as e:
@@ -325,8 +325,8 @@ class TalantixCalendClient:
 
     async def book_slot(
         self,
-        start_date: int,
-        end_date: int,
+        start_date: int,  # приходит timestamp в ms
+        end_date: int,    # приходит timestamp в ms
         person_ids: list[int] | None = None,
         vacancy_ids: list[int] | None = None,
         manager_ids: list[int] | None = None,
@@ -340,56 +340,61 @@ class TalantixCalendClient:
         account: Account | None = None,
         db: AsyncSession | None = None,
     ) -> dict:
-        """
-        Создание встречи/собеседования в календаре Talantix.
-
-        Args:
-            start_date: timestamp начала встречи в ms (UTC)
-            end_date: timestamp конца встречи в ms (UTC)
-            person_ids: список ID кандидатов (personId)
-            vacancy_ids: список ID вакансий
-            manager_ids: список ID менеджеров-участников
-            title: название встречи (тип)
-            comment: комментарий в формате HTML
-            place: место проведения
-            timezone: часовой пояс (по умолчанию europe/moscow)
-            send_person_message: отправить уведомление кандидату
-            sync_with_external_calendar: синхронизация с внешним календарём
-            person_message_file_ids: файлы для сообщения кандидату
-            account: аккаунт Talantix
-            db: сессия БД
-
-        Returns:
-            dict: ответ API с данными календаря (включая созданную встречу)
-        """
         if account is None or db is None:
             raise ValueError("account и db обязательны для book_slot")
 
-        path = "/ats/calendar/meeting"
+        path = "/ats/graphql?operationName=CreateCalendarMeeting"
 
-        payload: dict[str, Any] = {
-            "startDate": start_date,
-            "endDate": end_date,
-            "timezone": timezone,
-            "personIds": person_ids or [],
-            "vacancyIds": vacancy_ids or [],
-            "managerIds": manager_ids or [],
-            "type": title or "",
-            "comment": {
-                "dangerousHtml": comment or ""
-            },
-            "place": place,
-            "sendPersonMessage": send_person_message,
-            "syncWithExternalCalendar": sync_with_external_calendar,
-            "personMessageFileIds": person_message_file_ids or [],
+        # Конвертируем ms timestamp в ISO формат (YYYY-MM-DDTHH:MM:SS)
+        # Talantix в GraphQL ждет локальное время без Z
+        dt_start = datetime.datetime.fromtimestamp(start_date / 1000, tz=MSK_TZ).replace(tzinfo=None)
+        dt_end = datetime.datetime.fromtimestamp(end_date / 1000, tz=MSK_TZ).replace(tzinfo=None)
+
+        query = """
+        mutation CreateCalendarMeeting($data: CalendarMeetingCreateInput!) {
+          createCalendarMeeting(input: $data) {
+            __typename
+            ... on CalendarMeetingCreateError {
+              errorType
+              message
+              __typename
+            }
+            ... on CalendarMeetingItem {
+              id
+              __typename
+            }
+          }
+        }
+        """
+
+        variables = {
+            "data": {
+                "topic": title or "Интервью",
+                "comment": comment or "",
+                "place": place,
+                "vacancyIds": vacancy_ids or [],
+                "personIds": person_ids or [],
+                "managerIds": manager_ids or [],
+                "period": {
+                    "start": dt_start.isoformat(),
+                    "end": dt_end.isoformat(),
+                    "timezoneId": timezone.lower()
+                },
+                "sendPersonMessage": send_person_message,
+                "syncWithExternalCalendar": sync_with_external_calendar,
+                "personMessageFileIds": person_message_file_ids or []
+            }
         }
 
-        self.logger.info(
-            "book_slot: start_date=%s, end_date=%s, person_ids=%s, vacancy_ids=%s, manager_ids=%s, type=%s",
-            start_date, end_date, person_ids, vacancy_ids, manager_ids, title,
-        )
-        return await self._send_request("POST", path, account, db, json=payload)
+        graphql_payload = {
+            "operationName": "CreateCalendarMeeting",
+            "query": query.strip(),
+            "variables": variables,
+        }
 
+        self.logger.info(f"book_slot (GraphQL): topic={title}, period={variables['data']['period']}")
+        return await self._send_request("POST", path, account, db, json=graphql_payload)
+    
     async def get_managers(
         self,
         roles: list[str] | None = None,
@@ -790,27 +795,34 @@ class TalantixService:
                     person_message_file_ids=person_message_file_ids,
                 )
 
-                # Извлекаем meeting_id из ответа
-                # Ответ имеет структуру: {"ats": {"calendar": {"meetingsMap": {"2091160": {...}}}}}
-                ats = result.get("ats", {})
-                calendar = ats.get("calendar", {})
-                meetings_map = calendar.get("meetingsMap", {})
+                # НОВАЯ ЛОГИКА ИЗВЛЕЧЕНИЯ ID ИЗ GRAPHQL
+                data = result.get("data", {}).get("createCalendarMeeting", {})
+                typename = data.get("__typename")
 
-                if meetings_map:
-                    # Берём последнюю созданную встречу (самый большой ключ = последний ID)
-                    meeting_id = max(int(k) for k in meetings_map.keys())
-                    self.logger.info(
-                        "✅ Встреча создана: meeting_id=%s, person_ids=%s, vacancy_ids=%s, manager_ids=%s",
-                        meeting_id, person_ids, vacancy_ids, manager_ids,
-                    )
-                    return meeting_id
+                if typename == "CalendarMeetingItem":
+                    meeting_id = data.get("id")
+                    self.logger.info(f"✅ Встреча создана (GQL): meeting_id={meeting_id}")
+                    return int(meeting_id)
+                
+                elif typename == "CalendarMeetingCreateError":
+                    error_msg = data.get("message", "Unknown error")
+                    self.logger.error(f"❌ Ошибка Talantix API: {error_msg}")
+                    # Опционально: можно слать алерт и сюда, если это не "слот занят", 
+                    # а системная ошибка
+                    return None
                 else:
-                    self.logger.warning("⚠️ meetingsMap пуст в ответе book_slot")
+                    # ВОТ ТУТ АЛЕРТ НА ИЗМЕНЕНИЕ API
+                    msg = f"🚨 **TALANTIX API CHANGED**\nМетод: CreateCalendarMeeting\nПолучен неожиданный __typename: `{typename}`\nБот не может создать встречу!"
+                    self.logger.error(msg)
+                    await self.calend_client._send_alert(msg) # Отправляем алерт в ТГ
                     return None
 
             except Exception as e:
-                self.logger.error(f"❌ Ошибка создания встречи: {e}", exc_info=True)
+                error_msg = f"❌ КРИТИЧЕСКАЯ ОШИБКА в book_interview: {e}"
+                self.logger.error(error_msg, exc_info=True)
+                await self.calend_client._send_alert(error_msg) # Алерт при любом падении
                 return None
+            
 
     async def release_interview(self, interview_id: int, account_name: str | None = None) -> bool:
         """
@@ -848,11 +860,16 @@ class TalantixService:
                     self.logger.error(f"❌ Ошибка отмены собеседования {interview_id}: {error_type}")
                     return False
                 else:
-                    self.logger.warning(f"⚠️ Неожиданный ответ при отмене {interview_id}: {typename}")
+                    # ДОБАВЛЯЕМ АЛЕРТ НА ИЗМЕНЕНИЕ API УДАЛЕНИЯ
+                    msg = f"🚨 **TALANTIX API CHANGED (DELETE)**\nМетод: DeleteCalendarMeeting\nПолучен неожиданный __typename: `{typename}`\nБот не смог отменить встречу {interview_id}!"
+                    self.logger.error(msg)
+                    await self.calend_client._send_alert(msg)
                     return False
 
             except Exception as e:
-                self.logger.error(f"❌ Ошибка отмены собеседования {interview_id}: {e}", exc_info=True)
+                error_msg = f"❌ КРИТИЧЕСКАЯ ОШИБКА при отмене встречи {interview_id}: {e}"
+                self.logger.error(error_msg, exc_info=True)
+                await self.calend_client._send_alert(error_msg)
                 return False
 
     async def get_managers(
