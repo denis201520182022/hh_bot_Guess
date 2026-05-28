@@ -1,7 +1,12 @@
 FROM python:3.11-slim-bookworm
 
-# Установка системных зависимостей + Supervisor
-# curl нужен для healthcheck, libpq-dev для postgres
+# 1. Заменяем стандартные зеркала на Яндекс (проверяем оба возможных пути конфига)
+# 2. Форсируем IPv4, чтобы не ждать таймаутов IPv6 (частая причина тормозов)
+RUN sed -i 's/deb.debian.org/mirror.yandex.ru/g' /etc/apt/sources.list.d/debian.sources || \
+    sed -i 's/deb.debian.org/mirror.yandex.ru/g' /etc/apt/sources.list && \
+    echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
+
+# Дальше твой код без изменений, но работать будет в разы быстрее
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
