@@ -1,12 +1,20 @@
 FROM python:3.11-slim-bookworm
 
-# 1. Заменяем стандартные зеркала на Яндекс (проверяем оба возможных пути конфига)
-# 2. Форсируем IPv4, чтобы не ждать таймаутов IPv6 (частая причина тормозов)
-RUN sed -i 's/deb.debian.org/mirror.yandex.ru/g' /etc/apt/sources.list.d/debian.sources || \
-    sed -i 's/deb.debian.org/mirror.yandex.ru/g' /etc/apt/sources.list && \
+# Принудительно переписываем конфиг репозиториев на Яндекс (новый формат Debian 12)
+RUN echo "Types: deb\n\
+URIs: http://mirror.yandex.ru/debian/\n\
+Suites: bookworm bookworm-updates\n\
+Components: main\n\
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\
+\n\
+Types: deb\n\
+URIs: http://mirror.yandex.ru/debian-security\n\
+Suites: bookworm-security\n\
+Components: main\n\
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" > /etc/apt/sources.list.d/debian.sources && \
     echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
 
-# Дальше твой код без изменений, но работать будет в разы быстрее
+# Теперь установка пойдет через зеркала РФ и по IPv4
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
