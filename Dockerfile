@@ -26,7 +26,9 @@ WORKDIR /app
 
 # Копируем зависимости
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir \
+    --index-url https://mirror.yandex.ru/pypi/simple \
+    -r requirements.txt
 
 # Копируем код
 COPY . .
