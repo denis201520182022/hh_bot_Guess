@@ -82,7 +82,7 @@ async def on_hh_inbound(message: IncomingMessage):
                 folder=body.get("folder")
             )
             
-            logger.info(f"📥 [Connector] Унификация события от HH (Source: {body.get('source')})")
+            # logger.info(f"📥 [Connector] Унификация события от HH (Source: {body.get('source')})")
             
             # Наш сервис уже готов принимать этот body
             await hh_connector.process_hh_event(body)
