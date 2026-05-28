@@ -24,13 +24,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY requirements.txt .
-# Копируем зависимости
-# Используем стабильное и полное зеркало
+# 2. Устанавливаем через российское зеркало ВШЭ
+# Если оно вдруг не сработает, замени на https://mirrors.aliyun.com/pypi/simple/
 RUN pip install --no-cache-dir \
-    --index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    --default-timeout=1000 \
+    --index-url https://mirror.hse.ru/pypi/simple/ \
+    --extra-index-url https://pypi.org/simple \
+    --default-timeout=100 \
     -r requirements.txt
-
 # Копируем код
 COPY . .
 
