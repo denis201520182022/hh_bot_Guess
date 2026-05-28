@@ -370,9 +370,9 @@ class TalantixCalendClient:
 
         variables = {
             "data": {
-                "topic": title or "Интервью",
+                "topic": title or "",
                 "comment": comment or "",
-                "place": place,
+                "place": place or "",
                 "vacancyIds": vacancy_ids or [],
                 "personIds": person_ids or [],
                 "managerIds": manager_ids or [],
@@ -380,10 +380,9 @@ class TalantixCalendClient:
                     "start": dt_start.isoformat(),
                     "end": dt_end.isoformat(),
                     "timezoneId": timezone.lower()
-                },
-                "sendPersonMessage": send_person_message,
-                "syncWithExternalCalendar": sync_with_external_calendar,
-                "personMessageFileIds": person_message_file_ids or []
+                }
+                # УДАЛИЛИ: sendPersonMessage, syncWithExternalCalendar, personMessageFileIds
+                # Эти поля больше не входят в объект 'data'
             }
         }
 
