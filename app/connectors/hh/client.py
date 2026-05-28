@@ -26,9 +26,9 @@ CLIENT_SECRET = os.getenv('HH_CLIENT_SECRET')
 
 # Лимиты (через Redis для распределенной работы)
 # 1. Общий лимит запросов в секунду (Rate Limit)
-HH_API_RATE_LIMITER_GLOBAL = DistributedRateLimiter(name="hh_api_rate", limit=100, period=60)
+HH_API_RATE_LIMITER_GLOBAL = DistributedRateLimiter(name="hh_api_rate", limit=100, period=1)
 # 2. Лимит одновременных соединений (Concurrency)
-GLOBAL_HH_API_LIMIT = int(os.getenv("GLOBAL_HH_API_CONCURRENCY", 10))
+GLOBAL_HH_API_LIMIT = int(os.getenv("GLOBAL_HH_API_CONCURRENCY", 50))
 
 class HHClient:
     def __init__(self):
