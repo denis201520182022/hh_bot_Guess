@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import re
+import json
 from typing import Any
 
 import httpx
@@ -794,7 +795,20 @@ class TalantixService:
                     sync_with_external_calendar=sync_with_external_calendar,
                     person_message_file_ids=person_message_file_ids,
                 )
+                # --- ДОБАВЬТЕ ЭТИ СТРОКИ ДЛЯ ДАМПА ---
+                try:
+                    # Печатаем весь ответ в красивом JSON формате
+                    debug_res = json.dumps(result, indent=2, ensure_ascii=False)
+                    self.logger.info(f"🔍 DEBUG TALANTIX RESPONSE:\n{debug_res}")
+                except Exception as e:
+                    self.logger.error(f"Не удалось сериализовать ответ для лога: {result}")
+                # -------------------------------------
 
+                # НОВАЯ БЕЗОПАСНАЯ ЛОГИКА (чтобы не падало)
+                if result is None:
+                    self.logger.error("❌ Результат запроса — None (запрос не удался)")
+                    return None
+                
                 # НОВАЯ ЛОГИКА ИЗВЛЕЧЕНИЯ ID ИЗ GRAPHQL
                 data = result.get("data", {}).get("createCalendarMeeting", {})
                 typename = data.get("__typename")
