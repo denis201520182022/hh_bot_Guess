@@ -25,9 +25,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Копируем зависимости
-COPY requirements.txt .
+# Используем стабильное и полное зеркало
 RUN pip install --no-cache-dir \
-    --index-url https://mirror.yandex.ru/pypi/simple \
+    --index-url https://pypi.tuna.tsinghua.edu.cn/simple \
+    --default-timeout=1000 \
     -r requirements.txt
 
 # Копируем код
