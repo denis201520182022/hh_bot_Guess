@@ -26,10 +26,10 @@ WORKDIR /app
 COPY requirements.txt .
 # 2. Устанавливаем через российское зеркало ВШЭ
 # Если оно вдруг не сработает, замени на https://mirrors.aliyun.com/pypi/simple/
+# ПОТОМ УСТАНАВЛИВАЕМ
 RUN pip install --no-cache-dir \
-    --index-url https://mirror.hse.ru/pypi/simple/ \
-    --extra-index-url https://pypi.org/simple \
-    --default-timeout=100 \
+    --index-url https://pypi.tuna.tsinghua.edu.cn/simple \
+    --default-timeout=1000 \
     -r requirements.txt
 # Копируем код
 COPY . .
