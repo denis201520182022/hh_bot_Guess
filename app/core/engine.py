@@ -2667,7 +2667,7 @@ class Engine:
                             user_message=f"ИСТОРИЯ ДИАЛОГА (последние реплики):\n{recent_context}",
                             
                             attempt_tracker=clarification_attempts,
-                            skip_instructions=True,
+                            # skip_instructions=True,
                             extra_context=ctx_logger.extra
                         )
 
