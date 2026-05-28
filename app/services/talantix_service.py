@@ -348,9 +348,16 @@ class TalantixCalendClient:
 
         # Конвертируем ms timestamp в ISO формат (YYYY-MM-DDTHH:MM:SS)
         # Talantix в GraphQL ждет локальное время без Z
-        dt_start = datetime.datetime.fromtimestamp(start_date / 1000, tz=MSK_TZ).replace(tzinfo=None)
-        dt_end = datetime.datetime.fromtimestamp(end_date / 1000, tz=MSK_TZ).replace(tzinfo=None)
+        # Корректировка: вычитаем 3 часа (3 * 3600 * 1000 мс), так как в календаре всё встает на 3 часа позже
+        offset = 3 * 3600 * 1000
+        adjusted_start = start_date - offset
+        adjusted_end = end_date - offset
 
+        # Конвертируем скорректированный ms timestamp в ISO формат
+        dt_start = datetime.datetime.fromtimestamp(adjusted_start / 1000, tz=MSK_TZ).replace(tzinfo=None)
+        dt_end = datetime.datetime.fromtimestamp(adjusted_end / 1000, tz=MSK_TZ).replace(tzinfo=None)
+
+        
         query = """
         mutation CreateCalendarMeeting($data: CalendarMeetingCreateInput!) {
           createCalendarMeeting(input: $data) {
