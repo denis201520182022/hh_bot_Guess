@@ -152,13 +152,8 @@ async def send_tg_notification(bot: Bot, dialogue: Dialogue, candidate: Candidat
         # if meta.get('cancel_reason'):
         #     message_text += f"📝 <b>Причина отмены:</b> {esc(meta.get('cancel_reason'))}\n"
     elif event_type == 'rescheduled':
-        old_date = meta.get('old_interview_date')
-        old_time = meta.get('old_interview_time')
-        new_date = meta.get('interview_date')
-        new_time = meta.get('interview_time')
         message_text += (
-            f"\n📅 <b>Было:</b> {esc(old_date)} в {esc(old_time)}\n"
-            f"📅 <b>Стало:</b> {esc(new_date)} в {esc(new_time)}\n"
+            f"\n📅 <b>Собеседование:</b> {esc(meta.get('interview_date'))} в {esc(meta.get('interview_time'))}\n"
         )
     else:  # qualified
         message_text += (

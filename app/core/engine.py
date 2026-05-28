@@ -2756,6 +2756,12 @@ class Engine:
                 # --- 16.3 ФИНАЛЬНАЯ ФИКСАЦИЯ СТАТУСА ---
                 dialogue.status = 'rejected'
 
+                # Отправляем сигнал в очередь отчетности
+                await mq.publish("services_output", {
+                    "dialogue_id": dialogue.id,
+                    "type": "rejected"
+                })
+
                 # Определяем тип отказа для статистики
                 stat_event_type = 'rejected_by_bot'
                 if new_state in ['declined_vacancy', 'declined_interview']:

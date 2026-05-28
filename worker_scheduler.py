@@ -142,6 +142,12 @@ class Scheduler:
                                 # Ставим уровень выше максимума, чтобы запрос его больше не цеплял
                                 dialogue.reminder_level = max_levels + 1 
                                 
+                                # Отправляем сигнал в очередь отчетности
+                                await mq.publish("services_output", {
+                                    "dialogue_id": dialogue.id,
+                                    "type": "silent"
+                                })
+                                
                                 # Пишем в аналитику
                                 await log_event(
                                     db=db,
