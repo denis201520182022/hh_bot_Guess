@@ -796,6 +796,7 @@ class TalantixService:
                     person_message_file_ids=person_message_file_ids,
                 )
                 # --- ДОБАВЬТЕ ЭТИ СТРОКИ ДЛЯ ДАМПА ---
+                print(result)
                 try:
                     # Печатаем весь ответ в красивом JSON формате
                     debug_res = json.dumps(result, indent=2, ensure_ascii=False)
